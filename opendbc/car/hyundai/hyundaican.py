@@ -142,9 +142,12 @@ def get_scc12_values(enabled, accel, idx, stopping, long_override, use_fca):
     "ACCMode": 2 if enabled and long_override else 1 if enabled else 0,
     "StopReq": 1 if stopping else 0,
     "aReqRaw": accel,
-    "aReqValue": accel, # stock ramps up and down respecting jerk limit until it reaches aReqRaw
+    "aReqValue": accel,  # stock ramps up and down respecting jerk limit until it reaches aReqRaw
     "CR_VSM_Alive": idx % 0xF,
   }
+
+  # show AEB disabled indicator on dash with SCC12 if not sending FCA messages.
+  # these signals also prevent a TCS fault on non-FCA cars with alpha longitudinal
   if not use_fca:
     scc12_values["CF_VSM_ConfMode"] = 1
     scc12_values["AEB_Status"] = 1 # AEB disabled
