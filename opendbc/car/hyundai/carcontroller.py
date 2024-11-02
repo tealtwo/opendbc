@@ -2,7 +2,7 @@ from opendbc.can.packer import CANPacker
 from opendbc.car import DT_CTRL, apply_driver_steer_torque_limits, common_fault_avoidance, make_tester_present_msg, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.common.numpy_fast import clip
-from opendbc.car.hyundai import hyundaicanfd, hyundaican
+from opendbc.car.hyundai import hyundaicanfd, hyundaican, hyundaicansp
 from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CAR
@@ -145,9 +145,9 @@ class CarController(CarControllerBase):
         # TODO: unclear if this is needed
         jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0
         use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
-        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
+        can_sends.extend(hyundaicansp.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
                                                         hud_control, set_speed_in_units, stopping,
-                                                        CC.cruiseControl.override, use_fca))
+                                                        CC.cruiseControl.override, use_fca, CS))
 
       # 20 Hz LFA MFA message
       if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:
