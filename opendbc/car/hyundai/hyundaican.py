@@ -129,11 +129,11 @@ def get_scc11_values(enabled, set_speed, idx, hud_control):
     "TauGapSet": hud_control.leadDistanceBars,
     "VSetDis": set_speed if enabled else 0,
     "AliveCounterACC": idx % 0x10,
-    "ObjValid": 1,
-    "ACC_ObjStatus": 1,
+    "ObjValid": 1, # close lead makes controls tighter
+    "ACC_ObjStatus": 1, # close lead makes controls tighter
     "ACC_ObjLatPos": 0,
     "ACC_ObjRelSpd": 0,
-    "ACC_ObjDist": 1,
+    "ACC_ObjDist": 1, # close lead makes controls tighter
   }
 
 
@@ -142,12 +142,12 @@ def get_scc12_values(enabled, accel, idx, stopping, long_override, use_fca):
     "ACCMode": 2 if enabled and long_override else 1 if enabled else 0,
     "StopReq": 1 if stopping else 0,
     "aReqRaw": accel,
-    "aReqValue": accel,
+    "aReqValue": accel, # stock ramps up and down respecting jerk limit until it reaches aReqRaw
     "CR_VSM_Alive": idx % 0xF,
   }
   if not use_fca:
     scc12_values["CF_VSM_ConfMode"] = 1
-    scc12_values["AEB_Status"] = 1
+    scc12_values["AEB_Status"] = 1 # AEB disabled
   return scc12_values
 
 
@@ -159,12 +159,12 @@ def calculate_scc12_checksum(packer, scc12_values):
 
 def get_scc14_values(enabled, upper_jerk, hud_control, long_override):
   return {
-    "ComfortBandUpper": 0.0,
-    "ComfortBandLower": 0.0,
-    "JerkUpperLimit": upper_jerk,
-    "JerkLowerLimit": 5.0,
-    "ACCMode": 2 if enabled and long_override else 1 if enabled else 4,
-    "ObjGap": 2 if hud_control.leadVisible else 0,
+    "ComfortBandUpper": 0.0, # stock usually is 0 but sometimes uses higher values
+    "ComfortBandLower": 0.0, # stock usually is 0 but sometimes uses higher values
+    "JerkUpperLimit": upper_jerk, # stock usually is 1.0 but sometimes uses higher values
+    "JerkLowerLimit": 5.0, # stock usually is 0.5 but sometimes uses higher values
+    "ACCMode": 2 if enabled and long_override else 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
+    "ObjGap": 2 if hud_control.leadVisible else 0, # 5: >30, m, 4: 25-30 m, 3: 20-25 m, 2: < 20 m, 0: no lead
   }
 
 
@@ -196,7 +196,10 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
   scc14_values = get_scc14_values(enabled, upper_jerk, hud_control, long_override)
   commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 
+  # Only send FCA11 on cars where it exists on the bus
   if use_fca:
+    # note that some vehicles most likely have an alternate checksum/counter definition
+    # https://github.com/commaai/opendbc/commit/9ddcdb22c4929baf310295e832668e6e7fcfa602
     fca11_values = get_fca11_values(idx)
     fca11_values = calculate_fca11_checksum(packer, fca11_values)
     commands.append(packer.make_can_msg("FCA11", 0, fca11_values))
