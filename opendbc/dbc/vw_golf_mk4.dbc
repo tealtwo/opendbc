@@ -641,6 +641,20 @@ BO_ 906 GRA_Neu: 4 XXX
  SG_ GRA_Sportschalter : 30|1@1+ (1,0) [0|1] "" XXX
  SG_ GRA_Fehler_Tip : 31|1@1+ (1,0) [0|1] "" XXX
 
+BO_ 512 GAS_COMMAND: 6 EON
+ SG_ GAS_COMMAND : 7|16@0+ (0.5,0) [0|1] "" INTERCEPTOR
+ SG_ GAS_COMMAND2 : 23|16@0+ (0.9857,0) [0|1] "" INTERCEPTOR
+ SG_ ENABLE : 39|1@0+ (1,0) [0|1] "" INTERCEPTOR
+ SG_ COUNTER : 35|4@0+ (1,0) [0|15] "" INTERCEPTOR
+ SG_ CHECKSUM : 47|8@0+ (1,0) [0|255] "" INTERCEPTOR
+
+BO_ 513 GAS_SENSOR: 6 INTERCEPTOR
+ SG_ STATE : 39|4@0+ (1,0) [0|15] "" EON
+ SG_ COUNTER : 35|4@0+ (1,0) [0|15] "" EON
+ SG_ CHECKSUM : 47|8@0+ (1,0) [0|255] "" EON
+ SG_ INTERCEPTOR_GAS : 7|16@0+ (0.5,0) [0|1] "" EON
+ SG_ INTERCEPTOR_GAS2 : 23|16@0+ (0.9857,0) [0|1] "" EON
+
 BO_ 904 GRA: 3 XXX
  SG_ Checksumme_GRA_alt : 16|8@1+ (1,0) [0|0] "" XXX
  SG_ Frei_GRA_alt : 15|1@1+ (1,0) [0|0] "" XXX
