@@ -1,12 +1,18 @@
 from opendbc.car.hyundai import hyundaican
 from opendbc.car.hyundai.hyundaican import get_scc11_values, calculate_scc12_checksum, \
     get_scc14_values, get_fca11_values, calculate_fca11_checksum
-from sunnypilot.car.hyundai import escc
+
+
+def update_escc_values(scc12_values, CS):
+    scc12_values["AEB_CmdAct"] = CS.escc_cmd_act
+    scc12_values["CF_VSM_Warn"] = CS.escc_aeb_warning
+    scc12_values["CF_VSM_DecCmdAct"] = CS.escc_aeb_dec_cmd_act
+    scc12_values["CR_VSM_DecCmd"] = CS.escc_aeb_dec_cmd
 
 
 def get_scc12_values(enabled, accel, idx, stopping, long_override, use_fca, CS):
     scc12_values = hyundaican.get_scc12_values(enabled, accel, idx, stopping, long_override, use_fca)
-    scc12_values = escc.update_escc_values(scc12_values, CS)
+    update_escc_values(scc12_values, CS)
     return scc12_values
 
 
