@@ -186,13 +186,15 @@ def calculate_fca11_checksum(packer, fca11_values):
   return fca11_values
 
 
-def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca):
+def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca, CS=None):
   commands = []
 
   scc11_values = get_scc11_values(enabled, set_speed, idx, hud_control)
   commands.append(packer.make_can_msg("SCC11", 0, scc11_values))
 
   scc12_values = get_scc12_values(enabled, accel, idx, stopping, long_override, use_fca)
+  if CS:
+    update_escc_values(scc12_values, CS)
   scc12_values = calculate_scc12_checksum(packer, scc12_values)
   commands.append(packer.make_can_msg("SCC12", 0, scc12_values))
 
@@ -234,3 +236,11 @@ def create_frt_radar_opt(packer):
     "CF_FCA_Equip_Front_Radar": 1,
   }
   return packer.make_can_msg("FRT_RADAR11", 0, frt_radar11_values)
+
+def update_escc_values(scc12_values, CS):
+  scc12_values["AEB_CmdAct"] = CS.escc_cmd_act
+  scc12_values["CF_VSM_Warn"] = CS.escc_aeb_warning
+  scc12_values["CF_VSM_DecCmdAct"] = CS.escc_aeb_dec_cmd_act
+  scc12_values["CR_VSM_DecCmd"] = CS.escc_aeb_dec_cmd
+
+
