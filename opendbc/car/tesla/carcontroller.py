@@ -1,7 +1,7 @@
 from opendbc.car.common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
 from opendbc.car import apply_std_steer_angle_limits
-from opendbc.car.interfaces import CarControllerBase
+from opendbc.car.sunnypilot.interfaces import CarControllerBase
 from opendbc.car.tesla.teslacan import TeslaCAN
 from opendbc.car.tesla.values import CarControllerParams
 

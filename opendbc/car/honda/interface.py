@@ -6,7 +6,7 @@ from opendbc.car.common.numpy_fast import interp
 from opendbc.car.honda.hondacan import CanBus
 from opendbc.car.honda.values import CarControllerParams, HondaFlags, CAR, HONDA_BOSCH, \
                                                  HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS
-from opendbc.car.interfaces import CarInterfaceBase
+from opendbc.car.sunnypilot.interfaces import CarInterfaceBase
 from opendbc.car.disable_ecu import disable_ecu
 
 TransmissionType = structs.CarParams.TransmissionType

@@ -1,6 +1,6 @@
 from panda import Panda
 from opendbc.car import get_safety_config, structs
-from opendbc.car.interfaces import CarInterfaceBase
+from opendbc.car.sunnypilot.interfaces import CarInterfaceBase
 from opendbc.car.nissan.values import CAR
 
 

@@ -1,6 +1,6 @@
 from opendbc.can.packer import CANPacker
 from opendbc.car import apply_driver_steer_torque_limits, structs
-from opendbc.car.interfaces import CarControllerBase
+from opendbc.car.sunnypilot.interfaces import CarControllerBase
 from opendbc.car.mazda import mazdacan
 from opendbc.car.mazda.values import CarControllerParams, Buttons
 

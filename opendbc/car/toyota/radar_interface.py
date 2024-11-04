@@ -2,7 +2,7 @@
 from opendbc.can.parser import CANParser
 from opendbc.car.structs import RadarData
 from opendbc.car.toyota.values import DBC, TSS2_CAR
-from opendbc.car.interfaces import RadarInterfaceBase
+from opendbc.car.sunnypilot.interfaces import RadarInterfaceBase
 
 
 def _create_radar_can_parser(car_fingerprint):

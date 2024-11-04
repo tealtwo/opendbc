@@ -3,7 +3,7 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from opendbc.car import structs
 from opendbc.car.common.conversions import Conversions as CV
-from opendbc.car.interfaces import CarStateBase
+from opendbc.car.sunnypilot.interfaces import CarStateBase
 from opendbc.car.tesla.values import DBC, CANBUS, GEAR_MAP
 
 ButtonType = structs.CarState.ButtonEvent.Type

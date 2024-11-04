@@ -2,7 +2,7 @@
 from panda import Panda
 from opendbc.car import get_safety_config, structs
 from opendbc.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags
-from opendbc.car.interfaces import CarInterfaceBase
+from opendbc.car.sunnypilot.interfaces import CarInterfaceBase
 
 
 class CarInterface(CarInterfaceBase):

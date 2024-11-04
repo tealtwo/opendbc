@@ -4,7 +4,7 @@ from opendbc.can.parser import CANParser
 from opendbc.car import create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.common.numpy_fast import mean
-from opendbc.car.interfaces import CarStateBase
+from opendbc.car.sunnypilot.interfaces import CarStateBase
 from opendbc.car.gm.values import DBC, AccState, CanBus, CruiseButtons, STEER_THRESHOLD, SDGM_CAR
 
 ButtonType = structs.CarState.ButtonEvent.Type

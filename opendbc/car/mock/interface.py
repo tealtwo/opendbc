@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from opendbc.car import structs
-from opendbc.car.interfaces import CarInterfaceBase
+from opendbc.car.sunnypilot.interfaces import CarInterfaceBase
 
 
 # mocked car interface for dashcam mode

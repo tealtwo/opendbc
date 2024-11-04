@@ -1,7 +1,7 @@
 from panda import Panda
 from opendbc.car import get_safety_config, structs
 from opendbc.car.disable_ecu import disable_ecu
-from opendbc.car.interfaces import CarInterfaceBase
+from opendbc.car.sunnypilot.interfaces import CarInterfaceBase
 from opendbc.car.subaru.values import CAR, GLOBAL_ES_ADDR, SubaruFlags
 
 

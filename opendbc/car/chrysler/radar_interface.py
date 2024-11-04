@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from opendbc.can.parser import CANParser
 from opendbc.car import structs
-from opendbc.car.interfaces import RadarInterfaceBase
+from opendbc.car.sunnypilot.interfaces import RadarInterfaceBase
 from opendbc.car.chrysler.values import DBC
 
 RADAR_MSGS_C = list(range(0x2c2, 0x2d4+2, 2))  # c_ messages 706,...,724

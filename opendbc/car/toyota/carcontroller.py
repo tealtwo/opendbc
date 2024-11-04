@@ -4,7 +4,7 @@ from opendbc.car import carlog, apply_meas_steer_torque_limits, apply_std_steer_
 from opendbc.car.can_definitions import CanData
 from opendbc.car.common.numpy_fast import clip
 from opendbc.car.secoc import add_mac, build_sync_mac
-from opendbc.car.interfaces import CarControllerBase
+from opendbc.car.sunnypilot.interfaces import CarControllerBase
 from opendbc.car.toyota import toyotacan
 from opendbc.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         CarControllerParams, ToyotaFlags, \

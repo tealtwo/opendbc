@@ -2,7 +2,7 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from opendbc.car import create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
-from opendbc.car.interfaces import CarStateBase
+from opendbc.car.sunnypilot.interfaces import CarStateBase
 from opendbc.car.mazda.values import DBC, LKAS_LIMITS, MazdaFlags
 
 ButtonType = structs.CarState.ButtonEvent.Type

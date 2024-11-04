@@ -1,4 +1,4 @@
-from opendbc.car.interfaces import CarControllerBase
+from opendbc.car.sunnypilot.interfaces import CarControllerBase
 
 
 class CarController(CarControllerBase):

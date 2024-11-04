@@ -8,7 +8,7 @@ from opendbc.car import create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC, Buttons, CarControllerParams
-from opendbc.car.interfaces import CarStateBase
+from opendbc.car.sunnypilot.interfaces import CarStateBase
 
 ButtonType = structs.CarState.ButtonEvent.Type
 

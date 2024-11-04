@@ -4,7 +4,7 @@ from opendbc.can.parser import CANParser
 from opendbc.car import structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.gm.values import DBC, CanBus
-from opendbc.car.interfaces import RadarInterfaceBase
+from opendbc.car.sunnypilot.interfaces import RadarInterfaceBase
 
 RADAR_HEADER_MSG = 1120
 SLOT_1_MSG = RADAR_HEADER_MSG + 1

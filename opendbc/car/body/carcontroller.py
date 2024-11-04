@@ -5,7 +5,7 @@ from opendbc.car import DT_CTRL
 from opendbc.car.common.pid import PIDController
 from opendbc.car.body import bodycan
 from opendbc.car.body.values import SPEED_FROM_RPM
-from opendbc.car.interfaces import CarControllerBase
+from opendbc.car.sunnypilot.interfaces import CarControllerBase
 
 MAX_TORQUE = 500
 MAX_TORQUE_RATE = 50

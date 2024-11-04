@@ -1,5 +1,5 @@
 from opendbc.car import structs
-from opendbc.car.interfaces import CarStateBase
+from opendbc.car.sunnypilot.interfaces import CarStateBase
 
 
 class CarState(CarStateBase):

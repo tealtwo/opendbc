@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from opendbc.can.parser import CANParser
 from opendbc.car import structs
-from opendbc.car.interfaces import RadarInterfaceBase
+from opendbc.car.sunnypilot.interfaces import RadarInterfaceBase
 from opendbc.car.honda.values import DBC
 
 

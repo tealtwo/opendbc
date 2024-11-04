@@ -1,7 +1,7 @@
 from opendbc.can.packer import CANPacker
 from opendbc.car import apply_driver_steer_torque_limits, common_fault_avoidance, make_tester_present_msg
 from opendbc.car.common.numpy_fast import clip, interp
-from opendbc.car.interfaces import CarControllerBase
+from opendbc.car.sunnypilot.interfaces import CarControllerBase
 from opendbc.car.subaru import subarucan
 from opendbc.car.subaru.values import DBC, GLOBAL_ES_ADDR, CanBus, CarControllerParams, SubaruFlags
 

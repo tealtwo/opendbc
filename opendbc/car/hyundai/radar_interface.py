@@ -2,7 +2,7 @@ import math
 
 from opendbc.can.parser import CANParser
 from opendbc.car import structs
-from opendbc.car.interfaces import RadarInterfaceBase
+from opendbc.car.sunnypilot.interfaces import RadarInterfaceBase
 from opendbc.car.hyundai.values import DBC
 
 RADAR_START_ADDR = 0x500

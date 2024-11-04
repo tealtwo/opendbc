@@ -1,6 +1,6 @@
 import math
 from opendbc.car import get_safety_config, structs
-from opendbc.car.interfaces import CarInterfaceBase
+from opendbc.car.sunnypilot.interfaces import CarInterfaceBase
 from opendbc.car.body.values import SPEED_FROM_RPM
 
 

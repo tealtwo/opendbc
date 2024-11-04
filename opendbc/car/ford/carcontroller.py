@@ -4,7 +4,8 @@ from opendbc.car import ACCELERATION_DUE_TO_GRAVITY, DT_CTRL, apply_std_steer_an
 from opendbc.car.ford import fordcan
 from opendbc.car.ford.values import CarControllerParams, FordFlags
 from opendbc.car.common.numpy_fast import clip, interp
-from opendbc.car.interfaces import CarControllerBase, V_CRUISE_MAX
+from opendbc.car.interfaces import V_CRUISE_MAX
+from opendbc.car.sunnypilot.interfaces import CarControllerBase
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
