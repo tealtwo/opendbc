@@ -176,11 +176,9 @@ class CarState(CarStateBase):
     if self.CP.safetyConfigs[-1].spFlags & HyundaiFlagsSP.HAS_LFA_BUTTON:
       self.alt_button = cp.vl["BCM_PO_11"]["LFA_Pressed"]
 
-    ret.buttonEvents = [
-      *create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
-      *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.altButton3}),
-      *create_button_events(self.alt_button, prev_alt_button, {1: ButtonType.altButton1}),
-    ]
+    ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
+                        *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
+                        *create_button_events(self.alt_button, prev_alt_button, {1: ButtonType.altButton1})]
 
     return ret
 
@@ -269,11 +267,9 @@ class CarState(CarStateBase):
     lfa_button = "LFA_BTN" if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "LKAS_BTN"
     self.alt_button = cp.vl[self.cruise_btns_msg_canfd][lfa_button]
 
-    ret.buttonEvents = [
-      *create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
-      *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.altButton3}),
-      *create_button_events(self.alt_button, prev_alt_button, {1: ButtonType.altButton1}),
-    ]
+    ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
+                        *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
+                        *create_button_events(self.alt_button, prev_alt_button, {1: ButtonType.altButton1})]
 
     return ret
 
