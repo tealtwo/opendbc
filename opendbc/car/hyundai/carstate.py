@@ -178,7 +178,7 @@ class CarState(CarStateBase):
 
     ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
                         *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
-                        *create_button_events(self.alt_button, prev_alt_button, {1: ButtonType.altButton1})]
+                        *create_button_events(self.alt_button, prev_alt_button, {1: ButtonType.lkas})]
 
     return ret
 
@@ -269,7 +269,7 @@ class CarState(CarStateBase):
 
     ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
                         *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
-                        *create_button_events(self.alt_button, prev_alt_button, {1: ButtonType.altButton1})]
+                        *create_button_events(self.alt_button, prev_alt_button, {1: ButtonType.lkas})]
 
     return ret
 
