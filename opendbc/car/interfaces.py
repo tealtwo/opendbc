@@ -18,7 +18,7 @@ from opendbc.car.common.simple_kalman import KF1D, get_kalman_gain
 from opendbc.car.common.numpy_fast import clip
 from opendbc.car.values import PLATFORMS
 
-from openpilot.sunnypilot.selfdrive.car.interfaces import CarInterfaceBaseSP, CarStateBaseSP
+from openpilot.sunnypilot.selfdrive.car.interfaces import CarStateBaseSP
 
 GearShifter = structs.CarState.GearShifter
 
@@ -86,9 +86,8 @@ def get_torque_params():
 
 # generic car and radar interfaces
 
-class CarInterfaceBase(CarInterfaceBaseSP):
+class CarInterfaceBase(ABC):
   def __init__(self, CP: structs.CarParams, CarController, CarState):
-    super().__init__(CP, CarController, CarState)
     self.CP = CP
 
     self.frame = 0
@@ -106,9 +105,6 @@ class CarInterfaceBase(CarInterfaceBaseSP):
     self.CC: CarControllerBase = CarController(dbc_name, CP)
 
   def apply(self, c: structs.CarControl, now_nanos: int | None = None) -> tuple[structs.CarControl.Actuators, list[CanData]]:
-    # update prevs
-    self.update_prevs()
-
     if now_nanos is None:
       now_nanos = int(time.monotonic() * 1e9)
     return self.CC.update(c, self.CS, now_nanos)
