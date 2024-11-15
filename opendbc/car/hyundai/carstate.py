@@ -61,7 +61,7 @@ class CarState(CarStateBase):
     if any(be.type == ButtonType.mainCruise and be.pressed for be in ret.buttonEvents):
       self.main_cruise_enabled = not self.main_cruise_enabled
 
-    return ret.cruiseState.available and self.main_cruise_enabled
+    return self.main_cruise_enabled if ret.cruiseState.available else False
 
   def update(self, cp, cp_cam, *_) -> structs.CarState:
     if self.CP.flags & HyundaiFlags.CANFD:
