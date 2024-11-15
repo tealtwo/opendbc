@@ -57,6 +57,12 @@ class CarState(CarStateBase):
 
     self.params = CarControllerParams(CP)
 
+  def get_main_cruise(self, ret: structs.CarState) -> bool:
+    if any(be.type == ButtonType.mainCruise and be.pressed for be in ret.buttonEvents):
+      self.main_cruise_enabled = not self.main_cruise_enabled
+
+    return ret.cruiseState.available and self.main_cruise_enabled
+
   def update(self, cp, cp_cam, *_) -> structs.CarState:
     if self.CP.flags & HyundaiFlags.CANFD:
       return self.update_canfd(cp, cp_cam)
@@ -180,6 +186,9 @@ class CarState(CarStateBase):
                         *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
                         *create_button_events(self.alt_button, prev_alt_button, {1: ButtonType.lkas})]
 
+    if self.CP.openpilotLongitudinalControl:
+      ret.cruiseState.available = self.get_main_cruise(ret)
+
     return ret
 
   def update_canfd(self, cp, cp_cam) -> structs.CarState:
@@ -270,6 +279,9 @@ class CarState(CarStateBase):
     ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
                         *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
                         *create_button_events(self.alt_button, prev_alt_button, {1: ButtonType.lkas})]
+
+    if self.CP.openpilotLongitudinalControl:
+      ret.cruiseState.available = self.get_main_cruise(ret)
 
     return ret
 

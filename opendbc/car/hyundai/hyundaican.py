@@ -132,11 +132,12 @@ def create_lfahda_mfc(packer, enabled, mads):
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca):
+def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca,
+                        main_cruise_enabled):
   commands = []
 
   scc11_values = {
-    "MainMode_ACC": 1,
+    "MainMode_ACC": 1 if main_cruise_enabled else 0,
     "TauGapSet": hud_control.leadDistanceBars,
     "VSetDis": set_speed if enabled else 0,
     "AliveCounterACC": idx % 0x10,

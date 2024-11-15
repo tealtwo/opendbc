@@ -129,7 +129,8 @@ class CarController(CarControllerSP):
           can_sends.extend(hyundaicanfd.create_adrv_messages(self.packer, self.CAN, self.frame))
         if self.frame % 2 == 0:
           can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CAN, CC.enabled, self.accel_last, accel, stopping, CC.cruiseControl.override,
-                                                           set_speed_in_units, hud_control))
+                                                           set_speed_in_units, hud_control,
+                                                           CS.main_cruise_enabled))
           self.accel_last = accel
       else:
         # button presses
@@ -150,7 +151,8 @@ class CarController(CarControllerSP):
         use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
         can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
                                                         hud_control, set_speed_in_units, stopping,
-                                                        CC.cruiseControl.override, use_fca))
+                                                        CC.cruiseControl.override, use_fca,
+                                                        CS.main_cruise_enabled))
 
       # 20 Hz LFA MFA message
       if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:
