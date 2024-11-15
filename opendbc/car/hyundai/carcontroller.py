@@ -59,7 +59,7 @@ class CarController(CarControllerBase, EsccController, MadsController):
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
 
-  def update(self, CC, CS: structs.CarState, now_nanos):
+  def update(self, CC, CS: CarState, now_nanos):
     EsccController.update(self, CC, CS, now_nanos)
     MadsController.update(self, CC, CS, now_nanos)
 
