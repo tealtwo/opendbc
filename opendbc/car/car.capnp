@@ -517,6 +517,12 @@ struct CarParams {
   secOcRequired @75 :Bool;  # Car requires SecOC message authentication to operate
   secOcKeyAvailable @76 :Bool;  # Stored SecOC key loaded from params
 
+  sunnyParams @9 :SunnyParams; # sunnypilot specific params. Stolen ordinal from safetyModelDEPRECATED
+
+  struct SunnyParams {
+    flags @0 :UInt32;         # flags for car specific quirks
+  }
+
   struct SafetyConfig {
     safetyModel @0 :SafetyModel;
     safetyParam @3 :UInt16;
@@ -703,7 +709,6 @@ struct CarParams {
   isPandaBlackDEPRECATED @39 :Bool;
   hasStockCameraDEPRECATED @57 :Bool;
   safetyParamDEPRECATED @10 :Int16;
-  safetyModelDEPRECATED @9 :SafetyModel;
   safetyModelPassiveDEPRECATED @42 :SafetyModel = silent;
   minSpeedCanDEPRECATED @51 :Float32;
   communityFeatureDEPRECATED @46: Bool;
