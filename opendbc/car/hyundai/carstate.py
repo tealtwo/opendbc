@@ -4,12 +4,13 @@ import math
 
 
 from opendbc.sunnypilot.car.escc_interfaces import EsccStateBase
+from opendbc.sunnypilot.car.hyundai.flags import HyundaiFlagsSP
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from opendbc.car import create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai.hyundaicanfd import CanBus
-from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC, Buttons, CarControllerParams, HyundaiFlagsSP
+from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC, Buttons, CarControllerParams
 from opendbc.car.interfaces import CarStateBase
 
 ButtonType = structs.CarState.ButtonEvent.Type
@@ -59,12 +60,6 @@ class CarState(CarStateBase, EsccStateBase):
     self.cluster_speed_counter = CLUSTER_SAMPLE_RATE
 
     self.params = CarControllerParams(CP)
-
-  def get_main_cruise(self, ret: structs.CarState) -> bool:
-    if any(be.type == ButtonType.mainCruise and be.pressed for be in ret.buttonEvents):
-      self.main_cruise_enabled = not self.main_cruise_enabled
-
-    return self.main_cruise_enabled if ret.cruiseState.available else False
 
   def update(self, cp, cp_cam, *_) -> structs.CarState:
     if self.CP.flags & HyundaiFlags.CANFD:

@@ -8,3 +8,4 @@ class HyundaiFlagsSP(IntFlag):
   Max 32 flags can be defined in this class.
   """
   SP_ENHANCED_SCC = 1 << 0
+  HAS_LFA_BUTTON = 1 << 1

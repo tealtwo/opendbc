@@ -18,7 +18,7 @@ from opendbc.car.common.simple_kalman import KF1D, get_kalman_gain
 from opendbc.car.common.numpy_fast import clip
 from opendbc.car.values import PLATFORMS
 
-from openpilot.sunnypilot.selfdrive.car.interfaces import CarStateBaseSP
+from opendbc.sunnypilot.car.mads_interfaces import MadsStateBase
 
 GearShifter = structs.CarState.GearShifter
 
@@ -270,9 +270,10 @@ class RadarInterfaceBase(ABC):
     return None
 
 
-class CarStateBase(CarStateBaseSP):
+class CarStateBase(ABC, MadsStateBase):
   def __init__(self, CP: structs.CarParams):
     super().__init__(CP)
+    MadsStateBase.__init__(self)
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
     self.out = structs.CarState()

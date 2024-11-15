@@ -1,3 +1,4 @@
+from opendbc.car import structs
 from opendbc.car.hyundai.carstate import CarState
 from opendbc.can.parser import CANParser
 from opendbc.car.hyundai.values import DBC
@@ -48,5 +49,5 @@ class EsccController(EsccControllerBase):
     def init(self):
         self.ESCC = Escc(self.CP)
 
-    def update(self, CC, CS: CarState, now_nanos):
+    def update(self, CC: structs.CarControl, CS: CarState, now_nanos):
         self.ESCC.refresh_car_state(CS)
