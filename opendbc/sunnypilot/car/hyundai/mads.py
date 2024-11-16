@@ -28,7 +28,7 @@ class MadsCarController(ABC):
 
     self.prev_lat_active = CC.latActive
 
-    return MadsDataSP(CC.enableMads, CC.latActive, disengaging, paused)
+    return MadsDataSP(CC.sunnyLiveParams.enableMads, CC.latActive, disengaging, paused)
 
   def update(self, CC: structs.CarControl, frame: int) -> MadsDataSP:
     mads = self.mads_status_update(CC, frame)
