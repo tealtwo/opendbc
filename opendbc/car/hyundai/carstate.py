@@ -182,13 +182,13 @@ class CarState(CarStateBase, CarStateSP):
     self.cruise_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"])
     self.main_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwMain"])
 
-    prev_alt_button = self.alt_button
+    prev_lkas_button = self.lkas_button
     if self.CP.sunnypilotFlags & HyundaiFlagsSP.HAS_LFA_BUTTON:
-      self.alt_button = cp.vl["BCM_PO_11"]["LFA_Pressed"]
+      self.lkas_button = cp.vl["BCM_PO_11"]["LFA_Pressed"]
 
     ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
                         *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
-                        *create_button_events(self.alt_button, prev_alt_button, {1: ButtonType.lkas})]
+                        *create_button_events(self.lkas_button, prev_lkas_button, {1: ButtonType.lkas})]
 
     if self.CP.openpilotLongitudinalControl:
       ret.cruiseState.available = self.get_main_cruise(ret)
@@ -277,13 +277,13 @@ class CarState(CarStateBase, CarStateSP):
       self.hda2_lfa_block_msg = copy.copy(cp_cam.vl["CAM_0x362"] if self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING
                                           else cp_cam.vl["CAM_0x2a4"])
 
-    prev_alt_button = self.alt_button
+    prev_lkas_button = self.lkas_button
     lfa_button = "LFA_BTN" if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "LKAS_BTN"
-    self.alt_button = cp.vl[self.cruise_btns_msg_canfd][lfa_button]
+    self.lkas_button = cp.vl[self.cruise_btns_msg_canfd][lfa_button]
 
     ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
                         *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
-                        *create_button_events(self.alt_button, prev_alt_button, {1: ButtonType.lkas})]
+                        *create_button_events(self.lkas_button, prev_lkas_button, {1: ButtonType.lkas})]
 
     if self.CP.openpilotLongitudinalControl:
       ret.cruiseState.available = self.get_main_cruise(ret)
