@@ -179,7 +179,7 @@ class CarState(CarStateBase):
     self.main_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwMain"])
 
     prev_alt_button = self.alt_button
-    if self.CP.safetyConfigs[-1].spFlags & HyundaiFlagsSP.HAS_LFA_BUTTON:
+    if self.CP.sunnyParams.flags & HyundaiFlagsSP.HAS_LFA_BUTTON:
       self.alt_button = cp.vl["BCM_PO_11"]["LFA_Pressed"]
 
     ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
@@ -334,7 +334,7 @@ class CarState(CarStateBase):
     else:
       messages.append(("LVR12", 100))
 
-    if CP.safetyConfigs[-1].spFlags & HyundaiFlagsSP.HAS_LFA_BUTTON:
+    if CP.sunnyParams.flags & HyundaiFlagsSP.HAS_LFA_BUTTON:
       messages.append(("BCM_PO_11", 50))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
