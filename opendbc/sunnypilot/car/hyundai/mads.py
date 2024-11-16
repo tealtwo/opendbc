@@ -9,7 +9,7 @@ MadsDataSP = namedtuple("MadsDataSP",
                         ["enable_mads", "lat_active", "disengaging", "paused"])
 
 
-class MadsCarController(ABC):
+class MadsCarControllerBase(ABC):
   def __init__(self):
     self.lat_disengage_blink = 0
     self.lat_disengage_init = False
@@ -37,3 +37,9 @@ class MadsCarController(ABC):
   def update(self, CC: structs.CarControl, frame: int) -> MadsDataSP:
     mads = self.mads_status_update(CC, frame)
     return mads
+
+
+class MadsCarStateBase(ABC):
+  def __init__(self):
+    self.lkas_button = 0
+    self.main_cruise_enabled: bool = False
