@@ -47,7 +47,7 @@ def process_hud_alert(enabled, fingerprint, hud_control):
 class CarController(CarControllerBase, MadsCarController):
   def __init__(self, dbc_name, CP):
     super().__init__(dbc_name, CP)
-    MadsCarController().__init__()
+    MadsCarController.__init__(self)
     self.CAN = CanBus(CP)
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
