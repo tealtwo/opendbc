@@ -351,6 +351,8 @@ struct CarControl {
   cruiseControl @4 :CruiseControl;
   hudControl @5 :HUDControl;
 
+  sunnyLiveParams @10 :SunnyLiveParams;
+
   struct Actuators {
     # lateral commands, mutually exclusive
     steer @2: Float32;  # [0.0, 1.0]
@@ -425,13 +427,16 @@ struct CarControl {
     }
   }
 
+  struct SunnyLiveParams {
+    enableMads @0 :Bool;
+  }
+
   gasDEPRECATED @1 :Float32;
   brakeDEPRECATED @2 :Float32;
   steeringTorqueDEPRECATED @3 :Float32;
   madsActive @7 :Bool;
   rollDEPRECATED @8 :Float32;
   pitchDEPRECATED @9 :Float32;
-  actuatorsOutputDEPRECATED @10 :Actuators;
 }
 
 struct CarOutput {
