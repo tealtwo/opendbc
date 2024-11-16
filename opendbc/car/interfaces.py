@@ -270,7 +270,6 @@ class RadarInterfaceBase(ABC):
 
 class CarStateBase(ABC):
   def __init__(self, CP: structs.CarParams):
-    super().__init__(CP)
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
     self.out = structs.CarState()
