@@ -4,6 +4,7 @@ from collections import namedtuple
 from opendbc.car import DT_CTRL, structs
 
 from opendbc.sunnypilot import SunnypilotParamFlags
+from opendbc.sunnypilot.mads_base import MadsCarStateBase
 
 MadsDataSP = namedtuple("MadsDataSP",
                         ["enable_mads", "lat_active", "disengaging", "paused"])
@@ -39,7 +40,7 @@ class MadsCarControllerBase(ABC):
     return mads
 
 
-class MadsCarStateBase(ABC):
+class MadsCarState(MadsCarStateBase):
   def __init__(self):
-    self.lkas_button = 0
+    super().__init__()
     self.main_cruise_enabled: bool = False
