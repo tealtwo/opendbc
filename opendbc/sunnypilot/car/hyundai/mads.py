@@ -3,6 +3,8 @@ from collections import namedtuple
 
 from opendbc.car import DT_CTRL, structs
 
+from opendbc.sunnypilot import SunnypilotParamFlags
+
 MadsDataSP = namedtuple("MadsDataSP",
                         ["enable_mads", "lat_active", "disengaging", "paused"])
 
@@ -15,6 +17,8 @@ class MadsCarController(ABC):
 
   # display LFA "white_wheel" and LKAS "White car + lanes" when not CC.latActive
   def mads_status_update(self, CC: structs.CarControl, frame: int) -> MadsDataSP:
+    enable_mads = CC.sunnypilotParams & SunnypilotParamFlags.ENABLE_MADS
+
     if CC.latActive:
       self.lat_disengage_init = False
     elif self.prev_lat_active:
@@ -28,7 +32,7 @@ class MadsCarController(ABC):
 
     self.prev_lat_active = CC.latActive
 
-    return MadsDataSP(CC.sunnyLiveParams.enableMads, CC.latActive, disengaging, paused)
+    return MadsDataSP(enable_mads, CC.latActive, disengaging, paused)
 
   def update(self, CC: structs.CarControl, frame: int) -> MadsDataSP:
     mads = self.mads_status_update(CC, frame)
