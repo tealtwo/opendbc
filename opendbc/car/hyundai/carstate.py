@@ -186,10 +186,9 @@ class CarState(CarStateBase, MadsCarState):
     if self.CP.sunnypilotFlags & HyundaiFlagsSP.HAS_LFA_BUTTON:
       self.lkas_button = cp.vl["BCM_PO_11"]["LFA_Pressed"]
 
-    if self.CP.openpilotLongitudinalControl:
-      ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT)]
-      #*create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
-      #*create_button_events(self.lkas_button, prev_lkas_button, {1: ButtonType.lkas})]
+    ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
+                        *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
+                        *create_button_events(self.lkas_button, prev_lkas_button, {1: ButtonType.lkas})]
 
     if self.CP.openpilotLongitudinalControl:
       ret.cruiseState.available = self.get_main_cruise(ret)
@@ -282,10 +281,9 @@ class CarState(CarStateBase, MadsCarState):
     lfa_button = "LFA_BTN" if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "LKAS_BTN"
     self.lkas_button = cp.vl[self.cruise_btns_msg_canfd][lfa_button]
 
-    if self.CP.openpilotLongitudinalControl:
-      ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT)]
-                        #*create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
-                        #*create_button_events(self.lkas_button, prev_lkas_button, {1: ButtonType.lkas})]
+    ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
+                        *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
+                        *create_button_events(self.lkas_button, prev_lkas_button, {1: ButtonType.lkas})]
 
     if self.CP.openpilotLongitudinalControl:
       ret.cruiseState.available = self.get_main_cruise(ret)
