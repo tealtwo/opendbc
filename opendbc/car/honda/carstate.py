@@ -109,7 +109,7 @@ class CarState(CarStateBase):
     # However, on cars without a digital speedometer this is not always present (HRV, FIT, CRV 2016, ILX and RDX)
     self.dash_speed_seen = False
 
-  def update(self, cp, cp_cam, _, cp_body, __) -> structs.CarState:
+  def update(self, cp, cp_cam, _, cp_body, __, ___) -> structs.CarState:
     ret = structs.CarState()
 
     # car params

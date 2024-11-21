@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from panda import Panda
 from opendbc.car import get_safety_config, structs
-from opendbc.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags
+from opendbc.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags, STEER_TO_ZERO
 from opendbc.car.interfaces import CarInterfaceBase
 
 
@@ -70,5 +70,9 @@ class CarInterface(CarInterfaceBase):
 
     ret.centerToFront = ret.wheelbase * 0.44
     ret.enableBsm = 720 in fingerprint[0]
+
+    if candidate in STEER_TO_ZERO:
+      ret.minEnableSpeed = ret.minSteerSpeed
+      ret.minSteerSpeed = 0.0
 
     return ret

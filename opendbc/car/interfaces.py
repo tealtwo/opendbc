@@ -97,6 +97,7 @@ class CarInterfaceBase(ABC):
     self.cp_adas = self.CS.get_adas_can_parser(CP)
     self.cp_body = self.CS.get_body_can_parser(CP)
     self.cp_loopback = self.CS.get_loopback_can_parser(CP)
+    self.cp_eps = self.CS.get_eps_can_parser(CP)
     self.can_parsers = (self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback)
 
     dbc_name = "" if self.cp is None else self.cp.dbc_name
@@ -293,7 +294,7 @@ class CarStateBase(ABC):
     self.v_ego_kf = KF1D(x0=x0, A=A, C=C[0], K=K)
 
   @abstractmethod
-  def update(self, cp, cp_cam, cp_adas, cp_body, cp_loopback) -> structs.CarState:
+  def update(self, cp, cp_cam, cp_adas, cp_body, cp_loopback, cp_eps) -> structs.CarState:
     pass
 
   def update_speed_kf(self, v_ego_raw):
@@ -374,6 +375,10 @@ class CarStateBase(ABC):
 
   @staticmethod
   def get_loopback_can_parser(CP):
+    return None
+
+  @staticmethod
+  def get_eps_can_parser(CP):
     return None
 
 

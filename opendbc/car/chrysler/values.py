@@ -150,3 +150,5 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 DBC = CAR.create_dbc_map()
+
+STEER_TO_ZERO = (RAM_HD | {CAR.CHRYSLER_PACIFICA_2019_HYBRID})
