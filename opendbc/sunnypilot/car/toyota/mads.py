@@ -15,6 +15,9 @@ class MadsCarState(MadsCarStateBase):
     self.prev_lta_status = False
     self.lta_status_active = False
 
+    self.distance_button_events = []
+    self.lkas_button_events = []
+
   def get_lkas_button(self, cp_cam):
     self.lta_status = cp_cam.vl["LKAS_HUD"]["SET_ME_X02"]
     if ((self.prev_lta_status == 16 and self.lta_status == 0) or
