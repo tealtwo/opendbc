@@ -13,12 +13,12 @@ class MadsCarState(MadsCarStateBase):
 
     if cur_btn == prev_btn:
       return events
-  
+
     state_changes = [
       {"pressed": prev_btn != cur_btn and cur_btn != 2 and not (prev_btn == 2 and cur_btn == 1)},
       {"pressed": prev_btn != cur_btn and cur_btn == 2 and cur_btn != 1},
     ]
-  
+
     for change in state_changes:
       if change["pressed"]:
         events.append(structs.CarState.ButtonEvent(pressed=change["pressed"],
