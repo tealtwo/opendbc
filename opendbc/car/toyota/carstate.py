@@ -29,7 +29,7 @@ PERM_STEER_FAULTS = (3, 17)
 
 class CarState(CarStateBase, MadsCarState):
   def __init__(self, CP):
-    super().__init__(CP)
+    CarStateBase.__init__(self, CP)
     MadsCarState.__init__(self)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.eps_torque_scale = EPS_SCALE[CP.carFingerprint] / 100.

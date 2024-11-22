@@ -9,7 +9,7 @@ from opendbc.sunnypilot.car.chrysler.mads import MadsCarController
 
 class CarController(CarControllerBase, MadsCarController):
   def __init__(self, dbc_name, CP):
-    super().__init__(dbc_name, CP)
+    CarControllerBase.__init__(self, dbc_name, CP)
     MadsCarController.__init__(self)
     self.apply_steer_last = 0
 
