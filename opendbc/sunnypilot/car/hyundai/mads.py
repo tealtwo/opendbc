@@ -10,7 +10,7 @@ MadsDataSP = namedtuple("MadsDataSP",
                         ["enable_mads", "lat_active", "disengaging", "paused"])
 
 
-class MadsCarControllerBase(ABC):
+class MadsCarController(ABC):
   def __init__(self):
     self.lat_disengage_blink = 0
     self.lat_disengage_init = False
