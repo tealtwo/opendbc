@@ -8,6 +8,7 @@ from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CAR
 from opendbc.car.interfaces import CarControllerBase
 
+from opendbc.sunnypilot.car.hyundai.escc import EsccCarController
 from opendbc.sunnypilot.car.hyundai.mads import MadsCarControllerBase
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
@@ -44,9 +45,10 @@ def process_hud_alert(enabled, fingerprint, hud_control):
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
 
-class CarController(CarControllerBase, MadsCarControllerBase):
+class CarController(CarControllerBase, EsccCarController, MadsCarControllerBase):
   def __init__(self, dbc_name, CP):
-    super().__init__(dbc_name, CP)
+    CarControllerBase.__init__(self, dbc_name, CP)
+    EsccCarController.__init__(self, CP)
     MadsCarControllerBase.__init__(self)
     self.CAN = CanBus(CP)
     self.params = CarControllerParams(CP)
@@ -59,6 +61,7 @@ class CarController(CarControllerBase, MadsCarControllerBase):
     self.last_button_frame = 0
 
   def update(self, CC, CS, now_nanos):
+    EsccCarController.update(self, CS)
     mads = MadsCarControllerBase.update(self, CC, self.frame)
     actuators = CC.actuators
     hud_control = CC.hudControl
@@ -94,7 +97,8 @@ class CarController(CarControllerBase, MadsCarControllerBase):
     # *** common hyundai stuff ***
 
     # tester present - w/ no response (keeps relevant ECU disabled)
-    if self.frame % 100 == 0 and not (self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) and self.CP.openpilotLongitudinalControl:
+    if self.frame % 100 == 0 and not ((self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) or self.ESCC.enabled) and \
+            self.CP.openpilotLongitudinalControl:
       # for longitudinal control, either radar or ADAS driving ECU
       addr, bus = 0x7d0, 0
       if self.CP.flags & HyundaiFlags.CANFD_HDA2.value:
@@ -154,7 +158,7 @@ class CarController(CarControllerBase, MadsCarControllerBase):
         can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
                                                         hud_control, set_speed_in_units, stopping,
                                                         CC.cruiseControl.override, use_fca,
-                                                        CS.main_cruise_enabled))
+                                                        self.ESCC, CS.main_cruise_enabled))
 
       # 20 Hz LFA MFA message
       if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:
@@ -162,10 +166,10 @@ class CarController(CarControllerBase, MadsCarControllerBase):
 
       # 5 Hz ACC options
       if self.frame % 20 == 0 and self.CP.openpilotLongitudinalControl:
-        can_sends.extend(hyundaican.create_acc_opt(self.packer))
+        can_sends.extend(hyundaican.create_acc_opt(self.packer, self.ESCC))
 
       # 2 Hz front radar options
-      if self.frame % 50 == 0 and self.CP.openpilotLongitudinalControl:
+      if self.frame % 50 == 0 and self.CP.openpilotLongitudinalControl and not self.ESCC.enabled:
         can_sends.append(hyundaican.create_frt_radar_opt(self.packer))
 
     new_actuators = actuators.as_builder()
