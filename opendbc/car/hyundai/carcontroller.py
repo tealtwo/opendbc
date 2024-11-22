@@ -158,7 +158,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarControllerBase)
         can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
                                                         hud_control, set_speed_in_units, stopping,
                                                         CC.cruiseControl.override, use_fca,
-                                                        self.ESCC, CS.main_cruise_enabled))
+                                                        CS.main_cruise_enabled, self.ESCC))
 
       # 20 Hz LFA MFA message
       if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:

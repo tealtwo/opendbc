@@ -135,7 +135,7 @@ def create_lfahda_mfc(packer, enabled, mads):
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
 def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca,
-                        ESCC: EnhancedSmartCruiseControl = None, main_cruise_enabled):
+                        main_cruise_enabled, ESCC: EnhancedSmartCruiseControl = None):
 
   def get_scc11_values():
     return {
