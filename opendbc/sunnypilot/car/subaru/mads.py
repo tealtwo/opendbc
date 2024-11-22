@@ -6,6 +6,9 @@ ButtonType = structs.CarState.ButtonEvent.Type
 
 
 class MadsCarState(MadsCarStateBase):
+  def __init__(self):
+    super().__init__()
+
   @staticmethod
   def create_lkas_button_events(cur_btn: int, prev_btn: int,
                                 buttons_dict: dict[int, structs.CarState.ButtonEvent.Type]) -> list[structs.CarState.ButtonEvent]:
