@@ -41,13 +41,13 @@ class MadsCarState(MadsCarStateBase):
 
     if self.lta_status_active:
       state_changes = [
-        {"pressed": prev_btn == 16 and cur_btn == 0},
-        {"pressed": prev_btn == 0 and cur_btn == 16},
+        {"pressed": bool(prev_btn == 16 and cur_btn == 0)},
+        {"pressed": bool(prev_btn == 0 and cur_btn == 16)},
       ]
     else:
       state_changes = [
-        {"pressed": not prev_btn and cur_btn},
-        {"pressed": prev_btn == 1 and not cur_btn},
+        {"pressed": bool(not prev_btn and cur_btn)},
+        {"pressed": bool(prev_btn == 1 and not cur_btn)},
       ]
 
     for change in state_changes:
