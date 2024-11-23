@@ -97,7 +97,6 @@ class CarInterface(CarInterfaceBase):
 
       if 0x391 in fingerprint[0]:
         ret.sunnypilotFlags |= HyundaiFlagsSP.HAS_LFA_BUTTON.value
-        ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_LFA_BUTTON
 
     # Common lateral control setup
 
