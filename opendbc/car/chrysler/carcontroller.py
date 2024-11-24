@@ -83,7 +83,7 @@ class CarController(CarControllerBase, MadsCarController):
       can_sends.extend(chryslercan.create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit, int(self.frame/self.params.STEER_STEP)))
 
     if self.CP.carFingerprint in STEER_TO_ZERO and self.frame % 2 == 0:
-      if lkas_active and CS.out.vEgo > self.CP.minSteerSpeed:
+      if CC.latActive and CS.out.vEgo > self.CP.minSteerSpeed:
         if self.spoof_speed < self.spoof_speed_threshold:
           self.spoof_speed = max(self.spoof_speed, CS.out.vEgo) + self.spoof_speed_increment
         else:
