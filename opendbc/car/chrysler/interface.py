@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from panda import Panda
 from opendbc.car import get_safety_config, structs
-from opendbc.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags
+from opendbc.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags, STEER_TO_ZERO
 from opendbc.car.interfaces import CarInterfaceBase
 
 
@@ -30,6 +30,11 @@ class CarInterface(CarInterfaceBase):
       new_eps_firmware = any(fw.ecu == 'eps' and fw.fwVersion[:4] >= b"6841" for fw in car_fw)
       if new_eps_platform or new_eps_firmware:
         ret.flags |= ChryslerFlags.HIGHER_MIN_STEERING_SPEED.value
+
+        # TODO: allow these cars to steer down to 13 m/s if already engaged.
+        # TODO: Durango 2020 may be able to steer to zero once above 38 kph
+        ret.minSteerSpeed = 13.0  # m/s 17 on the way up, 13 on the way down once engaged.
+        ret.minEnableSpeed = 17.5
 
     # Chrysler
     if candidate in (CAR.CHRYSLER_PACIFICA_2018, CAR.CHRYSLER_PACIFICA_2018_HYBRID, CAR.CHRYSLER_PACIFICA_2019_HYBRID,
@@ -63,12 +68,10 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError(f"Unsupported car: {candidate}")
 
-    if ret.flags & ChryslerFlags.HIGHER_MIN_STEERING_SPEED:
-      # TODO: allow these cars to steer down to 13 m/s if already engaged.
-      # TODO: Durango 2020 may be able to steer to zero once above 38 kph
-      ret.minSteerSpeed = 17.5  # m/s 17 on the way up, 13 on the way down once engaged.
-
     ret.centerToFront = ret.wheelbase * 0.44
     ret.enableBsm = 720 in fingerprint[0]
+
+    if candidate in STEER_TO_ZERO:
+      ret.minSteerSpeed = 0.5
 
     return ret

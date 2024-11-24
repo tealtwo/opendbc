@@ -1,7 +1,9 @@
+from opendbc.car.common.conversions import Conversions as CV
+
 from opendbc.can.packer import CANPacker
 from opendbc.car import Bus, DT_CTRL, apply_meas_steer_torque_limits
 from opendbc.car.chrysler import chryslercan
-from opendbc.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags
+from opendbc.car.chrysler.values import RAM_CARS, CarControllerParams, STEER_TO_ZERO
 from opendbc.car.interfaces import CarControllerBase
 
 from opendbc.sunnypilot.car.chrysler.mads import MadsCarController
@@ -20,6 +22,10 @@ class CarController(CarControllerBase, MadsCarController):
 
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.params = CarControllerParams(CP)
+
+    self.spoof_speed = 0
+    self.spoof_speed_increment = 0.2
+    self.spoof_speed_threshold = 7
 
   def update(self, CC, CS, now_nanos):
     MadsCarController.update(CC, CS)
@@ -44,7 +50,7 @@ class CarController(CarControllerBase, MadsCarController):
     # HUD alerts
     if self.frame % 25 == 0:
       if CS.lkas_car_model != -1:
-        can_sends.append(chryslercan.create_lkas_hud(self.packer, self.CP, lkas_active, CC.hudControl.visualAlert,
+        can_sends.extend(chryslercan.create_lkas_hud(self.packer, self.CP, lkas_active, CC.hudControl.visualAlert,
                                                      self.hud_count, CS.lkas_car_model, CS.auto_high_beam, self.mads))
         self.hud_count += 1
 
@@ -53,14 +59,12 @@ class CarController(CarControllerBase, MadsCarController):
 
       # TODO: can we make this more sane? why is it different for all the cars?
       lkas_control_bit = self.lkas_control_bit_prev
-      if CS.out.vEgo > self.CP.minSteerSpeed:
-        lkas_control_bit = True
-      elif self.CP.flags & ChryslerFlags.HIGHER_MIN_STEERING_SPEED:
-        if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
-          lkas_control_bit = False
-      elif self.CP.carFingerprint in RAM_CARS:
-        if CS.out.vEgo < (self.CP.minSteerSpeed - 0.5):
-          lkas_control_bit = False
+      speed_logic = self.spoof_speed if self.CP.carFingerprint in STEER_TO_ZERO else CS.out.vEgo
+      if CS.out.vEgo < self.CP.minSteerSpeed or \
+            (self.CP.carFingerprint in STEER_TO_ZERO and self.spoof_speed < self.CP.minEnableSpeed):
+        lkas_control_bit = False
+      elif (speed_logic >= self.CP.minEnableSpeed) or (self.CP.carFingerprint in STEER_TO_ZERO):
+        lkas_control_bit = CC.latActive
 
       # EPS faults if LKAS re-enables too quickly
       lkas_control_bit = lkas_control_bit and (self.frame - self.last_lkas_falling_edge > 200)
@@ -72,11 +76,21 @@ class CarController(CarControllerBase, MadsCarController):
       # steer torque
       new_steer = int(round(CC.actuators.steer * self.params.STEER_MAX))
       apply_steer = apply_meas_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, self.params)
-      if not lkas_active or not lkas_control_bit:
+      if not lkas_active or not lkas_control_bit or not self.lkas_control_bit_prev:
         apply_steer = 0
       self.apply_steer_last = apply_steer
 
-      can_sends.append(chryslercan.create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit))
+      can_sends.extend(chryslercan.create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit, int(self.frame/self.params.STEER_STEP)))
+
+    if self.CP.carFingerprint in STEER_TO_ZERO and self.frame % 2 == 0:
+      if lkas_active and CS.out.vEgo > self.CP.minSteerSpeed:
+        if self.spoof_speed < self.spoof_speed_threshold:
+          self.spoof_speed = max(self.spoof_speed, CS.out.vEgo) + self.spoof_speed_increment
+        else:
+          self.spoof_speed = self.CP.minEnableSpeed
+      else:
+        self.spoof_speed = CS.out.vEgo
+      can_sends.append(chryslercan.create_speed_spoof(self.packer, self.spoof_speed * CV.MS_TO_KPH))
 
     if self.frame % 10 == 0 and self.CP.carFingerprint not in RAM_CARS:
       can_sends.append(MadsCarController.create_lkas_heartbit(self.packer, CS.lkas_heartbit, self.mads))

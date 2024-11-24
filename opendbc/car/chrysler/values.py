@@ -31,6 +31,7 @@ class ChryslerPlatformConfig(PlatformConfig):
 @dataclass(frozen=True)
 class ChryslerCarSpecs(CarSpecs):
   minSteerSpeed: float = 3.8  # m/s
+  minEnableSpeed: float = 3.8
 
 
 class CAR(Platforms):
@@ -75,7 +76,7 @@ class CAR(Platforms):
   # Ram
   RAM_1500_5TH_GEN = ChryslerPlatformConfig(
     [ChryslerCarDocs("Ram 1500 2019-24", car_parts=CarParts.common([CarHarness.ram]))],
-    ChryslerCarSpecs(mass=2493., wheelbase=3.88, steerRatio=16.3, minSteerSpeed=14.5),
+    ChryslerCarSpecs(mass=2493., wheelbase=3.88, steerRatio=16.3, minSteerSpeed=0.5, minEnableSpeed=14.5),
     {Bus.pt: 'chrysler_ram_dt_generated'},
   )
   RAM_HD_5TH_GEN = ChryslerPlatformConfig(
@@ -83,7 +84,7 @@ class CAR(Platforms):
       ChryslerCarDocs("Ram 2500 2020-24", car_parts=CarParts.common([CarHarness.ram])),
       ChryslerCarDocs("Ram 3500 2019-22", car_parts=CarParts.common([CarHarness.ram])),
     ],
-    ChryslerCarSpecs(mass=3405., wheelbase=3.785, steerRatio=15.61, minSteerSpeed=16.),
+    ChryslerCarSpecs(mass=3405., wheelbase=3.785, steerRatio=15.61, minSteerSpeed=15.5, minEnableSpeed=16),
     {Bus.pt: 'chrysler_ram_hd_generated'},
   )
 
@@ -153,3 +154,5 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 DBC = CAR.create_dbc_map()
+
+STEER_TO_ZERO = (RAM_HD | {CAR.CHRYSLER_PACIFICA_2019_HYBRID})
