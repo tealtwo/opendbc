@@ -28,7 +28,7 @@ class CarController(CarControllerBase, MadsCarController):
     self.spoof_speed_threshold = 7
 
   def update(self, CC, CS, now_nanos):
-    MadsCarController.update(CC, CS)
+    MadsCarController.update(self, CC, CS)
     can_sends = []
 
     lkas_active = CC.latActive and self.lkas_control_bit_prev
