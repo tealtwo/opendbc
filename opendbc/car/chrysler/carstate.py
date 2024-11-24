@@ -196,16 +196,3 @@ class CarState(CarStateBase, MadsCarState):
       Bus.alt: CANParser(DBC[CP.carFingerprint][Bus.pt], eps_messages, 1),
       Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, 2),
     }
-
-  @staticmethod
-  def get_eps_can_parser(CP):
-    messages = []
-    if CP.carFingerprint in STEER_TO_ZERO:
-      messages += [
-        ("EPS_2", 100),
-      ]
-      if CP.carFingerprint in RAM_CARS:
-        messages += [
-          ("EPS_3", 50),
-        ]
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 1)
