@@ -30,8 +30,8 @@ class CarState(CarStateBase, MadsCarState):
 
   def update(self, can_parsers) -> structs.CarState:
     cp = can_parsers[Bus.pt]
-    cp_cam = can_parsers[Bus.cam]
     cp_eps = can_parsers[Bus.alt]
+    cp_cam = can_parsers[Bus.cam]
 
     ret = structs.CarState()
 
@@ -172,6 +172,16 @@ class CarState(CarStateBase, MadsCarState):
           ("EPS_3", 50),
         ]
 
+    eps_messages = []
+    if CP.carFingerprint in STEER_TO_ZERO:
+      eps_messages += [
+        ("EPS_2", 100),
+      ]
+      if CP.carFingerprint in RAM_CARS:
+        eps_messages += [
+          ("EPS_3", 50),
+        ]
+
     cam_messages = [
       ("DAS_6", 4),
     ]
@@ -183,6 +193,7 @@ class CarState(CarStateBase, MadsCarState):
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
+      Bus.alt: CANParser(DBC[CP.carFingerprint][Bus.pt], eps_messages, 1),
       Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, 2),
     }
 
