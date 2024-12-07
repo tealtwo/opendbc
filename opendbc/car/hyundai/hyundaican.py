@@ -123,24 +123,15 @@ def create_hda11_mfc(packer, frame, hda11_mfc):
     "NEW_SIGNAL_1",
     "NEW_SIGNAL_2",
     "NEW_SIGNAL_3",
-    "NEW_SIGNAL_4",
     "NEW_SIGNAL_5",
     "NEW_SIGNAL_6",
     "NEW_SIGNAL_7",
-    "NEW_SIGNAL_8",
     "NEW_SIGNAL_9",
   ]}
-  values["NEW_SIGNAL_1"] = 0x00
-  values["NEW_SIGNAL_2"] = 0x00
-  values["NEW_SIGNAL_3"] = 0x00
   values["NEW_SIGNAL_4"] = 0x00
-  values["NEW_SIGNAL_5"] = 0x00
-  values["NEW_SIGNAL_6"] = 0x00
-  values["NEW_SIGNAL_7"] = 0x00
   values["NEW_SIGNAL_8"] = 0x00
-  values["NEW_SIGNAL_9"] = 0x00
   values["Counter"] = frame % 0x10
-  return packer.make_can_msg("HDA11_MFC", 0, values)
+  return packer.make_can_msg("HDA11_MFC", 2, values)
 
 
 def create_lfahda_mfc(packer, enabled):
