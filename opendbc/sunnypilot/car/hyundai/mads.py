@@ -111,13 +111,11 @@ class MadsCarState(MadsCarStateBase):
       pt_messages.append(("BCM_PO_11", 50))
 
   def get_main_cruise(self, ret: structs.CarState) -> bool:
-    if self.CP.sunnypilotFlags & HyundaiFlagsSP.LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE:
-      if any(be.type == ButtonType.mainCruise and be.pressed for be in ret.buttonEvents):
-        self.main_cruise_enabled = not self.main_cruise_enabled
-    else:
-      self.main_cruise_enabled = True
+    main_cruise_toggleable = self.CP.sunnypilotFlags & HyundaiFlagsSP.LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE
+    if any(be.type == ButtonType.mainCruise and be.pressed for be in ret.buttonEvents):
+      self.main_cruise_enabled = not self.main_cruise_enabled
 
-    return self.main_cruise_enabled if ret.cruiseState.available else False
+    return self.main_cruise_enabled and ret.cruiseState.available if main_cruise_toggleable else True
 
   def update_mads(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp = can_parsers[Bus.pt]
