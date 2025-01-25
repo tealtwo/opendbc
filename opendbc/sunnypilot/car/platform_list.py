@@ -2,7 +2,7 @@ import json
 import os
 from natsort import natsorted
 
-from common.basedir import BASEDIR
+from opendbc.car.common.basedir import BASEDIR
 from opendbc.car.docs import get_all_footnotes, get_params_for_docs
 from opendbc.car.values import PLATFORMS
 
