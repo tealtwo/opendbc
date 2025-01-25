@@ -6,6 +6,8 @@ from common.basedir import BASEDIR
 from opendbc.car.docs import get_all_footnotes, get_params_for_docs
 from opendbc.car.values import PLATFORMS
 
+CAR_LIST_JSON_OUT = os.path.join(BASEDIR, "opendbc/sunnypilot/car/car_list.json")
+
 
 def get_car_list() -> dict[str, str]:
   collected_footnote = get_all_footnotes()
@@ -37,9 +39,7 @@ def build_sorted_car_list(platforms, footnotes) -> dict[str, str]:
 
 if __name__ == "__main__":
   car_name_dict = get_car_list()
-  car_list_file = os.path.join(BASEDIR, "opendbc/sunnypilot/car/car_list.json")
 
-  with open(car_list_file, "w") as json_file:
+  with open(CAR_LIST_JSON_OUT, "w") as json_file:
     json.dump(car_name_dict, json_file, indent=2, ensure_ascii=False)
-    json_file.write('\n')
-  print(f"Generated and written to {car_list_file}")
+  print(f"Generated and written to {CAR_LIST_JSON_OUT}")
