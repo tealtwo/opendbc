@@ -38,8 +38,8 @@ def build_sorted_car_list(platforms, footnotes) -> dict[str, str]:
 
 
 if __name__ == "__main__":
-  car_name_dict = get_car_list()
+  platform_dict = get_car_list()
 
   with open(CAR_LIST_JSON_OUT, "w") as json_file:
-    json.dump(car_name_dict, json_file, indent=2, ensure_ascii=False)
+    json.dump(platform_dict, json_file, indent=2, ensure_ascii=False)
   print(f"Generated and written to {CAR_LIST_JSON_OUT}")
