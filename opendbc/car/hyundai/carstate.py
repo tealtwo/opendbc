@@ -173,8 +173,9 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState):
       ret.leftBlindspot = cp.vl["LCA11"]["CF_Lca_IndLeft"] != 0
       ret.rightBlindspot = cp.vl["LCA11"]["CF_Lca_IndRight"] != 0
 
-    # save the entire LKAS11 and CLU11
+    # save the entire LKAS11, LKAS12 and CLU11
     self.lkas11 = copy.copy(cp_cam.vl["LKAS11"])
+    self.lkas12 = copy.copy(cp_cam.vl["LKAS12"])
     self.clu11 = copy.copy(cp.vl["CLU11"])
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
     prev_cruise_buttons = self.cruise_buttons[-1]
@@ -388,7 +389,8 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState):
       pt_messages.append(("LVR12", 100))
 
     cam_messages = [
-      ("LKAS11", 100)
+      ("LKAS11", 100),
+      ("LKAS12", 10)
     ]
 
     if CP.flags & HyundaiFlags.CAMERA_SCC:
