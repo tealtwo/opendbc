@@ -147,7 +147,9 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
                                                 hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                                 left_lane_warning, right_lane_warning,
                                                 self.lkas_icon))
-      can_sends.append(hyundaican.create_lkas12(self.packer, CS.lkas12))
+
+      if self.frame % 10 == 0:
+        can_sends.append(hyundaican.create_lkas12(self.packer, CS.lkas12))
 
       if not self.CP.openpilotLongitudinalControl:
         can_sends.extend(self.create_button_messages(CC, CS, use_clu11=True))
