@@ -1008,7 +1008,9 @@ BO_ 1342 LKAS12: 8 LDWS_LKAS
  SG_ NEW_SIGNAL_3 : 34|3@1+ (1,0) [0|7] "" XXX
  SG_ CF_Lkas_Daw_USM : 37|3@1+ (1,0) [0|7] "" CLU
  SG_ CF_LkasDawStatus : 40|3@1+ (1,0) [0|7] "" CLU
- SG_ NEW_SIGNAL_4 : 43|21@1+ (1,0) [0|31] "" XXX
+ SG_ NEW_SIGNAL_4 : 43|3@1+ (1,0) [0|7] "" XXX
+ SG_ Lkas_Daw_Setting : 46|2@1+ (1,0) [0|3] "" XXX
+ SG_ NEW_SIGNAL_5 : 48|16@1+ (1,0) [0|255] "" XXX
 
 BO_ 1338 TMU_GW_E_01: 8 CLU
  SG_ CF_Gway_TeleReqDrLock : 0|2@1+ (1.0,0.0) [0.0|3.0] ""  BCM
