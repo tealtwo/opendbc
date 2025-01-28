@@ -98,6 +98,25 @@ def create_lkas11(packer, frame, CP, apply_steer, steer_req,
   return packer.make_can_msg("LKAS11", 0, values)
 
 
+def create_lkas12(packer, lkas12):
+  values = {s: lkas12[s] for s in [
+    "CF_Lkas_TsrSlifOpt",
+    "CF_LkasTsrStatus",
+    "CF_Lkas_TsrSpeed_Display_Clu",
+    "CF_LkasTsrSpeed_Display_Navi",
+    "CF_Lkas_TsrAddinfo_Display",
+    "CF_Lkas_Daw_USM",
+    "NEW_SIGNAL_1",
+    "NEW_SIGNAL_2",
+    "NEW_SIGNAL_3",
+    "NEW_SIGNAL_4",
+    "NEW_SIGNAL_5",
+  ]}
+  values["Lkas_Daw_Setting"] = 1  # User setting to OFF
+  values["CF_LkasDawStatus"] = 0  # User setting to OFF
+  return packer.make_can_msg("LKAS12", 0, values)
+
+
 def create_clu11(packer, frame, clu11, button, CP):
   values = {s: clu11[s] for s in [
     "CF_Clu_CruiseSwState",
