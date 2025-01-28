@@ -112,7 +112,7 @@ def create_lkas12(packer, lkas12):
     "NEW_SIGNAL_4",
     "NEW_SIGNAL_5",
   ]}
-  values["Lkas_Daw_Setting"] = 0  # User setting to OFF
+  values["Lkas_Daw_Setting"] = 1  # User setting to OFF
   values["CF_LkasDawStatus"] = 0  # User setting to OFF
   return packer.make_can_msg("LKAS12", 0, values)
 
