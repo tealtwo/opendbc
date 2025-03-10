@@ -37,8 +37,8 @@
   {.msg = {{0x125, (pt_bus), 16, .check_checksum = false, .max_counter = 0xffU, .frequency = 100U}, { 0 }, { 0 }}},  \
 
 // SCC_CONTROL (from ADAS unit or camera)
-#define HYUNDAI_CANFD_SCC_ADDR_CHECK(scc_bus)                                                                       \
-  {.msg = {{0x1a0, (scc_bus), 32, .check_checksum = true, .max_counter = 0xffU, .frequency = 50U}, { 0 }, { 0 }}},  \
+#define HYUNDAI_CANFD_SCC_ADDR_CHECK(scc_bus)                                               \
+  {.msg = {{0x1a0, (scc_bus), 32, .max_counter = 0xffU, .frequency = 50U}, { 0 }, { 0 }}},  \
 
 static bool hyundai_canfd_alt_buttons = false;
 static bool hyundai_canfd_lka_steering_alt = false;
@@ -238,6 +238,11 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
       violation |= longitudinal_accel_checks(desired_accel_val, HYUNDAI_LONG_LIMITS);
     } else {
       // only used to cancel on here
+      const int acc_mode = (GET_BYTE(to_send, 8) >> 4) & 0x7U;
+      if (acc_mode != 4) {
+        violation = true;
+      }
+
       if ((desired_accel_raw != 0) || (desired_accel_val != 0)) {
         violation = true;
       }
