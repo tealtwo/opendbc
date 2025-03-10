@@ -79,16 +79,45 @@ class CarController(CarControllerBase):
 
     # angle control
     else:
+      if CS.out.steeringPressed:
+        # Reset the angle if the user has intervened to prevent the car from trying to steer back due to limits applied.
+        self.apply_angle_last = actuators.steeringAngleDeg
       self.apply_angle_last = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
                                                            CS.out.steeringAngleDeg, CC.latActive, self.params.ANGLE_LIMITS)
 
-      # Similar to torque control driver torque override, we ramp up and down the max allowed torque,
-      # but this is a single threshold for simplicity. It also matches the stock system behavior.
-      if abs(CS.out.steeringTorque) > self.params.STEER_THRESHOLD:
-        self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_TORQUE_DOWN_RATE, self.params.ANGLE_MIN_TORQUE)
+      # Determine if the user is actively overriding the steering assist
+      # This happens when the absolute steering torque exceeds a set threshold.
+      USER_OVERRIDING = abs(CS.out.steeringTorque) > self.params.STEER_THRESHOLD
+
+      # Define threshold for "near center" detection (in degrees)
+      NEAR_CENTER_ANGLE = 1.0
+
+      # Number of cycles to ramp down max torque when user override is detected
+      OVERRIDE_CYCLES = 20
+
+      if USER_OVERRIDING:
+        # Compute ramp-down rate to reach minimum torque in OVERRIDE_CYCLES
+        adaptive_ramp_rate = max((self.lkas_max_torque - self.params.ANGLE_MIN_TORQUE) / OVERRIDE_CYCLES, 1)
+
+        # Reduce max torque down to the minimum limit over time
+        self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.params.ANGLE_MIN_TORQUE)
       else:
-        # ramp back up on engage as well
-        self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_TORQUE_UP_RATE, self.params.ANGLE_MAX_TORQUE)
+        # Define speed range for dynamic max torque adjustment
+        speed_range, torque_range = [0, 4], [self.params.ANGLE_MIN_TORQUE * 1.5, self.params.ANGLE_MAX_TORQUE]
+
+        # Interpolate target max torque based on vehicle speed
+        target_torque = float(np.interp(CS.out.vEgoRaw, speed_range, torque_range))
+
+        # If the steering angle is close to zero (near center), limit max torque adaptively
+        if abs(self.apply_angle_last) < NEAR_CENTER_ANGLE:
+          adaptive_max_torque = float(np.interp(abs(self.apply_angle_last), [0, NEAR_CENTER_ANGLE], [0.5, 1]))
+          target_torque = min(target_torque, self.params.ANGLE_MAX_TORQUE * adaptive_max_torque)
+
+        if self.lkas_max_torque > target_torque:
+          # Gradually adjust max torque toward the computed target torque
+          self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_TORQUE_DOWN_RATE, target_torque)
+        else:
+          self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_TORQUE_UP_RATE, target_torque)
 
     if not CC.latActive:
       apply_torque = 0
