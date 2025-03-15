@@ -27,6 +27,6 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelay = 0.35
     ret.vEgoStopping = 0.25
     ret.stopAccel = 0
-    ret.liveTuner = LongitudinalLiveTuner(ret, ret.longitudinalTuning.kpV, ret.longitudinalTuning.kiV)
+    ret._liveTuner = LongitudinalLiveTuner(ret, ret.longitudinalTuning.kpV, ret.longitudinalTuning.kiV)
 
     return ret
