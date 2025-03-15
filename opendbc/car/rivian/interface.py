@@ -1,5 +1,6 @@
 from opendbc.car import get_safety_config, structs
 from opendbc.car.interfaces import CarInterfaceBase
+from opendbc.sunnypilot.longitudinal_live_tuner import LongitudinalLiveTuner
 
 
 class CarInterface(CarInterfaceBase):
@@ -26,5 +27,6 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelay = 0.35
     ret.vEgoStopping = 0.25
     ret.stopAccel = 0
+    ret.liveTuner = LongitudinalLiveTuner(ret, ret.longitudinalTuning.kpV, ret.longitudinalTuning.kiV)
 
     return ret

@@ -5,6 +5,7 @@ from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.ford.fordcan import CanBus
 from opendbc.car.ford.values import CarControllerParams, DBC, Ecu, FordFlags, RADAR, FordSafetyFlags
 from opendbc.car.interfaces import CarInterfaceBase
+from opendbc.sunnypilot.longitudinal_live_tuner import LongitudinalLiveTuner
 
 TransmissionType = structs.CarParams.TransmissionType
 
@@ -29,6 +30,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.5]
+    ret.liveTuner = LongitudinalLiveTuner(ret, ret.longitudinalTuning.kpV, ret.longitudinalTuning.kiV)
 
     if not ret.radarUnavailable and DBC[candidate][Bus.radar] == RADAR.DELPHI_MRR:
       # average of 33.3 Hz radar timestep / 4 scan modes = 60 ms

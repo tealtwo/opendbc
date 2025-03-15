@@ -4,6 +4,7 @@ from opendbc.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerP
                                                   ToyotaSafetyFlags
 from opendbc.car.disable_ecu import disable_ecu
 from opendbc.car.interfaces import CarInterfaceBase
+from opendbc.sunnypilot.longitudinal_live_tuner import LongitudinalLiveTuner
 
 SteerControlType = structs.CarParams.SteerControlType
 
@@ -142,6 +143,7 @@ class CarInterface(CarInterfaceBase):
       # Hybrids have much quicker longitudinal actuator response
       if ret.flags & ToyotaFlags.HYBRID.value:
         ret.longitudinalActuatorDelay = 0.05
+    ret.liveTuner = LongitudinalLiveTuner(ret, ret.longitudinalTuning.kpV, ret.longitudinalTuning.kiV)
 
     return ret
 

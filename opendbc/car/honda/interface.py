@@ -7,6 +7,7 @@ from opendbc.car.honda.values import CarControllerParams, HondaFlags, CAR, HONDA
                                                  HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS, HondaSafetyFlags
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.disable_ecu import disable_ecu
+from opendbc.sunnypilot.longitudinal_live_tuner import LongitudinalLiveTuner
 
 TransmissionType = structs.CarParams.TransmissionType
 
@@ -181,6 +182,8 @@ class CarInterface(CarInterfaceBase):
 
     else:
       raise ValueError(f"unsupported car {candidate}")
+
+    ret.liveTuner = LongitudinalLiveTuner(ret, ret.longitudinalTuning.kpV, ret.longitudinalTuning.kiV)
 
     # These cars use alternate user brake msg (0x1BE)
     # TODO: Only detect feature for Accord/Accord Hybrid, not all Bosch DBCs have BRAKE_MODULE

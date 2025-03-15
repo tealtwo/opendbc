@@ -2,6 +2,7 @@ from opendbc.car import get_safety_config, structs
 from opendbc.car.disable_ecu import disable_ecu
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.subaru.values import CAR, GLOBAL_ES_ADDR, SubaruFlags, SubaruSafetyFlags
+from opendbc.sunnypilot.longitudinal_live_tuner import LongitudinalLiveTuner
 
 
 class CarInterface(CarInterfaceBase):
@@ -85,6 +86,7 @@ class CarInterface(CarInterfaceBase):
     ret.experimentalLongitudinalAvailable = not (ret.flags & (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.PREGLOBAL |
                                                               SubaruFlags.LKAS_ANGLE | SubaruFlags.HYBRID))
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
+    ret.liveTuner = LongitudinalLiveTuner(ret, ret.longitudinalTuning.kpV, ret.longitudinalTuning.kiV)
 
     if ret.flags & SubaruFlags.GLOBAL_GEN2 and ret.openpilotLongitudinalControl:
       ret.flags |= SubaruFlags.DISABLE_EYESIGHT.value
