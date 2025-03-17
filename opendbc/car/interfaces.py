@@ -18,6 +18,7 @@ from opendbc.car.common.simple_kalman import KF1D, get_kalman_gain
 from opendbc.car.values import PLATFORMS
 from opendbc.can.parser import CANParser
 from opendbc.car.carlog import carlog
+from opendbc.sunnypilot import nnff_tuning
 
 GearShifter = structs.CarState.GearShifter
 ButtonType = structs.CarState.ButtonEvent.Type
@@ -151,7 +152,7 @@ class CarInterfaceBase(ABC):
   def get_params_sp(cls, car_params, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw], experimental_long: bool,
                     docs: bool) -> structs.CarParamsSP:
     car_params_sp = structs.CarParamsSP()
-
+    nnff_tuning.apply_nnff_tuning(car_params, car_params_sp)
     return cls._get_params_sp(car_params, car_params_sp, candidate, fingerprint, car_fw, experimental_long, docs)
 
   @staticmethod

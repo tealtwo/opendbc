@@ -1,7 +1,6 @@
 from opendbc.car import get_safety_config, structs
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.tesla.values import TeslaSafetyFlags
-from opendbc.sunnypilot.longitudinal_live_tuner import LongitudinalLiveTuner
 
 class CarInterface(CarInterfaceBase):
 
@@ -21,6 +20,5 @@ class CarInterface(CarInterfaceBase):
     if experimental_long:
       ret.openpilotLongitudinalControl = True
       ret.safetyConfigs[0].safetyParam |= TeslaSafetyFlags.LONG_CONTROL.value
-    ret._liveTuner = LongitudinalLiveTuner(ret, ret.longitudinalTuning.kpV, ret.longitudinalTuning.kiV)
 
     return ret
