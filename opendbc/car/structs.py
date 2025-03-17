@@ -63,6 +63,7 @@ class StrEnum(_StrEnum):
 class CarParamsSP:
   flags: int = auto_field()  # flags for car specific quirks
   nnffLongTuning: str = "" # json string of tuned params
+  safetyParam: int = auto_field()  # flags for custom safety flags
 
 
 @auto_dataclass
