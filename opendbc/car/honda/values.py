@@ -9,6 +9,8 @@ from opendbc.car.fw_query_definitions import FwQueryConfig, Request, StdQueries,
 Ecu = structs.CarParams.Ecu
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 GearShifter = structs.CarState.GearShifter
+MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
+PEDAL_TRANSITION = 10. * CV.MPH_TO_MS
 
 class CarControllerParams:
   # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we

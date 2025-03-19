@@ -76,6 +76,9 @@ class CarState(CarStateBase):
       ret.gas = cp.vl["GAS_PEDAL"]["GAS_PEDAL_USER"]
       ret.gasPressed = cp.vl["GAS_PEDAL"]["GAS_PEDAL_USER"] > 0
       can_gear = int(cp.vl["GEAR_PACKET_HYBRID"]["GEAR"])
+    elif self.CP.enableGasInterceptorDEPRECATED:
+      ret.gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
+      ret.gasPressed = ret.gas > 805
     else:
       ret.gasPressed = cp.vl["PCM_CRUISE"]["GAS_RELEASED"] == 0  # TODO: these also have GAS_PEDAL, come back and unify
       can_gear = int(cp.vl["GEAR_PACKET"]["GEAR"])
@@ -230,6 +233,10 @@ class CarState(CarStateBase):
       pt_messages.append(("PCM_CRUISE_ALT", 1))
     else:
       pt_messages.append(("PCM_CRUISE_2", 33))
+
+    # add gas interceptor reading if we are using it
+    if CP.enableGasInterceptorDEPRECATED:
+      pt_messages.append(("GAS_SENSOR", 50))
 
     if CP.enableBsm:
       pt_messages.append(("BSM", 1))
