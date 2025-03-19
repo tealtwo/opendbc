@@ -39,8 +39,8 @@ typedef enum __attribute__((packed)) {
 // ===============================
 
 #define ALT_EXP_ENABLE_MADS 1024
-#define ALT_EXP_DISENGAGE_LATERAL_ON_BRAKE 2048
-#define ALT_EXP_PAUSE_LATERAL_ON_BRAKE 4096
+#define ALT_EXP_MADS_DISENGAGE_LATERAL_ON_BRAKE 2048
+#define ALT_EXP_MADS_PAUSE_LATERAL_ON_BRAKE 4096
 
 #define MISMATCH_DEFAULT_THRESHOLD 25
 

@@ -142,8 +142,8 @@ inline void mads_heartbeat_engaged_check(void) {
 
 inline void mads_set_alternative_experience(const int *mode) {
   const bool mads_enabled = (*mode & ALT_EXP_ENABLE_MADS) != 0;
-  const bool disengage_lateral_on_brake = (*mode & ALT_EXP_DISENGAGE_LATERAL_ON_BRAKE) != 0;
-  const bool pause_lateral_on_brake = (*mode & ALT_EXP_PAUSE_LATERAL_ON_BRAKE) != 0;
+  const bool disengage_lateral_on_brake = (*mode & ALT_EXP_MADS_DISENGAGE_LATERAL_ON_BRAKE) != 0;
+  const bool pause_lateral_on_brake = (*mode & ALT_EXP_MADS_PAUSE_LATERAL_ON_BRAKE) != 0;
 
   mads_set_system_state(mads_enabled, disengage_lateral_on_brake, pause_lateral_on_brake);
 }
