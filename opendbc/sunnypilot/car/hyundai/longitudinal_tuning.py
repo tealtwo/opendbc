@@ -137,10 +137,7 @@ class HKGLongitudinalController:
 
   def __init__(self, CP: structs.CarParams):
     self.CP = CP
-    if CP.flags & HyundaiFlagsSP.HKGLONGTUNING:
-      self.tuning = HKGLongitudinalTuning(CP)
-    else:
-      self.tuning = None
+    self.tuning = HKGLongitudinalTuning(CP) if CP.flags & HyundaiFlagsSP.HKGLONGTUNING else None
     self.jerk = None
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
