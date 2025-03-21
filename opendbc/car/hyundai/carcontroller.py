@@ -64,8 +64,7 @@ class CarController(CarControllerBase, EsccCarController, HKGLongitudinalControl
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
     MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
-    HKGLongitudinalController.update(self, CC.actuators.longControlState, CC.actuators, CS, self.CP)
-    accel = self.accel
+    HKGLongitudinalController.update(self, CC, CC.actuators, CC.actuators.longControlState, CS, self.CP)
     actuators = CC.actuators
     hud_control = CC.hudControl
 
@@ -88,7 +87,7 @@ class CarController(CarControllerBase, EsccCarController, HKGLongitudinalControl
     self.apply_torque_last = apply_torque
 
     # accel + longitudinal
-    accel = float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+    accel = float(np.clip(self.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     stopping = actuators.longControlState == LongCtrlState.stopping
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
 
