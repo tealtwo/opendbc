@@ -190,8 +190,8 @@ class HKGLongitudinalController:
       accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     return accel
 
-  def update(self, actuators: structs.CarControl.Actuators, CC: structs.CarControl,
-             CS: structs.CarState, CP: structs.CarParams, long_control_state: LongCtrlState) -> None:
+  def update(self, actuators: structs.CarControl.Actuators, CS: structs.CarState,
+             CP: structs.CarParams, long_control_state: LongCtrlState) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
     jerk = self.calculate_and_get_jerk(actuators, CS, long_control_state)
     self.jerk_upper = jerk.jerk_upper_limit
@@ -199,7 +199,7 @@ class HKGLongitudinalController:
     self.cb_upper = jerk.cb_upper
     self.cb_lower = jerk.cb_lower
 
-    stopping = actuators.longControlState == LongCtrlState.stopping
+    stopping = long_control_state == LongCtrlState.stopping
     current_stop_req = 1 if stopping else 0
     stop_req_transition = (self.prev_stop_req == 1 and current_stop_req == 0)
 
@@ -213,7 +213,6 @@ class HKGLongitudinalController:
 
     # After StopReq changed from 1 to 0, force zero acceleration
     if stop_req_transition or (current_stop_req == 0 and time_since_transition < self.standstill_delay):
-      CC.longActive = True
       self.accel = 0.0    #0 m/s² during delay period
     else:
       # Normal conditions
