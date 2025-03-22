@@ -290,6 +290,9 @@ class CarInterfaceBase(ABC):
 
     return ret
 
+  def apply_longitudinal_tuning(self):
+    """Apply longitudinal tuning specific to the car's brand."""
+
 
 class CarStateBase(ABC):
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):

@@ -130,9 +130,6 @@ class CarInterface(CarInterfaceBase):
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
     ret.pcmCruise = not ret.openpilotLongitudinalControl
 
-    # Add HKG longitudinal support
-    HKGLongitudinalController(ret).apply_tune(ret)
-
     if ret.openpilotLongitudinalControl:
       ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.LONG.value
     if ret.flags & HyundaiFlags.HYBRID:
@@ -186,3 +183,6 @@ class CarInterface(CarInterfaceBase):
     if CP_SP.flags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
       enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
       CP.radarUnavailable = False
+
+  def apply_longitudinal_tuning(self):
+    HKGLongitudinalController(self.CP, self.CP_SP).apply_tune(self.CP)
