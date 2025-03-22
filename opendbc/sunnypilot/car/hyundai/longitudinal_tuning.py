@@ -22,13 +22,13 @@ class HKGLongitudinalTuning:
     self.CP = CP
     self.accel_last = 0.0
     self.accel_last_jerk = 0.0
+    self.cb_upper = self.cb_lower = 0.0
     self.car_config = Cartuning.get_car_config(self.CP)
     self.DT_CTRL = DT_CTRL
     self.jerk = 0.0
     self.jerk_count = 0.0
     self.jerk_upper_limit = 0.0
     self.jerk_lower_limit = 0.0
-    self.cb_upper = self.cb_lower = 0.0
     self.last_decel_time = 0.0
     self.min_cancel_delay = 0.1
 
@@ -57,7 +57,6 @@ class HKGLongitudinalTuning:
     self.jerk = catmull_rom_interp(base_jerk, xp, fp)
     jerk_max = self.car_config.jerk_limits[1]
 
-
     if self.CP.flags & HyundaiFlags.CANFD.value:
       self.jerk_upper_limit = min(max(self.car_config.jerk_limits[0], self.jerk * 2.0), jerk_max)
       self.jerk_lower_limit = min(max(self.car_config.jerk_limits[0], -self.jerk * 4.0), jerk_max)
@@ -80,7 +79,7 @@ class HKGLongitudinalTuning:
 
   def handle_cruise_cancel(self, CS: structs.CarState):
     """Handle cruise control cancel to prevent faults."""
-    if not CS.out.cruiseState.enabled or CS.out.gasPressed or CS.out.brakePressed:
+    if not CS.out.gasPressed or CS.out.brakePressed:
       self.accel_last = 0.0
       return True
     return False
@@ -92,7 +91,8 @@ class HKGLongitudinalTuning:
     self.make_jerk(CS, actuators)
     target_accel = actuators.accel
 
-    if CS.out.vEgo > 10.0 and target_accel < 0.01:
+    # Normal operation
+    if (CS.out.vEgo > 9.0 and target_accel < 0.01):
       brake_ratio = np.clip(abs(target_accel / self.car_config.accel_limits[0]), 0.0, 1.0)
       # Gentler for light braking, more responsive for harder braking
       accel_rate_down = self.DT_CTRL * catmull_rom_interp(brake_ratio,
@@ -102,9 +102,9 @@ class HKGLongitudinalTuning:
     else:
       accel = actuators.accel
 
-
+    target_accel = accel + (target_accel - self.accel_last)
+    accel = target_accel
     self.accel_last = accel
-    accel = self.accel_last
     return accel
 
   def calculate_accel(self, actuators: structs.CarControl.Actuators, CS: structs.CarState) -> float:
@@ -128,12 +128,13 @@ class HKGLongitudinalTuning:
 class HKGLongitudinalController:
   """Longitudinal controller which gets injected into CarControllerParams."""
 
-  def __init__(self, CP: structs.CarParams):
+  def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
     self.CP = CP
-    self.tuning = HKGLongitudinalTuning(CP) if CP.flags & HyundaiFlagsSP.HKGLONGTUNING else None
+    self.CP_SP = CP_SP
+    self.tuning = HKGLongitudinalTuning(CP) if CP_SP.flags & HyundaiFlagsSP.HKGLONGTUNING else None
     self.jerk = None
-    self.jerk_upper = 0.0
-    self.jerk_lower = 0.0
+    self.jerk_upper_limit = 0.0
+    self.jerk_lower_limit = 0.0
     self.cb_upper = 0.0
     self.cb_lower = 0.0
     self.accel = 0.0
@@ -141,8 +142,8 @@ class HKGLongitudinalController:
     self.standstill_delay = 0.9             # Delay in which accel commands from model are not sent
     self.prev_stop_req = 1                  # 1 means we are stopped
 
-  def apply_tune(self, CP: structs.CarParams):
-    if CP.flags & HyundaiFlagsSP.HKGLONGTUNING:
+  def apply_tune(self, CP: structs.CarParams) -> None:
+    if self.CP_SP.flags & HyundaiFlagsSP.HKGLONGTUNING:
       self.tuning.apply_tune(CP)
     else:
       CP.vEgoStopping = 0.5
@@ -194,8 +195,8 @@ class HKGLongitudinalController:
              CP: structs.CarParams, long_control_state: LongCtrlState) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
     jerk = self.calculate_and_get_jerk(actuators, CS, long_control_state)
-    self.jerk_upper = jerk.jerk_upper_limit
-    self.jerk_lower = jerk.jerk_lower_limit
+    self.jerk_upper_limit = jerk.jerk_upper_limit
+    self.jerk_lower_limit = jerk.jerk_lower_limit
     self.cb_upper = jerk.cb_upper
     self.cb_lower = jerk.cb_lower
 
