@@ -128,7 +128,7 @@ class HKGLongitudinalTuning:
 class HKGLongitudinalController:
   """Longitudinal controller which gets injected into CarControllerParams."""
 
-  def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
+  def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP = None) -> None:
     self.CP = CP
     self.CP_SP = CP_SP
     self.tuning = HKGLongitudinalTuning(CP) if CP_SP.flags & HyundaiFlagsSP.HKGLONGTUNING else None
