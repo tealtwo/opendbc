@@ -67,16 +67,13 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
     actuators = CC.actuators
     hud_control = CC.hudControl
+    apply_torque = 0
 
     # TODO: needed for angle control cars?
     # >90 degree steering fault prevention
     self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_FAULT_ANGLE, CC.latActive,
                                                                        self.angle_limit_counter, MAX_FAULT_ANGLE_FRAMES,
                                                                        MAX_FAULT_ANGLE_CONSECUTIVE_FRAMES)
-    # Hold torque with induced temporary fault when cutting the actuation bit
-    torque_fault = CC.latActive and not apply_steer_req
-
-    apply_torque = 0
 
     # steering torque
     if not self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
@@ -85,16 +82,38 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
 
     # angle control
     else:
+      if CS.out.steeringPressed:
+        self.apply_angle_last = actuators.steeringAngleDeg
       self.apply_angle_last = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
                                                            CS.out.steeringAngleDeg, CC.latActive, self.params.ANGLE_LIMITS)
 
       # Similar to torque control driver torque override, we ramp up and down the max allowed torque,
       # but this is a single threshold for simplicity. It also matches the stock system behavior.
-      if abs(CS.out.steeringTorque) > self.params.STEER_THRESHOLD:
-        self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_TORQUE_DOWN_RATE, self.params.ANGLE_MIN_TORQUE)
+      USER_OVERRIDING = abs(CS.out.steeringTorque) > self.params.STEER_THRESHOLD
+      NEAR_CENTER_ANGLE = 1.0  # Threshold in degrees to consider "near center"
+      OVERRIDE_CYCLES = 20  # Number of cycles to ramp down to minimum
+
+      if USER_OVERRIDING:
+        # When the user is overriding, calculate a ramp-down rate that will reach minimum torque in OVERRIDE_CYCLES
+        torque_delta = self.lkas_max_torque - self.params.ANGLE_MIN_TORQUE
+        adaptive_ramp_rate = max(torque_delta / OVERRIDE_CYCLES, 1)  # Ensure we move at least 1 unit per cycle
+        self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.params.ANGLE_MIN_TORQUE)
       else:
-        # ramp back up on engage as well
-        self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_TORQUE_UP_RATE, self.params.ANGLE_MAX_TORQUE)
+        # Calculate target torque based on current speed
+        speed_range = [0, 4]  # Speed threshold for reduced torque effect
+        torque_range = [self.params.ANGLE_MIN_TORQUE * 1.5, self.params.ANGLE_MAX_TORQUE]
+        target_torque = float(np.interp(CS.out.vEgoRaw, speed_range, torque_range))
+
+        # Reduce torque when near center (when apply_angle_last is close to 0)
+        if abs(self.apply_angle_last) < NEAR_CENTER_ANGLE:
+          adaptive_max_torque = float(np.interp(abs(self.apply_angle_last), [0, NEAR_CENTER_ANGLE], [.5, 1]))
+          target_torque = min(target_torque, self.params.ANGLE_MAX_TORQUE * adaptive_max_torque)
+
+        # Ramp up or down toward the target torque
+        if self.lkas_max_torque > target_torque:
+          self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_TORQUE_DOWN_RATE, target_torque)
+        else:
+          self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_TORQUE_UP_RATE, target_torque)
 
     if not CC.latActive:
       apply_torque = 0
@@ -139,6 +158,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     new_actuators = actuators.as_builder()
     new_actuators.torque = apply_torque / self.params.STEER_MAX
     new_actuators.torqueOutputCan = apply_torque
+    new_actuators.steeringAngleDeg = self.apply_angle_last
     new_actuators.accel = accel
 
     self.frame += 1
