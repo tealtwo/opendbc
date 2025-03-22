@@ -143,8 +143,8 @@ class HKGLongitudinalController:
     self.standstill_delay = 0.9             # Delay in which accel commands from model are not sent
     self.prev_stop_req = 1                  # 1 means we are stopped
 
-  def apply_tune(self, CP: structs.CarParams) -> None:
-    if self.CP_SP.flags & HyundaiFlagsSP.HKGLONGTUNING:
+  def apply_tune(self, CP: structs.CarParams):
+    if self.CP_SP is not None and (self.CP_SP.flags & HyundaiFlagsSP.HKGLONGTUNING):
       self.tuning.apply_tune(CP)
     else:
       CP.vEgoStopping = 0.5
