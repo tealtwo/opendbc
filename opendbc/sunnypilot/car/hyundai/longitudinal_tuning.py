@@ -35,7 +35,7 @@ class HKGLongitudinalTuning:
   def make_jerk(self, CS: structs.CarState, actuators: structs.CarControl.Actuators) -> float:
     self.jerk_count += 1
     # Handle cancel state to prevent cruise fault
-    if not CS.out.cruiseState.enabled or CS.out.gasPressed or CS.out.brakePressed:
+    if not CS.out.cruiseState.enabled or CS.out.brakePressed:
       self.accel_last_jerk = 0.0
       self.jerk = 0.0
       self.jerk_count = 0.0
@@ -79,7 +79,7 @@ class HKGLongitudinalTuning:
 
   def handle_cruise_cancel(self, CS: structs.CarState):
     """Handle cruise control cancel to prevent faults."""
-    if not CS.out.gasPressed or CS.out.brakePressed:
+    if CS.out.brakePressed:
       self.accel_last = 0.0
       return True
     return False
@@ -92,7 +92,7 @@ class HKGLongitudinalTuning:
     target_accel = actuators.accel
 
     # Normal operation
-    if (CS.out.vEgo > 9.0 and target_accel < 0.01):
+    if (CS.out.vEgo > 10.0 and target_accel < 0.01):
       brake_ratio = np.clip(abs(target_accel / self.car_config.accel_limits[0]), 0.0, 1.0)
       # Gentler for light braking, more responsive for harder braking
       accel_rate_down = self.DT_CTRL * catmull_rom_interp(brake_ratio,

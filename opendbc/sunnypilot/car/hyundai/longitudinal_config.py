@@ -18,7 +18,7 @@ class CarTuningConfig:
 # Default configurations for different car types
 TUNING_CONFIGS = {
   "EV": CarTuningConfig(
-    vego_stopping=0.15,
+    vego_stopping=0.25,
     vego_starting=0.12,
     stopping_decel_rate=0.25,
     start_accel=1.6,
@@ -32,7 +32,7 @@ TUNING_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.5,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   "ICE": CarTuningConfig(
@@ -63,7 +63,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.6,
     jerk_limits=(0.75, 3.5),
-    brake_response=(1.0, 1.25, 2.0, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 1.5),
   ),
   CAR.HYUNDAI_KONA_EV: CarTuningConfig(
@@ -72,7 +72,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.6,
     jerk_limits=(1.5, 5.0),
-    brake_response=(1.0, 1.85, 2.75, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_KONA_EV_2022: CarTuningConfig(
@@ -81,7 +81,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.6,
     jerk_limits=(0.75, 5.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_KONA_EV_2ND_GEN: CarTuningConfig(
@@ -90,7 +90,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.6,
     jerk_limits=(0.75, 3.5),
-    brake_response=(1.0, 1.25, 2.0, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 1.5),
   ),
   CAR.HYUNDAI_IONIQ_EV_LTD: CarTuningConfig(
@@ -99,7 +99,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.6,
     jerk_limits=(0.75, 5.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_IONIQ_EV_2020: CarTuningConfig(
@@ -108,7 +108,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.6,
     jerk_limits=(0.75, 5.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_AZERA_HEV_6TH_GEN: CarTuningConfig(
@@ -117,7 +117,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 3.5),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_SONATA_HYBRID: CarTuningConfig(
@@ -126,7 +126,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.6,
     jerk_limits=(0.75, 5.0),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_ELANTRA_HEV_2021: CarTuningConfig(
@@ -135,7 +135,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 3.5),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_IONIQ: CarTuningConfig(
@@ -144,7 +144,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 3.5),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_IONIQ_HEV_2022: CarTuningConfig(
@@ -153,7 +153,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 3.5),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_IONIQ_PHEV_2019: CarTuningConfig(
@@ -162,7 +162,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 3.5),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_IONIQ_PHEV: CarTuningConfig(
@@ -171,7 +171,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 3.5),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_KONA_HEV: CarTuningConfig(
@@ -180,7 +180,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 3.5),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_SANTA_FE_HEV_2022: CarTuningConfig(
@@ -189,7 +189,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 3.5),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_SANTA_FE_PHEV_2022: CarTuningConfig(
@@ -243,7 +243,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_CUSTIN_1ST_GEN: CarTuningConfig(
@@ -252,7 +252,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_ELANTRA: CarTuningConfig(
@@ -261,7 +261,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_ELANTRA_GT_I30: CarTuningConfig(
@@ -270,7 +270,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_KONA: CarTuningConfig(
@@ -279,7 +279,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_SANTA_CRUZ_1ST_GEN: CarTuningConfig(
@@ -288,7 +288,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_SANTA_FE: CarTuningConfig(
@@ -297,7 +297,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_SANTA_FE_2022: CarTuningConfig(
@@ -306,7 +306,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_SONATA_LF: CarTuningConfig(
@@ -315,7 +315,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_STARIA_4TH_GEN: CarTuningConfig(
@@ -324,7 +324,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.HYUNDAI_PALISADE: CarTuningConfig(
@@ -333,7 +333,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_EV6: CarTuningConfig(
@@ -342,7 +342,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.6,
     jerk_limits=(1.0, 5.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_NIRO_EV: CarTuningConfig(
@@ -351,7 +351,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.2,
     start_accel=1.0,
     jerk_limits=(0.75, 5.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 1.5),
   ),
   CAR.KIA_NIRO_EV_2ND_GEN: CarTuningConfig(
@@ -360,7 +360,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.2,
     start_accel=1.6,
     jerk_limits=(0.75, 5.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_K5_HEV_2020: CarTuningConfig(
@@ -378,7 +378,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 3.5),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_NIRO_HEV_2021: CarTuningConfig(
@@ -387,7 +387,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 5.0),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_NIRO_HEV_2ND_GEN: CarTuningConfig(
@@ -396,7 +396,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.5),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_NIRO_PHEV: CarTuningConfig(
@@ -405,7 +405,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.5),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.2, 1.8, 2.7, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_NIRO_PHEV_2022: CarTuningConfig(
@@ -414,7 +414,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.5),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_OPTIMA_H: CarTuningConfig(
@@ -423,7 +423,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 3.5),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_OPTIMA_H_G4_FL: CarTuningConfig(
@@ -432,7 +432,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 3.5),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_SORENTO_HEV_4TH_GEN: CarTuningConfig(
@@ -441,7 +441,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 3.5),
-    brake_response=(1.2, 1.8, 2.5, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_STINGER: CarTuningConfig(
@@ -477,7 +477,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_FORTE: CarTuningConfig(
@@ -486,7 +486,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_OPTIMA_G4: CarTuningConfig(
@@ -495,7 +495,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_OPTIMA_G4_FL: CarTuningConfig(
@@ -504,7 +504,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_SELTOS: CarTuningConfig(
@@ -513,7 +513,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_SPORTAGE_5TH_GEN: CarTuningConfig(
@@ -522,7 +522,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_SORENTO: CarTuningConfig(
@@ -531,7 +531,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_SORENTO_4TH_GEN: CarTuningConfig(
@@ -540,7 +540,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_CARNIVAL_4TH_GEN: CarTuningConfig(
@@ -549,7 +549,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.0,
     jerk_limits=(0.75, 4.0),
-    brake_response=(1.0, 1.5, 2.25, 3.5),
+    brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
   CAR.GENESIS_GV60_EV_1ST_GEN: CarTuningConfig(
@@ -558,7 +558,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.25,
     start_accel=1.6,
     jerk_limits=(0.75, 3.5),
-    brake_response=(1.0, 1.25, 2.0, 3.5),
+    brake_response=(1.0, 1.55, 2.25, 3.5),
     accel_limits=(-3.5, 1.5),
   ),
   CAR.GENESIS_G70: CarTuningConfig(
