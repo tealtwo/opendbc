@@ -32,7 +32,7 @@ class HKGLongitudinalTuning:
     self.last_decel_time = 0.0
     self.min_cancel_delay = 0.1
 
-  def make_jerk(self, CS: structs.CarState, actuators: structs.CarControl.Actuators) -> float:
+  def make_jerk(self, CS: structs.CarState) -> float:
     self.jerk_count += 1
     # Handle cancel state to prevent cruise fault
     if not CS.out.cruiseState.enabled or CS.out.brakePressed:
@@ -44,12 +44,13 @@ class HKGLongitudinalTuning:
       self.cb_upper = self.cb_lower = 0.0
       return 0.0
 
-    current_accel = actuators.accel
+    current_accel = CS.out.aEgo
     self.jerk = (current_accel - self.accel_last_jerk)
     self.accel_last_jerk = current_accel
 
     # the jerk division by ΔT (delta time) leads to too high of values of jerk when ΔT is small, which is not realistic
-    # when calculating jerk as a time-based derivative this is a more accurate representation of jerk within OP.
+    # when calculating jerk as a time-based derivative, this is a more accurate representation of jerk within OP.
+    # Jerk is calculated using current accel - last accel divided by time. It doesn't make sense to use planned accel.
 
     base_jerk = self.jerk
     xp = np.array([-3.0, -2.0, -1.0, 0.0, 1.0, 2.0])
@@ -68,10 +69,10 @@ class HKGLongitudinalTuning:
         self.cb_upper = self.cb_lower = 0.0
       else:
         self.cb_upper = self.cb_lower = 0.0
-        #if(not Params().get_bool("HyundaiSmootherBraking")) and (CS.out.vEgo > 5.0):
+        # if(not Params().get_bool("HyundaiSmootherBraking")) and (CS.out.vEgo > 5.0):
         #  self.cb_upper = float(np.clip(0.20 + actuators.accel * 0.20, 0.0, 1.0))
         #  self.cb_lower = float(np.clip(0.10 + actuators.accel * 0.20, 0.0, 1.0))
-        #else:
+        # else:
         #  # When at low speeds, or using smoother braking button, we don't want ComfortBands to be effecting stopping control.
         #  self.cb_upper = self.cb_lower = 0.0
 
@@ -88,7 +89,7 @@ class HKGLongitudinalTuning:
     """Adaptive acceleration limiting."""
     if self.handle_cruise_cancel(CS):
       return actuators.accel
-    self.make_jerk(CS, actuators)
+    self.make_jerk(CS)
     target_accel = actuators.accel
 
     # Normal operation
@@ -140,7 +141,7 @@ class HKGLongitudinalController:
     self.cb_lower = 0.0
     self.accel = 0.0
     self.stop_req_transition_time = 0.0     # Time when StopReq changed from 1 to 0
-    self.standstill_delay = 0.9             # Delay in which accel commands from model are not sent
+    self.standstill_delay = 0.9             # Delay in which commands from model are not sent
     self.prev_stop_req = 1                  # 1 means we are stopped
 
   def apply_tune(self, CP: structs.CarParams):
@@ -173,7 +174,7 @@ class HKGLongitudinalController:
                              long_control_state: LongCtrlState) -> JerkOutput:
     """Calculate jerk based on tuning and return JerkOutput."""
     if self.tuning is not None:
-      self.tuning.make_jerk(CS, actuators)
+      self.tuning.make_jerk(CS)
     else:
       jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
 
@@ -196,11 +197,6 @@ class HKGLongitudinalController:
              CP: structs.CarParams, long_control_state: LongCtrlState) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
     jerk = self.calculate_and_get_jerk(actuators, CS, long_control_state)
-    self.jerk_upper_limit = jerk.jerk_upper_limit
-    self.jerk_lower_limit = jerk.jerk_lower_limit
-    self.cb_upper = jerk.cb_upper
-    self.cb_lower = jerk.cb_lower
-
     stopping = long_control_state == LongCtrlState.stopping
     current_stop_req = 1 if stopping else 0
     stop_req_transition = (self.prev_stop_req == 1 and current_stop_req == 0)
@@ -215,7 +211,18 @@ class HKGLongitudinalController:
 
     # After StopReq changed from 1 to 0, force zero acceleration
     if stop_req_transition or (current_stop_req == 0 and time_since_transition < self.standstill_delay):
-      self.accel = 0.0    #0 m/s² during delay period
+      #0 m/s² during delay period
+      self.accel = 0.0
+      self.jerk_upper_limit = 0.0
+      self.jerk_lower_limit = 0.0
+      self.cb_upper = 0.0
+      self.cb_lower = 0.0
+
     else:
       # Normal conditions
       self.accel = self.calculate_accel(actuators, CS, CP)
+      self.jerk_upper_limit = jerk.jerk_upper_limit
+      self.jerk_lower_limit = jerk.jerk_lower_limit
+      self.cb_upper = jerk.cb_upper
+      self.cb_lower = jerk.cb_lower
+
