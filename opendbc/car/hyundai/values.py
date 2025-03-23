@@ -18,8 +18,8 @@ class CarControllerParams:
   ANGLE_LIMITS: AngleSteeringLimits = AngleSteeringLimits(
     # LKAS angle command is unlimited, but LFA is limited to 176.7 deg (but does not fault if requesting above)
     180,  # deg
-    ([0, 4, 9, 16, 25], [1.5, 1, 0.6, 0.4, 0.1]),
-    ([0, 4, 9, 16, 25], [1.5, 1, 0.7, 0.5, 0.1]),
+    ([0, 9, 25], [1, 0.6, 0.1]),
+    ([0, 9, 25], [1.2, 0.7, 0.1]),
   )
 
   # Stock LFA system is seen sending 250 max, but for LKAS events it's 175 max.
