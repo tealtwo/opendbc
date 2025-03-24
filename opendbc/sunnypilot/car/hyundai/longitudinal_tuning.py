@@ -20,8 +20,8 @@ class HKGLongitudinalTuning:
   """Longitudinal tuning methodology for Hyundai vehicles."""
   def __init__(self, CP: structs.CarParams) -> None:
     self.CP = CP
-    self.accel_last = 0.0
-    self.accel_last_jerk = 0.0
+    self._accel_last = 0.0
+    self._accel_last_jerk = 0.0
     self.cb_upper = self.cb_lower = 0.0
     self.car_config = Cartuning.get_car_config(self.CP)
     self.DT_CTRL = DT_CTRL
@@ -36,7 +36,7 @@ class HKGLongitudinalTuning:
     self.jerk_count += 1
     # Handle cancel state to prevent cruise fault
     if CS.out.brakePressed:
-      self.accel_last_jerk = 0.0
+      self._accel_last_jerk = 0.0
       self.jerk = 0.0
       self.jerk_count = 0.0
       self.jerk_upper_limit = 0.0
@@ -45,8 +45,8 @@ class HKGLongitudinalTuning:
       return 0.0
 
     current_accel = CS.out.aEgo
-    self.jerk = (current_accel - self.accel_last_jerk)
-    self.accel_last_jerk = current_accel
+    self.jerk = (current_accel - self._accel_last_jerk)
+    self._accel_last_jerk = current_accel
 
     # the jerk division by ΔT (delta time) leads to too high of values of jerk when ΔT is small, which is not realistic
     # when calculating jerk as a time-based derivative, this is a more accurate representation of jerk within OP.
@@ -81,7 +81,7 @@ class HKGLongitudinalTuning:
   def handle_cruise_cancel(self, CS: structs.CarState):
     """Handle cruise control cancel to prevent faults."""
     if CS.out.brakePressed:
-      self.accel_last = 0.0
+      self._accel_last = 0.0
       return True
     return False
 
@@ -99,13 +99,13 @@ class HKGLongitudinalTuning:
       accel_rate_down = self.DT_CTRL * catmull_rom_interp(brake_ratio,
                                                           np.array([0.25, 0.5, 0.75, 1.0]),
                                                           np.array(self.car_config.brake_response))
-      accel = max(target_accel, self.accel_last - accel_rate_down)
+      accel = max(target_accel, self._accel_last - accel_rate_down)
     else:
       accel = actuators.accel
 
-    target_accel = accel + (target_accel - self.accel_last)
+    target_accel = accel + (target_accel - self._accel_last)
     accel = target_accel
-    self.accel_last = accel
+    self._accel_last = accel
     return accel
 
   def calculate_accel(self, actuators: structs.CarControl.Actuators, CS: structs.CarState) -> float:
