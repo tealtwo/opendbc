@@ -87,7 +87,7 @@ class CarController(CarControllerBase, EsccCarController, HKGLongitudinalControl
     self.apply_torque_last = apply_torque
 
     # accel + longitudinal
-    accel = float(np.clip(self.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+    accel = float(np.clip(self._accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     stopping = actuators.longControlState == LongCtrlState.stopping
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
 
@@ -151,8 +151,8 @@ class CarController(CarControllerBase, EsccCarController, HKGLongitudinalControl
 
     if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
       use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
-      can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, self.jerk_upper_limit,
-                                                      self.jerk_lower_limit, self.cb_upper,
+      can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, self.jerk_upper,
+                                                      self.jerk_lower, self.cb_upper,
                                                       self.cb_lower, int(self.frame / 2),
                                                       hud_control, set_speed_in_units, stopping,
                                                       CC.cruiseControl.override, use_fca, self.CP,
@@ -201,7 +201,7 @@ class CarController(CarControllerBase, EsccCarController, HKGLongitudinalControl
         can_sends.extend(hyundaicanfd.create_fca_warning_light(self.packer, self.CAN, self.frame))
       if self.frame % 2 == 0:
         can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CAN, CC.enabled, self.accel_last, accel, stopping, CC.cruiseControl.override,
-                                                         self.jerk_upper_limit, self.jerk_lower_limit, set_speed_in_units, hud_control, CS.main_cruise_enabled))
+                                                         self.jerk_upper, self.jerk_lower, set_speed_in_units, hud_control, CS.main_cruise_enabled))
         self.accel_last = accel
     else:
       # button presses
