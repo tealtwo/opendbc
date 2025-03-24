@@ -65,6 +65,18 @@ class CarParamsSP:
   nnffLongTuning: str = "" # json string of tuned params
   safetyParam: int = auto_field()  # flags for custom safety flags
 
+  neuralNetworkLateralControl: 'CarParamsSP.NeuralNetworkLateralControl' = field(default_factory=lambda: CarParamsSP.NeuralNetworkLateralControl())
+
+  @auto_dataclass
+  class NeuralNetworkLateralControl:
+    model: 'CarParamsSP.NeuralNetworkLateralControl.Model' = field(default_factory=lambda: CarParamsSP.NeuralNetworkLateralControl.Model())
+    fuzzyFingerprint: bool = auto_field()
+
+    @auto_dataclass
+    class Model:
+      path: str = auto_field()
+      name: str = auto_field()
+
 
 @auto_dataclass
 class ModularAssistiveDrivingSystem:
