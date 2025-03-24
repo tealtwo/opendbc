@@ -1,6 +1,5 @@
 import time
 import numpy as np
-from typing import Optional, Union
 
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.hyundai.values import HyundaiFlags, CarControllerParams
@@ -134,7 +133,7 @@ class HKGLongitudinalController:
     self.CP_SP = CP_SP
     self.tuning = HKGLongitudinalTuning(CP) if self.CP_SP is not None \
                   and (self.CP_SP.flags & HyundaiFlagsSP.HKGLONGTUNING) else None
-    self.state: dict[str, Union[float, Optional[JerkOutput]]] = {
+    self.state: dict[str, float | JerkOutput | None] = {
       "accel": 0.0,
       "jerk": None
     }
