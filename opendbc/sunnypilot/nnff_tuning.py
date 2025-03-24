@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict
+from typing import Any
 from opendbc.car import structs
 
 def apply_nnff_tuning(car_params: structs.CarParams, car_params_sp: structs.CarParamsSP) -> None:
@@ -18,7 +18,7 @@ def apply_nnff_tuning(car_params: structs.CarParams, car_params_sp: structs.CarP
     """
 
     if hasattr(car_params, "_liveTuner"):
-        tuned: Dict[str, Any] = car_params._liveTuner.get_tuned_params()
+        tuned: dict[str, Any] = car_params._liveTuner.get_tuned_params()
         car_params.vEgoStopping = tuned['vego_stopping']
         car_params.vEgoStarting = tuned['vego_starting']
         car_params.stoppingDecelRate = tuned['stopping_decel_rate']
