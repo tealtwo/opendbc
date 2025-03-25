@@ -1,3 +1,4 @@
+from abc import ABC
 from dataclasses import dataclass
 
 from opendbc.car import structs
@@ -62,7 +63,7 @@ CAR_SPECIFIC_CONFIGS = {
     vego_starting=0.15,
     stopping_decel_rate=0.20,
     start_accel=1.6,
-    jerk_limits=(0.75, 3.5),
+    jerk_limits=(0.75, 4.5),
     brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 1.5),
   ),
@@ -80,7 +81,7 @@ CAR_SPECIFIC_CONFIGS = {
     vego_starting=0.1,
     stopping_decel_rate=0.20,
     start_accel=1.6,
-    jerk_limits=(0.75, 3.0),
+    jerk_limits=(1.0, 3.0),
     brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
@@ -625,7 +626,7 @@ CAR_SPECIFIC_CONFIGS = {
     accel_limits=(-3.5, 2.0),
   ),
 }
-class Cartuning(CarControllerBase):
+class Cartuning(CarControllerBase, ABC):
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
 
