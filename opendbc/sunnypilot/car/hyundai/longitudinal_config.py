@@ -348,12 +348,12 @@ CAR_SPECIFIC_CONFIGS = {
   ),
   CAR.KIA_NIRO_EV: CarTuningConfig(
     vego_stopping=0.25,
-    vego_starting=0.12,
-    stopping_decel_rate=0.2,
+    vego_starting=0.10,
+    stopping_decel_rate=0.15,
     start_accel=1.0,
-    jerk_limits=(0.75, 3.0),
-    brake_response=(1.25, 1.85, 2.55, 3.5),
-    accel_limits=(-3.5, 1.5),
+    jerk_limits=(0.5, 3.0),
+    brake_response=(1.2, 1.5, 2.5, 3.5),
+    accel_limits=(-3.5, 2.0),
   ),
   CAR.KIA_NIRO_EV_2ND_GEN: CarTuningConfig(
     vego_stopping=0.25,
