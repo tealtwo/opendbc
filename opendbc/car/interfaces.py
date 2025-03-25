@@ -140,6 +140,10 @@ class CarInterfaceBase(ABC):
   def get_non_essential_params_sp(cls, car_params, candidate: str) -> structs.CarParamsSP:
     return cls.get_params_sp(car_params, candidate, gen_empty_fingerprint(), list(), False, False)
 
+  def apply_longitudinal_tuning (self):
+    """Apply longitudinal tuning specific
+    to the car's brand. """
+
   @classmethod
   def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw],
                  experimental_long: bool, docs: bool) -> structs.CarParams:
