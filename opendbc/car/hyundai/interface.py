@@ -165,9 +165,6 @@ class CarInterface(CarInterfaceBase):
     if stock_cp.flags & HyundaiFlags.HAS_LDA_BUTTON:
       ret.safetyParam |= HyundaiSafetyFlagsSP.HAS_LDA_BUTTON
 
-    if stock_cp.openpilotLongitudinalControl:
-      HKGLongitudinalController(stock_cp, ret).apply_tune(stock_cp)
-
     return ret
 
   @staticmethod
@@ -186,4 +183,7 @@ class CarInterface(CarInterfaceBase):
     if CP_SP.flags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
       enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
       CP.radarUnavailable = False
+
+  def apply_longitudinal_tuning(self):
+    HKGLongitudinalController(self.CP, self.CP_SP).apply_tune(self.CP)
 
