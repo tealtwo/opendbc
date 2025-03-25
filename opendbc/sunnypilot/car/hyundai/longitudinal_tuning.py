@@ -59,11 +59,11 @@ class HKGLongitudinalTuning:
 
     if self.CP.flags & HyundaiFlags.CANFD.value:
       self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state["jerk"] * 2.0), jerk_max)
-      self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state["jerk"] * 4.0), jerk_max)
+      self.jerk_lower = min(max(1.0, -self.state["jerk"] * 4.0), jerk_max)
       self.cb_upper = self.cb_lower = 0.0
     else:
       self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state["jerk"] * 2.0), jerk_max)
-      self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state["jerk"] * 2.0), jerk_max)
+      self.jerk_lower = min(max(1.0, -self.state["jerk"] * 2.0), jerk_max)
       if self.CP.radarUnavailable:
         self.cb_upper = self.cb_lower = 0.0
       else:
