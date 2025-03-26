@@ -128,6 +128,7 @@ class CarInterfaceBase(ABC):
   @classmethod
   def apply_longitudinal_tuning (cls, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
     """Apply longitudinal tuning specific to the car's brand. """
+    pass
 
 
   @staticmethod
