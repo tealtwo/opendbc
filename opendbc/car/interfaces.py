@@ -125,8 +125,10 @@ class CarInterfaceBase(ABC):
       now_nanos = int(time.monotonic() * 1e9)
     return self.CC.update(c, c_sp, self.CS, now_nanos)
 
-  def apply_longitudinal_tuning (self):
+  @classmethod
+  def apply_longitudinal_tuning (cls, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
     """Apply longitudinal tuning specific to the car's brand. """
+
 
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
@@ -174,8 +176,10 @@ class CarInterfaceBase(ABC):
   def get_params_sp(cls, car_params, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw], experimental_long: bool,
                     docs: bool) -> structs.CarParamsSP:
     car_params_sp = structs.CarParamsSP()
+    ret = cls._get_params_sp(car_params, car_params_sp, candidate, fingerprint, car_fw, experimental_long, docs)
+    cls.apply_longitudinal_tuning(car_params, ret)
 
-    return cls._get_params_sp(car_params, car_params_sp, candidate, fingerprint, car_fw, experimental_long, docs)
+    return ret
 
   @staticmethod
   @abstractmethod

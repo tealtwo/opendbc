@@ -8,7 +8,7 @@ from opendbc.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParam
 from opendbc.car.interfaces import CarControllerBase
 
 from opendbc.sunnypilot.car.hyundai.escc import EsccCarController
-from opendbc.sunnypilot.car.hyundai.longitudinal_tuning import HKGLongitudinalController
+from opendbc.sunnypilot.car.hyundai.longitudinal_tuning import LongitudinalController
 from opendbc.sunnypilot.car.hyundai.mads import MadsCarController
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
@@ -45,12 +45,12 @@ def process_hud_alert(enabled, fingerprint, hud_control):
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
 
-class CarController(CarControllerBase, EsccCarController, HKGLongitudinalController, MadsCarController):
+class CarController(CarControllerBase, EsccCarController, LongitudinalController, MadsCarController):
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     EsccCarController.__init__(self, CP, CP_SP)
     MadsCarController.__init__(self)
-    HKGLongitudinalController.__init__(self, CP, CP_SP)
+    LongitudinalController.__init__(self, CP, CP_SP)
     self.CAN = CanBus(CP)
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_names[Bus.pt])
@@ -64,7 +64,7 @@ class CarController(CarControllerBase, EsccCarController, HKGLongitudinalControl
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
     MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
-    HKGLongitudinalController.update(self, CC.actuators, CS, self.CP, CC.actuators.longControlState)
+    LongitudinalController.update(self, CC, CS, self.CP)
     actuators = CC.actuators
     hud_control = CC.hudControl
 
@@ -87,7 +87,7 @@ class CarController(CarControllerBase, EsccCarController, HKGLongitudinalControl
     self.apply_torque_last = apply_torque
 
     # accel + longitudinal
-    accel = float(np.clip(self.state["accel"], CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+    accel = float(np.clip(self.state.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     stopping = actuators.longControlState == LongCtrlState.stopping
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
 

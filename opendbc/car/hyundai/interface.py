@@ -1,8 +1,8 @@
 from opendbc.car import Bus, get_safety_config, structs
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC, \
-                                       CANFD_UNSUPPORTED_LONGITUDINAL_CAR, \
-                                       UNSUPPORTED_LONGITUDINAL_CAR, HyundaiSafetyFlags
+  CANFD_UNSUPPORTED_LONGITUDINAL_CAR, \
+  UNSUPPORTED_LONGITUDINAL_CAR, HyundaiSafetyFlags
 from opendbc.car.hyundai.radar_interface import RADAR_START_ADDR
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.disable_ecu import disable_ecu
@@ -12,7 +12,7 @@ from opendbc.car.hyundai.radar_interface import RadarInterface
 
 from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
-from opendbc.sunnypilot.car.hyundai.longitudinal_tuning import HKGLongitudinalController
+from opendbc.sunnypilot.car.hyundai.longitudinal_tuning import LongitudinalController
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
@@ -129,6 +129,10 @@ class CarInterface(CarInterfaceBase):
     ret.radarUnavailable = RADAR_START_ADDR not in fingerprint[1] or Bus.radar not in DBC[ret.carFingerprint]
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
     ret.pcmCruise = not ret.openpilotLongitudinalControl
+    ret.startingState = True
+    ret.vEgoStarting = 0.1
+    ret.startAccel = 1.0
+    ret.longitudinalActuatorDelay = 0.5
 
     if ret.openpilotLongitudinalControl:
       ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.LONG.value
@@ -182,8 +186,7 @@ class CarInterface(CarInterfaceBase):
 
     if CP_SP.flags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
       enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
-      CP.radarUnavailable = False
 
-  def apply_longitudinal_tuning(self):
-    HKGLongitudinalController(self.CP, self.CP_SP).apply_tune(self.CP)
-
+  @classmethod
+  def apply_longitudinal_tuning(cls, CP, CP_SP):
+    LongitudinalController(CP, CP_SP).apply_tune(CP)
