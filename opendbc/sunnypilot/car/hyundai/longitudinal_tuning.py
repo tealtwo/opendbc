@@ -1,5 +1,6 @@
 import time
 import numpy as np
+from dataclasses import dataclass
 
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.hyundai.values import HyundaiFlags, CarControllerParams
@@ -16,15 +17,25 @@ class JerkOutput:
     self.cb_upper = cb_upper
     self.cb_lower = cb_lower
 
-class HKGLongitudinalTuning:
+
+@dataclass
+class LongitudinalTuningState:
+  accel_last: float = 0.0
+  accel_last_jerk: float = 0.0
+  jerk: float = 0.0
+
+
+@dataclass
+class LongitudinalState:
+  accel: float = 0.0
+  jerk: JerkOutput | None = None
+
+
+class LongitudinalTuningController:
   """Longitudinal tuning methodology for Hyundai vehicles."""
   def __init__(self, CP: structs.CarParams) -> None:
     self.CP = CP
-    self.state = {
-      "accel_last": 0.0,
-      "accel_last_jerk": 0.0,
-      "jerk": 0.0
-    }
+    self.state = LongitudinalTuningState()
     self.cb_upper = self.cb_lower = 0.0
     self.car_config = Cartuning.get_car_config(self.CP)
     self.DT_CTRL = DT_CTRL
@@ -36,34 +47,34 @@ class HKGLongitudinalTuning:
   def make_jerk(self, CS: structs.CarState) -> float:
     # Handle cancel state to prevent cruise fault
     if CS.out.brakePressed:
-      self.state["accel_last_jerk"] = 0.0
-      self.state["jerk"] = 0.0
+      self.state.accel_last_jerk = 0.0
+      self.state.jerk = 0.0
       self.jerk_upper = 0.0
       self.jerk_lower = 0.0
       self.cb_upper = self.cb_lower = 0.0
       return 0.0
 
     current_accel = CS.out.aEgo
-    self.state["jerk"] = (current_accel - self.state["accel_last_jerk"])
-    self.state["accel_last_jerk"] = current_accel
+    self.state.jerk = (current_accel - self.state.accel_last_jerk)
+    self.state.accel_last_jerk = current_accel
 
     # the jerk division by ΔT (delta time) leads to too high of values of jerk when ΔT is small, which is not realistic
     # when calculating jerk as a time-based derivative, this is a more accurate representation of jerk within OP.
     # Jerk is calculated using current accel - last accel divided by time. It doesn't make sense to use planned accel.
 
-    base_jerk = self.state["jerk"]
+    base_jerk = self.state.jerk
     xp = np.array([-3.0, -2.0, -1.0, 0.0, 1.0, 2.0])
     fp = np.array([-2.0, -1.0, -0.5, 0.0, 0.5, 1.0])
-    self.state["jerk"] = catmull_rom_interp(base_jerk, xp, fp)
+    self.state.jerk = catmull_rom_interp(base_jerk, xp, fp)
     jerk_max = self.car_config.jerk_limits[1]
 
     if self.CP.flags & HyundaiFlags.CANFD.value:
-      self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state["jerk"] * 2.0), jerk_max)
-      self.jerk_lower = min(max(1.0, -self.state["jerk"] * 4.0), jerk_max)
+      self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), jerk_max)
+      self.jerk_lower = min(max(1.0, -self.state.jerk * 4.0), jerk_max)
       self.cb_upper = self.cb_lower = 0.0
     else:
-      self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state["jerk"] * 2.0), jerk_max)
-      self.jerk_lower = min(max(1.0, -self.state["jerk"] * 2.0), jerk_max)
+      self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), jerk_max)
+      self.jerk_lower = min(max(1.0, -self.state.jerk * 2.0), jerk_max)
       if self.CP.radarUnavailable:
         self.cb_upper = self.cb_lower = 0.0
       else:
@@ -75,12 +86,12 @@ class HKGLongitudinalTuning:
         #  # When at low speeds, we don't want ComfortBands to be affecting stopping control.
         #  self.cb_upper = self.cb_lower = 0.0
 
-    return self.state["jerk"]
+    return self.state.jerk
 
   def handle_cruise_cancel(self, CS: structs.CarState):
     """Handle cruise control cancel to prevent faults."""
     if CS.out.brakePressed:
-      self.state["accel_last"] = 0.0
+      self.state.accel_last = 0.0
       return True
     return False
 
@@ -98,13 +109,13 @@ class HKGLongitudinalTuning:
       accel_rate_down = self.DT_CTRL * catmull_rom_interp(brake_ratio,
                                                           np.array([0.25, 0.5, 0.75, 1.0]),
                                                           np.array(self.car_config.brake_response))
-      accel = max(target_accel, self.state["accel_last"] - accel_rate_down)
+      accel = max(target_accel, self.state.accel_last - accel_rate_down)
     else:
       accel = actuators.accel
 
-    target_accel = accel + (target_accel - self.state["accel_last"])
+    target_accel = accel + (target_accel - self.state.accel_last)
     accel = target_accel
-    self.state["accel_last"] = accel
+    self.state.accel_last = accel
     return accel
 
   def calculate_accel(self, actuators: structs.CarControl.Actuators, CS: structs.CarState) -> float:
@@ -125,18 +136,15 @@ class HKGLongitudinalTuning:
     CP.longitudinalActuatorDelay = 0.5
 
 
-class HKGLongitudinalController:
+class LongitudinalController:
   """Longitudinal controller which gets injected into CarControllerParams."""
 
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP = None) -> None:
     self.CP = CP
     self.CP_SP = CP_SP
-    self.tuning = HKGLongitudinalTuning(CP) if self.CP_SP is not None \
-                  and (self.CP_SP.flags & HyundaiFlagsSP.HKGLONGTUNING) else None
-    self.state: dict[str, float | JerkOutput | None] = {
-      "accel": 0.0,
-      "jerk": None
-    }
+    self.tuning = LongitudinalTuningController(CP) if self.CP_SP is not None \
+                  and (self.CP_SP.flags & HyundaiFlagsSP.LONGTUNING) else None
+    self.state = LongitudinalState()
     self.jerk_upper= 0.0
     self.jerk_lower = 0.0
     self.cb_upper = 0.0
@@ -146,7 +154,7 @@ class HKGLongitudinalController:
     self.prev_stop_req = 1                  # 1 means we are stopped
 
   def apply_tune(self, CP: structs.CarParams):
-    if self.CP_SP is not None and (self.CP_SP.flags & HyundaiFlagsSP.HKGLONGTUNING):
+    if self.CP_SP is not None and (self.CP_SP.flags & HyundaiFlagsSP.LONGTUNING):
       self.tuning.apply_tune(CP)
     else:
       CP.vEgoStopping = 0.5
@@ -188,17 +196,18 @@ class HKGLongitudinalController:
   def calculate_accel(self, actuators: structs.CarControl.Actuators, CS: structs.CarState,
                       CP: structs.CarParams) -> float:
     """Calculate acceleration based on tuning and return the value."""
-    if CP.flags & HyundaiFlagsSP.HKGLONGTUNING_BRAKING and self.tuning is not None:
+    if CP.flags & HyundaiFlagsSP.LONGTUNING_BRAKING and self.tuning is not None:
       accel = self.tuning.calculate_accel(actuators, CS)
     else:
       accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     return accel
 
-  def update(self, actuators: structs.CarControl.Actuators, CS: structs.CarState,
-             CP: structs.CarParams, long_control_state: LongCtrlState) -> None:
+  def update(self, CC: structs.CarControl, CS: structs.CarState, CP: structs.CarParams) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
+    actuators = CC.actuators
+    long_control_state = actuators.longControlState
     j = self.calculate_and_get_jerk(CS, long_control_state)
-    self.state["jerk"] = j  # Store the JerkOutput object from our def.
+    self.state.jerk = j  # Store the JerkOutput object from our def.
     stopping = long_control_state == LongCtrlState.stopping
     current_stop_req = 1 if stopping else 0
     stop_req_transition = (self.prev_stop_req == 1 and current_stop_req == 0)
@@ -210,24 +219,18 @@ class HKGLongitudinalController:
     time_since_transition = float(time.monotonic()) - self.stop_req_transition_time
     self.prev_stop_req = current_stop_req
 
-    if self.tuning is not None:
-      # After StopReq changed from 1 to 0, force zero acceleration
-      if stop_req_transition or (current_stop_req == 0 and time_since_transition < self.standstill_delay):
-        #0 m/s² during delay period
-        self.jerk_upper = 0.0
-        self.state["accel"] = 0.0
-        self.jerk_lower = 0.0
-        self.cb_upper = 0.0
-        self.cb_lower = 0.0
-      else:
-        # Normal conditions
-        self.state["accel"] = self.calculate_accel(actuators, CS, CP)
-        self.jerk_upper = j.jerk_upper
-        self.jerk_lower = j.jerk_lower
-        self.cb_upper = j.cb_upper
-        self.cb_lower = j.cb_lower
+    # Check if we should force zero accel
+    force_zero = self.tuning is not None and (stop_req_transition or (current_stop_req == 0 and
+                                              time_since_transition < self.standstill_delay))
+
+    if force_zero:
+      # Force zero acceleration during standstill delay of 0.9 seconds
+      self.state.accel = 0.0
+      self.jerk_upper = self.jerk_lower = 0.0
+      self.cb_upper = self.cb_lower = 0.0
     else:
-      self.state["accel"] = actuators.accel
+      # Not transitioning from stopping
+      self.state.accel = self.calculate_accel(actuators, CS, CP) if self.tuning is not None else actuators.accel
       self.jerk_upper = j.jerk_upper
       self.jerk_lower = j.jerk_lower
       self.cb_upper = j.cb_upper
