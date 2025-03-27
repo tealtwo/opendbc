@@ -11,11 +11,9 @@ from opendbc.sunnypilot.interpolation_utils import catmull_rom_interp
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 class JerkOutput:
-  def __init__(self, jerk_upper, jerk_lower, cb_upper, cb_lower):
+  def __init__(self, jerk_upper, jerk_lower):
     self.jerk_upper = jerk_upper
     self.jerk_lower = jerk_lower
-    self.cb_upper = cb_upper
-    self.cb_lower = cb_lower
 
 
 @dataclass
@@ -36,7 +34,6 @@ class LongitudinalTuningController:
   def __init__(self, CP: structs.CarParams) -> None:
     self.CP = CP
     self.state = LongitudinalTuningState()
-    self.cb_upper = self.cb_lower = 0.0
     self.car_config = Cartuning.get_car_config(self.CP)
     self.DT_CTRL = DT_CTRL
     self.jerk_upper = 0.0
@@ -51,40 +48,35 @@ class LongitudinalTuningController:
       self.state.jerk = 0.0
       self.jerk_upper = 0.0
       self.jerk_lower = 0.0
-      self.cb_upper = self.cb_lower = 0.0
       return 0.0
 
     current_accel = CS.out.aEgo
-    self.state.jerk = (current_accel - self.state.accel_last_jerk)
+    self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.05     # DT_MDL == driving model which equals 0.05
     self.state.accel_last_jerk = current_accel
 
-    # the jerk division by ΔT (delta time) leads to too high of values of jerk when ΔT is small, which is not realistic
-    # when calculating jerk as a time-based derivative, this is a more accurate representation of jerk within OP.
-    # Jerk is calculated using current accel - last accel divided by time. It doesn't make sense to use planned accel.
+    # Jerk is calculated using current accel - last accel divided by ΔT (delta time). It doesn't make sense to use planned accel.
 
     base_jerk = self.state.jerk
-    xp = np.array([-3.0, -2.0, -1.0, 0.0, 1.0, 2.0])
-    fp = np.array([-2.0, -1.0, -0.5, 0.0, 0.5, 1.0])
+    xp = np.array([-5.0, -3.0, -1.0, 1.0, 2.0, 3.0])
+    fp = np.array([-4.0, -2.0, -0.5, 0.0, 1.0, 2.0])
     self.state.jerk = catmull_rom_interp(base_jerk, xp, fp)
-    jerk_max = self.car_config.jerk_limits[1]
+
+    # Jerk is limited by the following conditions imposed by ISO 15622:2018
+    velocity = CS.out.vEgo
+    if velocity < 5.0:
+      decel_jerk_max = self.car_config.jerk_limits[1]
+    elif velocity > 20.0:
+      decel_jerk_max = 2.5
+    else:
+      decel_jerk_max = 5.83 - (velocity / 6)
+    accel_jerk_max = self.car_config.jerk_limits[2]
 
     if self.CP.flags & HyundaiFlags.CANFD.value:
-      self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), jerk_max)
-      self.jerk_lower = min(max(1.0, -self.state.jerk * 4.0), jerk_max)
-      self.cb_upper = self.cb_lower = 0.0
+      self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), accel_jerk_max)
+      self.jerk_lower = min(max(1.0, -self.state.jerk * 4.0), decel_jerk_max)
     else:
-      self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), jerk_max)
-      self.jerk_lower = min(max(1.0, -self.state.jerk * 2.0), jerk_max)
-      if self.CP.radarUnavailable:
-        self.cb_upper = self.cb_lower = 0.0
-      else:
-        self.cb_upper = self.cb_lower = 0.0
-        # if CS.out.vEgo > 12.0:
-        #  self.cb_upper = float(np.clip(0.20 + actuators.accel * 0.20, 0.0, 1.0))
-        #  self.cb_lower = float(np.clip(0.10 + actuators.accel * 0.20, 0.0, 1.0))
-        # else:
-        #  # When at low speeds, we don't want ComfortBands to be affecting stopping control.
-        #  self.cb_upper = self.cb_lower = 0.0
+      self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), accel_jerk_max)
+      self.jerk_lower = min(max(1.0, -self.state.jerk * 2.0), decel_jerk_max)
 
     return self.state.jerk
 
@@ -147,8 +139,6 @@ class LongitudinalController:
     self.state = LongitudinalState()
     self.jerk_upper= 0.0
     self.jerk_lower = 0.0
-    self.cb_upper = 0.0
-    self.cb_lower = 0.0
     self.stop_req_transition_time = 0.0     # Time when StopReq changed from 1 to 0
     self.standstill_delay = 0.9             # Delay in which commands from model are not sent
     self.prev_stop_req = 1                  # 1 means we are stopped
@@ -168,15 +158,11 @@ class LongitudinalController:
       return JerkOutput(
         self.tuning.jerk_upper,
         self.tuning.jerk_lower,
-        self.tuning.cb_upper,
-        self.tuning.cb_lower,
       )
     else:
       return JerkOutput(
         self.jerk_upper,
         self.jerk_lower,
-        self.cb_upper,
-        self.cb_lower,
       )
 
   def calculate_and_get_jerk(self, CS: structs.CarState,
@@ -189,8 +175,6 @@ class LongitudinalController:
 
       self.jerk_upper = jerk_limit
       self.jerk_lower = jerk_limit
-      self.cb_upper = 0.0
-      self.cb_lower = 0.0
     return self.get_jerk()
 
   def calculate_accel(self, actuators: structs.CarControl.Actuators, CS: structs.CarState,
@@ -227,12 +211,8 @@ class LongitudinalController:
       # Force zero acceleration during standstill delay of 0.9 seconds
       self.state.accel = 0.0
       self.jerk_upper = self.jerk_lower = 0.0
-      self.cb_upper = self.cb_lower = 0.0
     else:
       # Not transitioning from stopping
       self.state.accel = self.calculate_accel(actuators, CS, CP) if self.tuning is not None else actuators.accel
       self.jerk_upper = j.jerk_upper
       self.jerk_lower = j.jerk_lower
-      self.cb_upper = j.cb_upper
-      self.cb_lower = j.cb_lower
-

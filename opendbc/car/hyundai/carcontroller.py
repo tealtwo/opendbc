@@ -152,8 +152,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
       use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
       can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, self.jerk_upper,
-                                                      self.jerk_lower, self.cb_upper,
-                                                      self.cb_lower, int(self.frame / 2),
+                                                      self.jerk_lower, int(self.frame / 2),
                                                       hud_control, set_speed_in_units, stopping,
                                                       CC.cruiseControl.override, use_fca, self.CP,
                                                       CS.main_cruise_enabled, self.ESCC))
