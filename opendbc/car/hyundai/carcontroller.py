@@ -82,34 +82,42 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
 
     # angle control
     else:
+      # Example values for curvature-based torque scaling (tune these as needed)
+      CURVATURE_BREAKPOINTS = [0.0, 0.05, 0.1]  # Example curvature values (in 1/m): 0 for straight, 0.1 for very curved
+      TORQUE_VALUES_AT_CURVATURE = [
+        # Corresponding target torque values
+        0.5 * self.params.ANGLE_MAX_TORQUE,  # Lower torque for nearly straight driving
+        0.75 * self.params.ANGLE_MAX_TORQUE, # Medium torque for moderate curvature
+        self.params.ANGLE_MAX_TORQUE         # Full torque for high curvature
+      ]
+
+      # Reset apply_angle_last if the driver is intervening
       if CS.out.steeringPressed:
         self.apply_angle_last = actuators.steeringAngleDeg
       self.apply_angle_last = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
                                                            CS.out.steeringAngleDeg, CC.latActive, self.params.ANGLE_LIMITS)
 
-      # Similar to torque control driver torque override, we ramp up and down the max allowed torque,
-      # but this is a single threshold for simplicity. It also matches the stock system behavior.
+      # Dynamic torque adjustment based on driver override
       USER_OVERRIDING = abs(CS.out.steeringTorque) > self.params.STEER_THRESHOLD
-      NEAR_CENTER_ANGLE = 1.0  # Threshold in degrees to consider "near center"
-      OVERRIDE_CYCLES = 20  # Number of cycles to ramp down to minimum
+      OVERRIDE_CYCLES = 17  # Number of cycles to ramp down to minimum torque
 
       if USER_OVERRIDING:
-        # When the user is overriding, calculate a ramp-down rate that will reach minimum torque in OVERRIDE_CYCLES
+        # When the user is overriding, ramp down the torque gradually
         torque_delta = self.lkas_max_torque - self.params.ANGLE_MIN_TORQUE
-        adaptive_ramp_rate = max(torque_delta / OVERRIDE_CYCLES, 1)  # Ensure we move at least 1 unit per cycle
+        adaptive_ramp_rate = max(torque_delta / OVERRIDE_CYCLES, 1)  # Ensure at least 1 unit per cycle
         self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.params.ANGLE_MIN_TORQUE)
       else:
-        # Calculate target torque based on current speed
-        speed_range = [0, 4]  # Speed threshold for reduced torque effect
-        torque_range = [self.params.ANGLE_MIN_TORQUE * 1.5, self.params.ANGLE_MAX_TORQUE]
-        target_torque = float(np.interp(CS.out.vEgoRaw, speed_range, torque_range))
+        # Calculate target torque based on the absolute curvature value.
+        # Higher curvature should naturally command higher torque.
+        target_torque = float(np.interp(abs(actuators.curvature), CURVATURE_BREAKPOINTS, TORQUE_VALUES_AT_CURVATURE))
 
-        # Reduce torque when near center (when apply_angle_last is close to 0)
+        # Optionally, reduce torque when near center to avoid overreacting on small corrections.
+        NEAR_CENTER_ANGLE = 0.0  # Define a small-angle threshold (in degrees) for "near center"
         if abs(self.apply_angle_last) < NEAR_CENTER_ANGLE:
-          adaptive_max_torque = float(np.interp(abs(self.apply_angle_last), [0, NEAR_CENTER_ANGLE], [.5, 1]))
+          adaptive_max_torque = float(np.interp(abs(self.apply_angle_last), [0, NEAR_CENTER_ANGLE], [0.5, 1.0]))
           target_torque = min(target_torque, self.params.ANGLE_MAX_TORQUE * adaptive_max_torque)
 
-        # Ramp up or down toward the target torque
+        # Ramp up or down toward the target torque smoothly
         if self.lkas_max_torque > target_torque:
           self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_TORQUE_DOWN_RATE, target_torque)
         else:
