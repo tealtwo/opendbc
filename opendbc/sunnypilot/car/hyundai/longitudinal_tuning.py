@@ -30,7 +30,7 @@ class LongitudinalState:
 
 
 class LongitudinalTuningController:
-  """Longitudinal tuning methodology for Hyundai vehicles."""
+  """Longitudinal tuning methodology for HKG"""
   def __init__(self, CP: structs.CarParams) -> None:
     self.CP = CP
     self.state = LongitudinalTuningState()
@@ -117,7 +117,6 @@ class LongitudinalTuningController:
     accel = self.calculate_limited_accel(actuators, CS)
     return float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
-
   def apply_tune(self, CP: structs.CarParams) -> None:
     config = self.car_config
     CP.vEgoStopping = config.vego_stopping
@@ -139,9 +138,9 @@ class LongitudinalController:
     self.state = LongitudinalState()
     self.jerk_upper= 0.0
     self.jerk_lower = 0.0
-    self.stop_req_transition_time = 0.0     # Time when StopReq changed from 1 to 0
+    self.stop_req_transition_time = 0.0     # Time when StopReq changed from 1 to 0 (note: StopReq uses stopping)
     self.standstill_delay = 0.9             # Delay in which commands from model are not sent
-    self.prev_stop_req = 1                  # 1 means we are stopped
+    self.prev_stop_req = 1                  # 1 == stopped
 
   def apply_tune(self, CP: structs.CarParams):
     if self.CP_SP is not None and (self.CP_SP.flags & HyundaiFlagsSP.LONGTUNING):
@@ -213,6 +212,6 @@ class LongitudinalController:
       self.jerk_upper = self.jerk_lower = 0.0
     else:
       # Not transitioning from stopping
-      self.state.accel = self.calculate_accel(actuators, CS, CP) if self.tuning is not None else actuators.accel
+      self.state.accel = self.calculate_accel(actuators, CS, CP)
       self.jerk_upper = j.jerk_upper
       self.jerk_lower = j.jerk_lower
