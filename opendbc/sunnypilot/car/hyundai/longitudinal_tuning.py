@@ -73,10 +73,10 @@ class LongitudinalTuningController:
 
     if self.CP.flags & HyundaiFlags.CANFD.value:
       self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), accel_jerk_max)
-      self.jerk_lower = min(max(1.0, -self.state.jerk * 4.0), decel_jerk_max)
+      self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state.jerk * 4.0), decel_jerk_max)
     else:
       self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), accel_jerk_max)
-      self.jerk_lower = min(max(1.0, -self.state.jerk * 2.0), decel_jerk_max)
+      self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state.jerk * 2.0), decel_jerk_max)
 
     return self.state.jerk
 
