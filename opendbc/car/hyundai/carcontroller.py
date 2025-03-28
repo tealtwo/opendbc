@@ -83,7 +83,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     # angle control
     else:
       # Example values for curvature-based torque scaling (tune these as needed)
-      CURVATURE_BREAKPOINTS = [0.0, 0.03, 0.6]  # Example curvature values (in 1/m): 0 for straight, 0.1 for very curved
+      CURVATURE_BREAKPOINTS = [0.0, 0.02, 0.35]  # Example curvature values (in 1/m): 0 for straight, 0.1 for very curved
       TORQUE_VALUES_AT_CURVATURE = [
         # Corresponding target torque values
         0.5 * self.params.ANGLE_MAX_TORQUE,  # Lower torque for nearly straight driving
