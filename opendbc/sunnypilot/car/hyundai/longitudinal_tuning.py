@@ -50,16 +50,10 @@ class LongitudinalTuningController:
       self.jerk_lower = 0.0
       return 0.0
 
+    # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CS.out.aEgo
     self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.05     # DT_MDL == driving model which equals 0.05
     self.state.accel_last_jerk = current_accel
-
-    # Jerk is calculated using current accel - last accel divided by ΔT (delta time). It doesn't make sense to use planned accel.
-
-    base_jerk = self.state.jerk
-    xp = np.array([-5.0, -3.0, -1.0, 1.0, 2.0, 3.0])
-    fp = np.array([-4.0, -2.0, -0.5, 0.0, 1.0, 2.0])
-    self.state.jerk = catmull_rom_interp(base_jerk, xp, fp)
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
     velocity = CS.out.vEgo
@@ -69,7 +63,7 @@ class LongitudinalTuningController:
       decel_jerk_max = 2.5
     else:
       decel_jerk_max = 5.83 - (velocity / 6)
-    accel_jerk_max = self.car_config.jerk_limits[2]
+    accel_jerk_max = self.car_config.jerk_limits[2] if LongCtrlState == LongCtrlState.pid else 1.0
 
     if self.CP.flags & HyundaiFlags.CANFD.value:
       self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), accel_jerk_max)
@@ -94,8 +88,8 @@ class LongitudinalTuningController:
     self.make_jerk(CS)
     target_accel = actuators.accel
 
-    # Normal operation = above ~29mph also known as 13 m/s
-    if CS.out.vEgo > 13.0 and target_accel < 0.01:
+    # Normal operation = above 13 m/s
+    if CS.out.vEgo > 17.0 and target_accel < 0.01:
       brake_ratio = np.clip(abs(target_accel / self.car_config.accel_limits[0]), 0.0, 1.0)
       # Array comes from longitudinal_config.py, 1.0 = -3.5 accel, which will never be less than -3.5 EVER
       accel_rate_down = self.DT_CTRL * catmull_rom_interp(brake_ratio,

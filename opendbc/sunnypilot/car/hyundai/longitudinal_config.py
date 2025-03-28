@@ -12,7 +12,7 @@ class CarTuningConfig:
   vego_starting: float
   stopping_decel_rate: float
   start_accel: float
-  jerk_limits: tuple[float, float, float]  # (min, max decel jerk, max accel jerk)
+  jerk_limits: tuple[float, float, float]  # (min, max lower jerk, max upper jerk)
   brake_response: tuple[float, float, float, float]
   accel_limits: tuple[float, float]  # (min, max)
 
