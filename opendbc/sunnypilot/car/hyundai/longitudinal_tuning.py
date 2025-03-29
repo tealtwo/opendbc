@@ -88,7 +88,7 @@ class LongitudinalTuningController:
     self.make_jerk(CS)
     target_accel = actuators.accel
 
-    # Normal operation = above 13 m/s
+    # Normal operation = above 17 m/s
     if CS.out.vEgo > 17.0 and target_accel < 0.01:
       brake_ratio = np.clip(abs(target_accel / self.car_config.accel_limits[0]), 0.0, 1.0)
       # Array comes from longitudinal_config.py, 1.0 = -3.5 accel, which will never be less than -3.5 EVER
