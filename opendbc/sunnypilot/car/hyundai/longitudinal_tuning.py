@@ -1,4 +1,3 @@
-import time
 import numpy as np
 from dataclasses import dataclass
 
@@ -179,7 +178,7 @@ class LongitudinalController:
       accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     return accel
 
-  def update(self, CC: structs.CarControl, CS: structs.CarState, CP: structs.CarParams) -> None:
+  def update(self, CC: structs.CarControl, CS: structs.CarState, CP: structs.CarParams, frame: int) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
     actuators = CC.actuators
     long_control_state = actuators.longControlState
@@ -190,10 +189,10 @@ class LongitudinalController:
     stop_req_transition = (self.prev_stop_req == 1 and current_stop_req == 0)
 
     if stop_req_transition:
-      self.stop_req_transition_time = float(time.monotonic())
+      self.stop_req_transition_time = frame
 
     # Time since transition
-    time_since_transition = float(time.monotonic()) - self.stop_req_transition_time
+    time_since_transition = (frame - self.stop_req_transition_time) * DT_CTRL
     self.prev_stop_req = current_stop_req
 
     # Check if we should force zero accel
