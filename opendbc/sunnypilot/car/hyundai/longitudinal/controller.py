@@ -29,7 +29,6 @@ class LongitudinalController:
   """Longitudinal controller which gets injected into CarControllerParams."""
 
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
-    self.CP = CP
     self.CP_SP = CP_SP
     self.tuning = LongitudinalTuningController(CP) if self.CP_SP is not None \
                   and (self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING) else None
@@ -38,6 +37,7 @@ class LongitudinalController:
     self.jerk_lower = 0.0
     self.stop_req_transition_time = 0.0  # Time when StopReq changed from 1 to 0 (note: StopReq uses stopping)
     self.prev_stop_req = 1  # 1 == stopped
+
 
   def apply_tune(self, CP: structs.CarParams):
     if self.CP_SP is not None and (self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING):
