@@ -130,7 +130,7 @@ class LongitudinalController:
     self.CP = CP
     self.CP_SP = CP_SP
     self.tuning = LongitudinalTuningController(CP) if self.CP_SP is not None \
-                  and (self.CP_SP.flags & HyundaiFlagsSP.LONGTUNING) else None
+                  and (self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING) else None
     self.state = LongitudinalState()
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
@@ -139,7 +139,7 @@ class LongitudinalController:
     self.prev_stop_req = 1  # 1 == stopped
 
   def apply_tune(self, CP: structs.CarParams):
-    if self.CP_SP is not None and (self.CP_SP.flags & HyundaiFlagsSP.LONGTUNING):
+    if self.CP_SP is not None and (self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING):
       self.tuning.apply_tune(CP)
     else:
       CP.vEgoStopping = 0.5
