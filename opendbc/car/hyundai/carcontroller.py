@@ -83,13 +83,12 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     # angle control
     else:
       # Example values for curvature-based torque scaling (tune these as needed)
-      CURVATURE_BREAKPOINTS = [0.0, 0.02, 0.35]  # Example curvature values (in 1/m): 0 for straight, 0.1 for very curved
-      TORQUE_VALUES_AT_CURVATURE = [
-        # Corresponding target torque values
-        0.5 * self.params.ANGLE_MAX_TORQUE,  # Lower torque for nearly straight driving
-        0.75 * self.params.ANGLE_MAX_TORQUE, # Medium torque for moderate curvature
-        self.params.ANGLE_MAX_TORQUE         # Full torque for high curvature
-      ]
+      CURVATURE_BREAKPOINTS = [0.0, 0.003, 0.01, 0.018, 0.025]
+      TORQUE_VALUES_AT_CURVATURE = [0.25 * self.params.ANGLE_MAX_TORQUE,
+                                    0.5 * self.params.ANGLE_MAX_TORQUE,
+                                    0.65 * self.params.ANGLE_MAX_TORQUE,
+                                    0.75 * self.params.ANGLE_MAX_TORQUE,
+                                    self.params.ANGLE_MAX_TORQUE]
 
       # Reset apply_angle_last if the driver is intervening
       if CS.out.steeringPressed:
