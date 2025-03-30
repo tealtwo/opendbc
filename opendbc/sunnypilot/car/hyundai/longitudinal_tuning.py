@@ -126,7 +126,7 @@ class LongitudinalTuningController:
 class LongitudinalController:
   """Longitudinal controller which gets injected into CarControllerParams."""
 
-  def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP = None) -> None:
+  def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
     self.CP = CP
     self.CP_SP = CP_SP
     self.tuning = LongitudinalTuningController(CP) if self.CP_SP is not None \
