@@ -83,11 +83,14 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     # angle control
     else:
       # Example values for curvature-based torque scaling (tune these as needed)
+      speed_multiplier = np.interp(CS.out.vEgoRaw, [0, 16.67, 30.0], [1.0, 1.4, 1.8])
       CURVATURE_BREAKPOINTS = [0.0, 0.003, 0.01, 0.018, 0.025]
-      TORQUE_VALUES_AT_CURVATURE = [0.25 * self.params.ANGLE_MAX_TORQUE,
-                                    0.5 * self.params.ANGLE_MAX_TORQUE,
-                                    0.65 * self.params.ANGLE_MAX_TORQUE,
-                                    0.75 * self.params.ANGLE_MAX_TORQUE,
+
+      # Define torque values at different curvature breakpoints factoring in speed.
+      TORQUE_VALUES_AT_CURVATURE = [0.25 * self.params.ANGLE_MAX_TORQUE * speed_multiplier,
+                                    0.50 * self.params.ANGLE_MAX_TORQUE * speed_multiplier,
+                                    0.65 * self.params.ANGLE_MAX_TORQUE * speed_multiplier,
+                                    0.75 * self.params.ANGLE_MAX_TORQUE * speed_multiplier,
                                     self.params.ANGLE_MAX_TORQUE]
 
       # Reset apply_angle_last if the driver is intervening
