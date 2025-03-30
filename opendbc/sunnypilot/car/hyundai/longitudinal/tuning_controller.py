@@ -70,8 +70,9 @@ class LongitudinalTuningController:
       return True
     return False
 
-  def calculate_limited_accel(self, actuators: structs.CarControl.Actuators, CS: structs.CarState) -> float:
+  def calculate_limited_accel(self, CC: structs.CarControl, CS: structs.CarState) -> float:
     """Adaptive acceleration limiting."""
+    actuators = CC.actuators
     if self.handle_cruise_cancel(CS):
       return actuators.accel
     self.make_jerk(CS)
@@ -93,11 +94,11 @@ class LongitudinalTuningController:
     self.state.accel_last = accel
     return accel
 
-  def calculate_accel(self, actuators: structs.CarControl.Actuators, CS: structs.CarState) -> float:
+  def calculate_accel(self, CC: structs.CarControl, CS: structs.CarState) -> float:
     """Calculate acceleration with cruise control status handling."""
     if self.handle_cruise_cancel(CS):
       return 0.0
-    accel = self.calculate_limited_accel(actuators, CS)
+    accel = self.calculate_limited_accel(CC, CS)
     return float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
   def apply_tune(self, CP: structs.CarParams) -> None:

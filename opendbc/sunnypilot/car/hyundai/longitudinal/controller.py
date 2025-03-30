@@ -70,12 +70,12 @@ class LongitudinalController:
       self.jerk_lower = jerk_limit
     return self.get_jerk()
 
-  def calculate_accel(self, actuators: structs.CarControl.Actuators, CS: structs.CarState, CP: structs.CarParams) -> float:
+  def calculate_accel(self, CC: structs.CarControl, CS: structs.CarState, CP: structs.CarParams) -> float:
     """Calculate acceleration based on tuning and return the value."""
     if CP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING and self.tuning is not None:
-      accel = self.tuning.calculate_accel(actuators, CS)
+      accel = self.tuning.calculate_accel(CC, CS)
     else:
-      accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+      accel = float(np.clip(CC.actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     return accel
 
   def update(self, CC: structs.CarControl, CS: structs.CarState, CP: structs.CarParams, frame: int) -> None:
@@ -104,6 +104,6 @@ class LongitudinalController:
       self.jerk_upper = self.jerk_lower = 0.0
     else:
       # Not transitioning from stopping
-      self.state.accel = self.calculate_accel(actuators, CS, CP)
+      self.state.accel = self.calculate_accel(CC, CS, CP)
       self.jerk_upper = j.jerk_upper
       self.jerk_lower = j.jerk_lower
