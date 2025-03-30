@@ -35,7 +35,7 @@ class LongitudinalController:
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
     self.stop_req_transition_time = 0.0  # Time when StopReq changed from 1 to 0 (note: StopReq uses stopping)
-    self.prev_stop_req = 1  # 1 == stopped
+    self.prev_stop_req = True  # True == stopped
 
   def get_jerk(self) -> JerkOutput:
     if self.tuning is not None:
@@ -72,11 +72,13 @@ class LongitudinalController:
     """Inject Longitudinal Controls for HKG Vehicles."""
     actuators = CC.actuators
     long_control_state = actuators.longControlState
-    j = self.calculate_and_get_jerk(CS, long_control_state)
-    self.state.jerk = j  # Store the JerkOutput object from our def.
+
+    jerk_output = self.calculate_and_get_jerk(CS, long_control_state)
+    self.state.jerk = jerk_output  # Store the JerkOutput object from our def.
+
     stopping = long_control_state == LongCtrlState.stopping
-    current_stop_req = 1 if stopping else 0
-    stop_req_transition = (self.prev_stop_req == 1 and current_stop_req == 0)
+    current_stop_req = stopping
+    stop_req_transition = (self.prev_stop_req and not current_stop_req)
 
     if stop_req_transition:
       self.stop_req_transition_time = frame
@@ -85,8 +87,9 @@ class LongitudinalController:
     time_since_transition = (frame - self.stop_req_transition_time) * DT_CTRL
     self.prev_stop_req = current_stop_req
 
-    # Check if we should force zero accel
-    force_zero = self.tuning is not None and (stop_req_transition or (current_stop_req == 0 and time_since_transition < STANDSTILL_DELAY))
+    # Determine if zero acceleration should be forced
+    in_standstill_delay = not current_stop_req and time_since_transition < STANDSTILL_DELAY
+    force_zero = self.tuning is not None and (stop_req_transition or in_standstill_delay)
 
     if force_zero:
       # Force zero acceleration during standstill delay of 0.9 seconds
@@ -95,5 +98,5 @@ class LongitudinalController:
     else:
       # Not transitioning from stopping
       self.state.accel = self.calculate_accel(CC, CS, CP)
-      self.jerk_upper = j.jerk_upper
-      self.jerk_lower = j.jerk_lower
+      self.jerk_upper = jerk_output.jerk_upper
+      self.jerk_lower = jerk_output.jerk_lower
