@@ -87,12 +87,3 @@ class LongitudinalTuningController:
 
     accel = self.calculate_limited_accel(CC, CS)
     return float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
-
-  def apply_tune(self, CP: structs.CarParams) -> None:
-    config = self.car_config
-    CP.vEgoStopping = config.v_ego_stopping
-    CP.vEgoStarting = config.v_ego_starting
-    CP.stoppingDecelRate = config.stopping_decel_rate
-    CP.startAccel = config.start_accel
-    CP.startingState = True
-    CP.longitudinalActuatorDelay = 0.5

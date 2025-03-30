@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import CarControllerParams
+from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_longitudinal_tune
 from opendbc.sunnypilot.car.hyundai.longitudinal.tuning_controller import LongitudinalTuningController
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
@@ -40,7 +41,7 @@ class LongitudinalController:
 
   def apply_tune(self, CP: structs.CarParams):
     if self.CP_SP is not None and (self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING):
-      self.tuning.apply_tune(CP)
+      get_longitudinal_tune(CP)
     else:
       CP.vEgoStopping = 0.5
       CP.vEgoStarting = 0.1

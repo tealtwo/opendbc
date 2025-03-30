@@ -12,7 +12,7 @@ from opendbc.car.hyundai.radar_interface import RadarInterface
 
 from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
-from opendbc.sunnypilot.car.hyundai.longitudinal.controller import LongitudinalController
+from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_longitudinal_tune
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
@@ -189,4 +189,4 @@ class CarInterface(CarInterfaceBase):
 
   @classmethod
   def apply_longitudinal_tuning(cls, CP, CP_SP):
-    LongitudinalController(CP, CP_SP).apply_tune(CP)
+    get_longitudinal_tune(CP)

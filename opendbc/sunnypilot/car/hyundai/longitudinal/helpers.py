@@ -15,3 +15,13 @@ def get_car_config(CP: structs.CarParams) -> CarTuningConfig:
       car_config = TUNING_CONFIGS["ICE"]
 
   return car_config
+
+
+def get_longitudinal_tune(CP: structs.CarParams) -> None:
+  config = get_car_config(CP)
+  CP.vEgoStopping = config.v_ego_stopping
+  CP.vEgoStarting = config.v_ego_starting
+  CP.stoppingDecelRate = config.stopping_decel_rate
+  CP.startAccel = config.start_accel
+  CP.startingState = True
+  CP.longitudinalActuatorDelay = 0.5
