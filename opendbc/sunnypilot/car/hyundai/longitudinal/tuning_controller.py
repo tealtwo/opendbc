@@ -23,8 +23,7 @@ class LongitudinalTuningController:
   def __init__(self, CP: structs.CarParams) -> None:
     self.CP = CP
     self.state = LongitudinalTuningState()
-    self.car_config = Cartuning.get_car_config(self.CP)
-    self.DT_CTRL = DT_CTRL
+    self.car_config = Cartuning.get_car_config(CP)
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
     self.last_decel_time = 0.0
@@ -69,9 +68,9 @@ class LongitudinalTuningController:
     if CS.out.vEgo > 17.0 and target_accel < 0.01:
       brake_ratio = np.clip(abs(target_accel / self.car_config.accel_limits[0]), 0.0, 1.0)
       # Array comes from longitudinal_config.py, 1.0 = -3.5 accel, which will never be less than -3.5 EVER
-      accel_rate_down = self.DT_CTRL * catmull_rom_interp(brake_ratio,
-                                                          np.array([0.25, 0.5, 0.75, 1.0]),
-                                                          np.array(self.car_config.brake_response))
+      accel_rate_down = DT_CTRL * catmull_rom_interp(brake_ratio,
+                                                     np.array([0.25, 0.5, 0.75, 1.0]),
+                                                     np.array(self.car_config.brake_response))
       accel = max(target_accel, self.state.accel_last - accel_rate_down)
     else:
       accel = actuators.accel
