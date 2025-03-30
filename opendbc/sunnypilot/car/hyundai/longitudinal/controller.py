@@ -85,7 +85,8 @@ class LongitudinalController:
     if force_zero:
       # Force zero acceleration during standstill delay of 0.9 seconds
       self.state.accel = 0.0
-      self.jerk_upper = self.jerk_lower = 0.0
+      self.jerk_upper = 0.0
+      self.jerk_lower = 0.0
     else:
       # Not transitioning from stopping
       self.state.accel = self.calculate_accel(CC, CS, CP)
