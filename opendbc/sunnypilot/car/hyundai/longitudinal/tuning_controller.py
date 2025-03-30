@@ -49,14 +49,11 @@ class LongitudinalTuningController:
       decel_jerk_max = 2.5
     else:
       decel_jerk_max = 5.83 - (velocity / 6)
-    accel_jerk_max = self.car_config.jerk_limits[2] if LongCtrlState == LongCtrlState.pid else 1.0
 
-    if self.CP.flags & HyundaiFlags.CANFD.value:
-      self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), accel_jerk_max)
-      self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state.jerk * 4.0), decel_jerk_max)
-    else:
-      self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), accel_jerk_max)
-      self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state.jerk * 2.0), decel_jerk_max)
+    accel_jerk_max = self.car_config.jerk_limits[2] if LongCtrlState == LongCtrlState.pid else 1.0
+    jerk_lower_multiplier = 4.0 if self.CP.flags & HyundaiFlags.CANFD else 2.0
+    self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), accel_jerk_max)
+    self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state.jerk * jerk_lower_multiplier), decel_jerk_max)
 
   def calculate_limited_accel(self, CC: structs.CarControl, CS: structs.CarState) -> float:
     """Adaptive acceleration limiting."""
