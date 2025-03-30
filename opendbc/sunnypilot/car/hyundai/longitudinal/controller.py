@@ -2,6 +2,7 @@ import numpy as np
 from dataclasses import dataclass
 
 from opendbc.car import DT_CTRL, structs
+from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import CarControllerParams
 from opendbc.sunnypilot.car.hyundai.longitudinal.tuning_controller import LongitudinalTuningController
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
@@ -59,7 +60,7 @@ class LongitudinalController:
         self.jerk_lower,
       )
 
-  def calculate_and_get_jerk(self, CS: structs.CarState, long_control_state: LongCtrlState) -> JerkOutput:
+  def calculate_and_get_jerk(self, CS: CarStateBase, long_control_state: LongCtrlState) -> JerkOutput:
     """Calculate jerk based on tuning and return JerkOutput."""
     if self.tuning is not None:
       self.tuning.make_jerk(CS)
@@ -70,7 +71,7 @@ class LongitudinalController:
       self.jerk_lower = jerk_limit
     return self.get_jerk()
 
-  def calculate_accel(self, CC: structs.CarControl, CS: structs.CarState, CP: structs.CarParams) -> float:
+  def calculate_accel(self, CC: structs.CarControl, CS: CarStateBase, CP: structs.CarParams) -> float:
     """Calculate acceleration based on tuning and return the value."""
     if CP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING and self.tuning is not None:
       accel = self.tuning.calculate_accel(CC, CS)
@@ -78,7 +79,7 @@ class LongitudinalController:
       accel = float(np.clip(CC.actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     return accel
 
-  def update(self, CC: structs.CarControl, CS: structs.CarState, CP: structs.CarParams, frame: int) -> None:
+  def update(self, CC: structs.CarControl, CS: CarStateBase, CP: structs.CarParams, frame: int) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
     actuators = CC.actuators
     long_control_state = actuators.longControlState

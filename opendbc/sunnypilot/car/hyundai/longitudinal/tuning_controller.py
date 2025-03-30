@@ -2,6 +2,7 @@ import numpy as np
 from dataclasses import dataclass
 
 from opendbc.car import DT_CTRL, structs
+from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import HyundaiFlags, CarControllerParams
 
 from opendbc.sunnypilot.car.hyundai.longitudinal_config import Cartuning
@@ -35,7 +36,7 @@ class LongitudinalTuningController:
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
 
-  def make_jerk(self, CS: structs.CarState) -> None:
+  def make_jerk(self, CS: CarStateBase) -> None:
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CS.out.aEgo
     self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.05  # DT_MDL == driving model which equals 0.05
@@ -55,7 +56,7 @@ class LongitudinalTuningController:
     self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), accel_jerk_max)
     self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state.jerk * jerk_lower_multiplier), decel_jerk_max)
 
-  def calculate_limited_accel(self, CC: structs.CarControl, CS: structs.CarState) -> float:
+  def calculate_limited_accel(self, CC: structs.CarControl, CS: CarStateBase) -> float:
     """Adaptive acceleration limiting."""
     actuators = CC.actuators
     self.make_jerk(CS)
@@ -77,7 +78,7 @@ class LongitudinalTuningController:
     self.state.accel_last = accel
     return accel
 
-  def calculate_accel(self, CC: structs.CarControl, CS: structs.CarState) -> float:
+  def calculate_accel(self, CC: structs.CarControl, CS: CarStateBase) -> float:
     """Calculate acceleration with cruise control status handling."""
     if not CC.enabled:
       self.reset_jerk()
