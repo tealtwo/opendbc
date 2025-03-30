@@ -5,7 +5,7 @@ from opendbc.car import DT_CTRL, structs
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import HyundaiFlags, CarControllerParams
 
-from opendbc.sunnypilot.car.hyundai.longitudinal_config import Cartuning
+from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
 from opendbc.sunnypilot.interpolation_utils import catmull_rom_interp
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -24,7 +24,7 @@ class LongitudinalTuningController:
   def __init__(self, CP: structs.CarParams) -> None:
     self.CP = CP
     self.state = LongitudinalTuningState()
-    self.car_config = Cartuning.get_car_config(CP)
+    self.car_config = get_car_config(CP)
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
     self.last_decel_time = 0.0

@@ -1,9 +1,6 @@
-from abc import ABC
 from dataclasses import dataclass
 
-from opendbc.car import structs
-from opendbc.car.hyundai.values import CAR, HyundaiFlags
-from opendbc.car.interfaces import CarControllerBase
+from opendbc.car.hyundai.values import CAR
 
 
 @dataclass
@@ -47,6 +44,7 @@ TUNING_CONFIGS = {
     accel_limits=(-3.5, 2.0),
   )
 }
+
 # Car-specific configs
 CAR_SPECIFIC_CONFIGS = {
   CAR.KIA_NIRO_EV: CarTuningConfig(
@@ -59,23 +57,3 @@ CAR_SPECIFIC_CONFIGS = {
     accel_limits=(-3.5, 2.0),
   )
 }
-
-
-class Cartuning(CarControllerBase, ABC):
-  def __init__(self, dbc_names, CP, CP_SP):
-    CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
-
-  @staticmethod
-  def get_car_config(CP: structs.CarParams) -> CarTuningConfig:
-    # Get car type flags from specific configs or determine from car flags
-    car_config = CAR_SPECIFIC_CONFIGS.get(CP.carFingerprint)
-    # If car is not in specific configs, determine from flags
-    if car_config is None:
-      if CP.flags & HyundaiFlags.EV:
-        car_config = TUNING_CONFIGS["EV"]
-      elif CP.flags & HyundaiFlags.HYBRID:
-        car_config = TUNING_CONFIGS["HYBRID"]
-      else:
-        car_config = TUNING_CONFIGS["ICE"]
-
-    return car_config
