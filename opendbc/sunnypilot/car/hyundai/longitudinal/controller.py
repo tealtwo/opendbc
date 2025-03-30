@@ -34,8 +34,7 @@ class LongitudinalController:
     self.state = LongitudinalState()
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
-    self.stop_req_transition_time = 0.0  # Time when StopReq changed from 1 to 0 (note: StopReq uses stopping)
-    self.prev_stop_req = True  # True == stopped
+    self.last_stop_req_frame = 0  # Time when StopReq changed from 1 to 0 (note: StopReq uses stopping)
 
   def get_jerk(self) -> JerkOutput:
     if self.tuning is not None:
@@ -76,20 +75,12 @@ class LongitudinalController:
     jerk_output = self.calculate_and_get_jerk(CS, long_control_state)
     self.state.jerk = jerk_output  # Store the JerkOutput object from our def.
 
-    stopping = long_control_state == LongCtrlState.stopping
-    current_stop_req = stopping
-    stop_req_transition = (self.prev_stop_req and not current_stop_req)
-
-    if stop_req_transition:
-      self.stop_req_transition_time = frame
-
-    # Time since transition
-    time_since_transition = (frame - self.stop_req_transition_time) * DT_CTRL
-    self.prev_stop_req = current_stop_req
-
     # Determine if zero acceleration should be forced
-    in_standstill_delay = not current_stop_req and time_since_transition < STANDSTILL_DELAY
-    force_zero = self.tuning is not None and (stop_req_transition or in_standstill_delay)
+    if long_control_state == LongCtrlState.stopping:
+      self.last_stop_req_frame = frame
+
+    in_standstill_delay = (frame - self.last_stop_req_frame) * DT_CTRL < STANDSTILL_DELAY
+    force_zero = self.tuning is not None and in_standstill_delay
 
     if force_zero:
       # Force zero acceleration during standstill delay of 0.9 seconds
