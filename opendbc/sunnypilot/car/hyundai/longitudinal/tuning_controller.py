@@ -30,15 +30,13 @@ class LongitudinalTuningController:
     self.last_decel_time = 0.0
     self.min_cancel_delay = 0.1
 
-  def make_jerk(self, CS: structs.CarState) -> float:
-    # Handle cancel state to prevent cruise fault
-    if CS.out.brakePressed:
-      self.state.accel_last_jerk = 0.0
-      self.state.jerk = 0.0
-      self.jerk_upper = 0.0
-      self.jerk_lower = 0.0
-      return 0.0
+  def reset_jerk(self) -> None:
+    self.state.accel_last_jerk = 0.0
+    self.state.jerk = 0.0
+    self.jerk_upper = 0.0
+    self.jerk_lower = 0.0
 
+  def make_jerk(self, CS: structs.CarState) -> None:
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CS.out.aEgo
     self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.05  # DT_MDL == driving model which equals 0.05
@@ -61,20 +59,9 @@ class LongitudinalTuningController:
       self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), accel_jerk_max)
       self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state.jerk * 2.0), decel_jerk_max)
 
-    return self.state.jerk
-
-  def handle_cruise_cancel(self, CS: structs.CarState):
-    """Handle cruise control cancel to prevent faults."""
-    if CS.out.brakePressed:
-      self.state.accel_last = 0.0
-      return True
-    return False
-
   def calculate_limited_accel(self, CC: structs.CarControl, CS: structs.CarState) -> float:
     """Adaptive acceleration limiting."""
     actuators = CC.actuators
-    if self.handle_cruise_cancel(CS):
-      return actuators.accel
     self.make_jerk(CS)
     target_accel = actuators.accel
 
@@ -96,8 +83,11 @@ class LongitudinalTuningController:
 
   def calculate_accel(self, CC: structs.CarControl, CS: structs.CarState) -> float:
     """Calculate acceleration with cruise control status handling."""
-    if self.handle_cruise_cancel(CS):
+    if not CC.enabled:
+      self.reset_jerk()
+      self.state.accel_last = 0.0
       return 0.0
+
     accel = self.calculate_limited_accel(CC, CS)
     return float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
