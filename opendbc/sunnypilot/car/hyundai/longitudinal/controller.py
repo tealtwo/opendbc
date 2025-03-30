@@ -31,7 +31,7 @@ class LongitudinalController:
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
     self.CP_SP = CP_SP
     self.tuning = LongitudinalTuningController(CP) if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING else None
-    self.state = LongitudinalState()
+    self.long_state = LongitudinalState()
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
     self.last_stop_req_frame = 0  # Time when StopReq changed from 1 to 0 (note: StopReq uses stopping)
@@ -73,7 +73,7 @@ class LongitudinalController:
     long_control_state = actuators.longControlState
 
     jerk_output = self.calculate_and_get_jerk(CS, long_control_state)
-    self.state.jerk = jerk_output  # Store the JerkOutput object from our def.
+    self.long_state.jerk = jerk_output  # Store the JerkOutput object from our def.
 
     # Determine if zero acceleration should be forced
     if long_control_state == LongCtrlState.stopping:
@@ -84,11 +84,11 @@ class LongitudinalController:
 
     if force_zero:
       # Force zero acceleration during standstill delay of 0.9 seconds
-      self.state.accel = 0.0
+      self.long_state.accel = 0.0
       self.jerk_upper = 0.0
       self.jerk_lower = 0.0
     else:
       # Not transitioning from stopping
-      self.state.accel = self.calculate_accel(CC, CS, CP)
+      self.long_state.accel = self.calculate_accel(CC, CS, CP)
       self.jerk_upper = jerk_output.jerk_upper
       self.jerk_lower = jerk_output.jerk_lower
