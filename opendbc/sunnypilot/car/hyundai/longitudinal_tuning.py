@@ -10,6 +10,7 @@ from opendbc.sunnypilot.interpolation_utils import catmull_rom_interp
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
+
 class JerkOutput:
   def __init__(self, jerk_upper, jerk_lower):
     self.jerk_upper = jerk_upper
@@ -31,6 +32,7 @@ class LongitudinalState:
 
 class LongitudinalTuningController:
   """Longitudinal tuning methodology for HKG"""
+
   def __init__(self, CP: structs.CarParams) -> None:
     self.CP = CP
     self.state = LongitudinalTuningState()
@@ -52,7 +54,7 @@ class LongitudinalTuningController:
 
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CS.out.aEgo
-    self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.05     # DT_MDL == driving model which equals 0.05
+    self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.05  # DT_MDL == driving model which equals 0.05
     self.state.accel_last_jerk = current_accel
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
@@ -130,11 +132,11 @@ class LongitudinalController:
     self.tuning = LongitudinalTuningController(CP) if self.CP_SP is not None \
                   and (self.CP_SP.flags & HyundaiFlagsSP.LONGTUNING) else None
     self.state = LongitudinalState()
-    self.jerk_upper= 0.0
+    self.jerk_upper = 0.0
     self.jerk_lower = 0.0
-    self.stop_req_transition_time = 0.0     # Time when StopReq changed from 1 to 0 (note: StopReq uses stopping)
-    self.standstill_delay = 0.9             # Delay in which commands from model are not sent
-    self.prev_stop_req = 1                  # 1 == stopped
+    self.stop_req_transition_time = 0.0  # Time when StopReq changed from 1 to 0 (note: StopReq uses stopping)
+    self.standstill_delay = 0.9  # Delay in which commands from model are not sent
+    self.prev_stop_req = 1  # 1 == stopped
 
   def apply_tune(self, CP: structs.CarParams):
     if self.CP_SP is not None and (self.CP_SP.flags & HyundaiFlagsSP.LONGTUNING):
@@ -197,8 +199,7 @@ class LongitudinalController:
     self.prev_stop_req = current_stop_req
 
     # Check if we should force zero accel
-    force_zero = self.tuning is not None and (stop_req_transition or (current_stop_req == 0 and
-                                              time_since_transition < self.standstill_delay))
+    force_zero = self.tuning is not None and (stop_req_transition or (current_stop_req == 0 and time_since_transition < self.standstill_delay))
 
     if force_zero:
       # Force zero acceleration during standstill delay of 0.9 seconds
