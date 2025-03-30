@@ -9,6 +9,8 @@ from opendbc.sunnypilot.interpolation_utils import catmull_rom_interp
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
+STANDSTILL_DELAY = 0.9  # Delay in which commands from model are not sent
+
 
 class JerkOutput:
   def __init__(self, jerk_upper, jerk_lower):
@@ -134,7 +136,6 @@ class LongitudinalController:
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
     self.stop_req_transition_time = 0.0  # Time when StopReq changed from 1 to 0 (note: StopReq uses stopping)
-    self.standstill_delay = 0.9  # Delay in which commands from model are not sent
     self.prev_stop_req = 1  # 1 == stopped
 
   def apply_tune(self, CP: structs.CarParams):
@@ -196,7 +197,7 @@ class LongitudinalController:
     self.prev_stop_req = current_stop_req
 
     # Check if we should force zero accel
-    force_zero = self.tuning is not None and (stop_req_transition or (current_stop_req == 0 and time_since_transition < self.standstill_delay))
+    force_zero = self.tuning is not None and (stop_req_transition or (current_stop_req == 0 and time_since_transition < STANDSTILL_DELAY))
 
     if force_zero:
       # Force zero acceleration during standstill delay of 0.9 seconds
