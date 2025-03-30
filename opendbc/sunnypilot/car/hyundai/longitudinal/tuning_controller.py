@@ -90,8 +90,8 @@ class LongitudinalTuningController:
 
   def apply_tune(self, CP: structs.CarParams) -> None:
     config = self.car_config
-    CP.vEgoStopping = config.vego_stopping
-    CP.vEgoStarting = config.vego_starting
+    CP.vEgoStopping = config.v_ego_stopping
+    CP.vEgoStarting = config.v_ego_starting
     CP.stoppingDecelRate = config.stopping_decel_rate
     CP.startAccel = config.start_accel
     CP.startingState = True

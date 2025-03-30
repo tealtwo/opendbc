@@ -5,20 +5,21 @@ from opendbc.car.hyundai.values import CAR
 
 @dataclass
 class CarTuningConfig:
-  vego_stopping: float
-  vego_starting: float
+  v_ego_stopping: float
+  v_ego_starting: float
   stopping_decel_rate: float
   start_accel: float
   jerk_limits: tuple[float, float, float]  # (min, max lower jerk, max upper jerk)
   brake_response: tuple[float, float, float, float]
   accel_limits: tuple[float, float]  # (min, max)
 
+
 # Default configurations for different car types
 # Min jerk is set to 0.60 per (Horn et al., 2024)
 TUNING_CONFIGS = {
   "EV": CarTuningConfig(
-    vego_stopping=0.25,
-    vego_starting=0.1,
+    v_ego_stopping=0.25,
+    v_ego_starting=0.1,
     stopping_decel_rate=0.20,
     start_accel=1.6,
     jerk_limits=(0.60, 5.0, 3.0),
@@ -26,8 +27,8 @@ TUNING_CONFIGS = {
     accel_limits=(-3.5, 2.0),
   ),
   "HYBRID": CarTuningConfig(
-    vego_stopping=0.25,
-    vego_starting=0.12,
+    v_ego_stopping=0.25,
+    v_ego_starting=0.12,
     stopping_decel_rate=0.20,
     start_accel=1.5,
     jerk_limits=(0.60, 5.0, 3.0),
@@ -35,8 +36,8 @@ TUNING_CONFIGS = {
     accel_limits=(-3.5, 2.0),
   ),
   "ICE": CarTuningConfig(
-    vego_stopping=0.25,
-    vego_starting=0.1,
+    v_ego_stopping=0.25,
+    v_ego_starting=0.1,
     stopping_decel_rate=0.30,
     start_accel=1.6,
     jerk_limits=(0.60, 5.0, 3.0),
@@ -48,8 +49,8 @@ TUNING_CONFIGS = {
 # Car-specific configs
 CAR_SPECIFIC_CONFIGS = {
   CAR.KIA_NIRO_EV: CarTuningConfig(
-    vego_stopping=0.25,
-    vego_starting=0.10,
+    v_ego_stopping=0.25,
+    v_ego_starting=0.10,
     stopping_decel_rate=0.05,
     start_accel=1.0,
     jerk_limits=(0.5, 5.0, 3.0),

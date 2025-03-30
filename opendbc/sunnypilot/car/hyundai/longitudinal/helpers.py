@@ -1,6 +1,6 @@
 from opendbc.car import structs
 from opendbc.car.hyundai.values import HyundaiFlags
-from opendbc.sunnypilot.car.hyundai.longitudinal_config import CarTuningConfig, TUNING_CONFIGS, CAR_SPECIFIC_CONFIGS
+from opendbc.sunnypilot.car.hyundai.longitudinal.longitudinal_config import CarTuningConfig, TUNING_CONFIGS, CAR_SPECIFIC_CONFIGS
 
 def get_car_config(CP: structs.CarParams) -> CarTuningConfig:
   # Get car type flags from specific configs or determine from car flags
