@@ -86,8 +86,3 @@ These values represent our negative acceleration squared. These values are then 
 calcuation using an alpha level of 0.5 centripetal. To read more about how catmull_rom interpolations work view the [interpolation_utils.py](opendbc_repo/opendbc/sunnypilot/interpolation_utils.py),
 in the codebase, or click on this [catmull rom splines](https://qroph.github.io/2018/07/30/smooth-paths-using-catmull-rom-splines.html) hyperlink
 to learn more.
-
-
-
-
-
