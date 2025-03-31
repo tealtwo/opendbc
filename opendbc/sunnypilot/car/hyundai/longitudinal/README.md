@@ -15,7 +15,7 @@ dividing that by time. In our tune you will see the following equation:
     self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.125
     self.state.accel_last_jerk = current_accel
 
-For time, in this equation we are using 100hz which as a decimal is 0.125 to represent time for our calculations.
+For time, in this equation we are using 50 hz which as a decimal is 0.125 to represent time for our calculations.
 For example, lets say our current acceleration is 0.7 m/s^2 and our previous acceleration was 0.2 m/s^2; This would lead to us having 0.5 m/s^2 divided by
 0.125 (our timestep), which leads to a calculated jerk value of 4.0 m/s^3. This then goes through our minimum and maximum clipping which forces a value between our set min and max,
 which I discuss later in this readme.

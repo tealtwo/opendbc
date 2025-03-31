@@ -39,7 +39,7 @@ class LongitudinalTuningController:
   def make_jerk(self, CS: CarStateBase) -> None:
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CS.out.aEgo
-    self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.125  # 100 hz time step division
+    self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.125  # 50 hz time step division
     self.state.accel_last_jerk = current_accel
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
