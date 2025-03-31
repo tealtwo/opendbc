@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.interfaces import CarStateBase
-from opendbc.car.hyundai.values import HyundaiFlags, CarControllerParams
+from opendbc.car.hyundai.values import CarControllerParams
 
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
 from opendbc.sunnypilot.interpolation_utils import catmull_rom_interp
@@ -22,7 +22,6 @@ class LongitudinalTuningController:
   """Longitudinal tuning methodology for HKG"""
 
   def __init__(self, CP: structs.CarParams) -> None:
-    self.CP = CP
     self.state = LongitudinalTuningState()
     self.car_config = get_car_config(CP)
     self.jerk_upper = 0.0
