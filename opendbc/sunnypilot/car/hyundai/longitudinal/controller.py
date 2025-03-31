@@ -29,9 +29,7 @@ class LongitudinalController:
   """Longitudinal controller which gets injected into CarControllerParams."""
 
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
-    self.CP = CP
     self.CP_SP = CP_SP
-
     self.tuning = LongitudinalTuningController(CP, CP_SP) if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING else None
     self.long_state = LongitudinalState()
     self.last_stop_req_frame = 0  # Time when StopReq changed from 1 to 0 (note: StopReq uses stopping)
@@ -43,15 +41,15 @@ class LongitudinalController:
     self.long_state.jerk_upper = self.tuning.jerk_upper
     self.long_state.jerk_lower = self.tuning.jerk_lower
 
-  def calculate_accel(self, CC: structs.CarControl, CS: CarStateBase) -> float:
+  def calculate_accel(self, CC: structs.CarControl, CS: CarStateBase, CP: structs.CarParams) -> float:
     """Calculate acceleration based on tuning and return the value."""
-    if self.CP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING and self.tuning is not None:
+    if CP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING and self.tuning is not None:
       accel = self.tuning.calculate_accel(CC, CS)
     else:
       accel = float(np.clip(CC.actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     return accel
 
-  def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> None:
+  def update(self, CC: structs.CarControl, CS: CarStateBase, CP: structs.CarParams, frame: int) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
     actuators = CC.actuators
     long_control_state = actuators.longControlState
@@ -72,4 +70,4 @@ class LongitudinalController:
       self.long_state.jerk_lower = 0.0
     else:
       # Not transitioning from stopping
-      self.long_state.accel = self.calculate_accel(CC, CS)
+      self.long_state.accel = self.calculate_accel(CC, CS, CP)
