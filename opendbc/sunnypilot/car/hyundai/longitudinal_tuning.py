@@ -2,7 +2,7 @@ import numpy as np
 from dataclasses import dataclass
 
 from opendbc.car import DT_CTRL, structs
-from opendbc.car.hyundai.values import HyundaiFlags, CarControllerParams
+from opendbc.car.hyundai.values import CarControllerParams
 from opendbc.sunnypilot.car.hyundai.longitudinal_config import Cartuning
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.sunnypilot.interpolation_utils import catmull_rom_interp
@@ -55,7 +55,7 @@ class LongitudinalTuningController:
 
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CS.out.aEgo
-    self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.05  # DT_MDL == driving model which equals 0.05
+    self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.125  # 50 hz timestep
     self.state.accel_last_jerk = current_accel
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
@@ -68,12 +68,8 @@ class LongitudinalTuningController:
       decel_jerk_max = 5.83 - (velocity / 6)
     accel_jerk_max = self.car_config.jerk_limits[2] if LongCtrlState == LongCtrlState.pid else 1.0
 
-    if self.CP.flags & HyundaiFlags.CANFD.value:
-      self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), accel_jerk_max)
-      self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state.jerk * 4.0), decel_jerk_max)
-    else:
-      self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), accel_jerk_max)
-      self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state.jerk * 2.0), decel_jerk_max)
+    self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk), accel_jerk_max)
+    self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state.jerk), decel_jerk_max)
 
     return self.state.jerk
 
@@ -141,34 +137,16 @@ class LongitudinalController:
   def apply_tune(self, CP: structs.CarParams):
     if self.CP_SP is not None and (self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING):
       self.tuning.apply_tune(CP)
-    else:
-      CP.vEgoStopping = 0.5
-      CP.vEgoStarting = 0.1
-      CP.startingState = True
-      CP.startAccel = 1.0
-      CP.longitudinalActuatorDelay = 0.5
 
   def get_jerk(self) -> JerkOutput:
-    if self.tuning is not None:
-      return JerkOutput(
-        self.tuning.jerk_upper,
-        self.tuning.jerk_lower,
-      )
-    else:
-      return JerkOutput(
-        self.jerk_upper,
-        self.jerk_lower,
-      )
+    return JerkOutput(
+      self.tuning.jerk_upper,
+      self.tuning.jerk_lower,
+    )
 
   def calculate_and_get_jerk(self, CS: structs.CarState, long_control_state: LongCtrlState) -> JerkOutput:
     """Calculate jerk based on tuning and return JerkOutput."""
-    if self.tuning is not None:
-      self.tuning.make_jerk(CS)
-    else:
-      jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
-
-      self.jerk_upper = jerk_limit
-      self.jerk_lower = jerk_limit
+    self.tuning.make_jerk(CS)
     return self.get_jerk()
 
   def calculate_accel(self, actuators: structs.CarControl.Actuators, CS: structs.CarState, CP: structs.CarParams) -> float:
