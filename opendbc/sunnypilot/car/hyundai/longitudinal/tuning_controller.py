@@ -39,7 +39,7 @@ class LongitudinalTuningController:
   def make_jerk(self, CS: CarStateBase) -> None:
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CS.out.aEgo
-    self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.05  # DT_MDL == driving model which equals 0.05
+    self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.125  # 50 hz time step division
     self.state.accel_last_jerk = current_accel
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
@@ -52,9 +52,9 @@ class LongitudinalTuningController:
       decel_jerk_max = 5.83 - (velocity / 6)
 
     accel_jerk_max = self.car_config.jerk_limits[2] if LongCtrlState == LongCtrlState.pid else 1.0
-    jerk_lower_multiplier = 4.0 if self.CP.flags & HyundaiFlags.CANFD else 2.0
-    self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk * 2.0), accel_jerk_max)
-    self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state.jerk * jerk_lower_multiplier), decel_jerk_max)
+
+    self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk), accel_jerk_max)
+    self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state.jerk), decel_jerk_max)
 
   def calculate_limited_accel(self, CC: structs.CarControl, CS: CarStateBase) -> float:
     """Adaptive acceleration limiting."""
