@@ -138,16 +138,20 @@ class LongitudinalController:
     if self.CP_SP is not None and (self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING):
       self.tuning.apply_tune(CP)
 
-  def get_jerk(self) -> JerkOutput:
-    return JerkOutput(
-      self.tuning.jerk_upper,
-      self.tuning.jerk_lower,
-    )
+  def get_jerk(self, long_control_state: LongCtrlState) -> JerkOutput:
+    if self.tuning is not None:
+      return JerkOutput(
+        self.tuning.jerk_upper,
+        self.tuning.jerk_lower,
+      )
+    jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
+    return JerkOutput(jerk_limit, jerk_limit)
 
   def calculate_and_get_jerk(self, CS: structs.CarState, long_control_state: LongCtrlState) -> JerkOutput:
     """Calculate jerk based on tuning and return JerkOutput."""
-    self.tuning.make_jerk(CS)
-    return self.get_jerk()
+    if self.tuning is not None:
+      self.tuning.make_jerk(CS)
+    return self.get_jerk(long_control_state)
 
   def calculate_accel(self, actuators: structs.CarControl.Actuators, CS: structs.CarState, CP: structs.CarParams) -> float:
     """Calculate acceleration based on tuning and return the value."""
