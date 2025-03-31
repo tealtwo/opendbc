@@ -187,7 +187,7 @@ class CarInterface(CarInterfaceBase):
     if CP_SP.flags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
       enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
 
-  @classmethod
-  def apply_longitudinal_tuning(cls, CP, CP_SP):
+  @staticmethod
+  def _get_longitudinal_tuning(CP, CP_SP):
     if CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
       get_longitudinal_tune(CP)
