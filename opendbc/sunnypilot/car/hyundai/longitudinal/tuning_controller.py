@@ -6,6 +6,7 @@ from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import CarControllerParams
 
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.sunnypilot.interpolation_utils import catmull_rom_interp
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -21,7 +22,9 @@ class LongitudinalTuningState:
 class LongitudinalTuningController:
   """Longitudinal tuning methodology for HKG"""
 
-  def __init__(self, CP: structs.CarParams) -> None:
+  def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
+    self.CP_SP = CP_SP
+
     self.state = LongitudinalTuningState()
     self.car_config = get_car_config(CP)
     self.jerk_upper = 0.0
@@ -35,7 +38,14 @@ class LongitudinalTuningController:
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
 
-  def make_jerk(self, CS: CarStateBase) -> None:
+  def make_jerk(self, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
+    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
+      jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
+
+      self.jerk_upper = jerk_limit
+      self.jerk_lower = jerk_limit
+      return
+
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CS.out.aEgo
     self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.125  # 50 hz time step division

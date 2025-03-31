@@ -21,7 +21,8 @@ class JerkOutput:
 @dataclass
 class LongitudinalState:
   accel: float = 0.0
-  jerk: JerkOutput | None = None
+  jerk_upper: float = 0.0
+  jerk_lower: float = 0.0
 
 
 class LongitudinalController:
@@ -29,34 +30,16 @@ class LongitudinalController:
 
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
     self.CP_SP = CP_SP
-    self.tuning = LongitudinalTuningController(CP) if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING else None
+    self.tuning = LongitudinalTuningController(CP, CP_SP) if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING else None
     self.long_state = LongitudinalState()
-    self.jerk_upper = 0.0
-    self.jerk_lower = 0.0
     self.last_stop_req_frame = 0  # Time when StopReq changed from 1 to 0 (note: StopReq uses stopping)
 
-  def get_jerk(self) -> JerkOutput:
-    if self.tuning is not None:
-      return JerkOutput(
-        self.tuning.jerk_upper,
-        self.tuning.jerk_lower,
-      )
-    else:
-      return JerkOutput(
-        self.jerk_upper,
-        self.jerk_lower,
-      )
+  def calculate_and_get_jerk(self, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
+    """Calculate jerk based on tuning."""
+    self.tuning.make_jerk(CS, long_control_state)
 
-  def calculate_and_get_jerk(self, CS: CarStateBase, long_control_state: LongCtrlState) -> JerkOutput:
-    """Calculate jerk based on tuning and return JerkOutput."""
-    if self.tuning is not None:
-      self.tuning.make_jerk(CS)
-    else:
-      jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
-
-      self.jerk_upper = jerk_limit
-      self.jerk_lower = jerk_limit
-    return self.get_jerk()
+    self.long_state.jerk_upper = self.tuning.jerk_upper
+    self.long_state.jerk_lower = self.tuning.jerk_lower
 
   def calculate_accel(self, CC: structs.CarControl, CS: CarStateBase, CP: structs.CarParams) -> float:
     """Calculate acceleration based on tuning and return the value."""
@@ -71,8 +54,7 @@ class LongitudinalController:
     actuators = CC.actuators
     long_control_state = actuators.longControlState
 
-    jerk_output = self.calculate_and_get_jerk(CS, long_control_state)
-    self.long_state.jerk = jerk_output  # Store the JerkOutput object from our def.
+    self.calculate_and_get_jerk(CS, long_control_state)
 
     # Determine if zero acceleration should be forced
     if long_control_state == LongCtrlState.stopping:
@@ -84,10 +66,8 @@ class LongitudinalController:
     if force_zero:
       # Force zero acceleration during standstill delay of 0.9 seconds
       self.long_state.accel = 0.0
-      self.jerk_upper = 0.0
-      self.jerk_lower = 0.0
+      self.long_state.jerk_upper = 0.0
+      self.long_state.jerk_lower = 0.0
     else:
       # Not transitioning from stopping
       self.long_state.accel = self.calculate_accel(CC, CS, CP)
-      self.jerk_upper = jerk_output.jerk_upper
-      self.jerk_lower = jerk_output.jerk_lower
