@@ -2,6 +2,7 @@ import numpy as np
 from dataclasses import dataclass
 
 from opendbc.car import DT_CTRL, structs
+from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import CarControllerParams
 from opendbc.sunnypilot.car.hyundai.longitudinal_config import Cartuning
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
@@ -44,15 +45,7 @@ class LongitudinalTuningController:
     self.last_decel_time = 0.0
     self.min_cancel_delay = 0.1
 
-  def make_jerk(self, CS: structs.CarState) -> float:
-    # Handle cancel state to prevent cruise fault
-    if CS.out.brakePressed:
-      self.state.accel_last_jerk = 0.0
-      self.state.jerk = 0.0
-      self.jerk_upper = 0.0
-      self.jerk_lower = 0.0
-      return 0.0
-
+  def make_jerk(self, CS: CarStateBase) -> None:
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CS.out.aEgo
     self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.125  # 50 hz timestep
@@ -71,16 +64,14 @@ class LongitudinalTuningController:
     self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk), accel_jerk_max)
     self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state.jerk), decel_jerk_max)
 
-    return self.state.jerk
-
-  def handle_cruise_cancel(self, CS: structs.CarState):
+  def handle_cruise_cancel(self, CS: CarStateBase):
     """Handle cruise control cancel to prevent faults."""
     if CS.out.brakePressed:
       self.state.accel_last = 0.0
       return True
     return False
 
-  def calculate_limited_accel(self, actuators: structs.CarControl.Actuators, CS: structs.CarState) -> float:
+  def calculate_limited_accel(self, actuators: structs.CarControl.Actuators, CS: CarStateBase) -> float:
     """Adaptive acceleration limiting."""
     if self.handle_cruise_cancel(CS):
       return actuators.accel
@@ -103,7 +94,7 @@ class LongitudinalTuningController:
     self.state.accel_last = accel
     return accel
 
-  def calculate_accel(self, actuators: structs.CarControl.Actuators, CS: structs.CarState) -> float:
+  def calculate_accel(self, actuators: structs.CarControl.Actuators, CS: CarStateBase) -> float:
     """Calculate acceleration with cruise control status handling."""
     if self.handle_cruise_cancel(CS):
       return 0.0
@@ -126,8 +117,7 @@ class LongitudinalController:
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
     self.CP = CP
     self.CP_SP = CP_SP
-    self.tuning = LongitudinalTuningController(CP) if self.CP_SP is not None \
-                  and (self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING) else None
+    self.tuning = LongitudinalTuningController(CP)
     self.state = LongitudinalState()
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
@@ -139,21 +129,18 @@ class LongitudinalController:
       self.tuning.apply_tune(CP)
 
   def get_jerk(self, long_control_state: LongCtrlState) -> JerkOutput:
-    if self.tuning is not None:
-      return JerkOutput(
-        self.tuning.jerk_upper,
-        self.tuning.jerk_lower,
-      )
-    jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
-    return JerkOutput(jerk_limit, jerk_limit)
+    return JerkOutput(
+      self.tuning.jerk_upper,
+      self.tuning.jerk_lower,
+    )
 
-  def calculate_and_get_jerk(self, CS: structs.CarState, long_control_state: LongCtrlState) -> JerkOutput:
+  def calculate_and_get_jerk(self, CS: CarStateBase, long_control_state: LongCtrlState) -> JerkOutput:
     """Calculate jerk based on tuning and return JerkOutput."""
-    if self.tuning is not None:
-      self.tuning.make_jerk(CS)
+    self.tuning.make_jerk(CS)
+
     return self.get_jerk(long_control_state)
 
-  def calculate_accel(self, actuators: structs.CarControl.Actuators, CS: structs.CarState, CP: structs.CarParams) -> float:
+  def calculate_accel(self, actuators: structs.CarControl.Actuators, CS: CarStateBase, CP: structs.CarParams) -> float:
     """Calculate acceleration based on tuning and return the value."""
     if CP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING and self.tuning is not None:
       accel = self.tuning.calculate_accel(actuators, CS)
@@ -161,7 +148,7 @@ class LongitudinalController:
       accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     return accel
 
-  def update(self, CC: structs.CarControl, CS: structs.CarState, CP: structs.CarParams, frame: int) -> None:
+  def update(self, CC: structs.CarControl, CS: CarStateBase, CP: structs.CarParams, frame: int) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
     actuators = CC.actuators
     long_control_state = actuators.longControlState
