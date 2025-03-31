@@ -9,7 +9,7 @@ For example, in our jerk calculations throughout this tune, you will see how jer
 
 In the tuning you will see a set of equations, the first being jerk, **but what exactly is jerk?**
 Jerk is calculated by taking current acceleration (in the form of m/s^2), subtracting that by previous acceleration, and
-dividing that by time. In our calculations we use 50hz as our timestep when calling the `make_jerk` method. In our tune you will see the following equation:
+dividing that by time. In our tune you will see the following equation:
 
     current_accel = CS.out.aEgo
     self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.125
