@@ -58,7 +58,6 @@ class LongitudinalTuningController:
   def calculate_limited_accel(self, CC: structs.CarControl, CS: CarStateBase) -> float:
     """Adaptive acceleration limiting."""
     actuators = CC.actuators
-    self.make_jerk(CS)
     target_accel = actuators.accel
 
     # Normal operation = above 17 m/s
