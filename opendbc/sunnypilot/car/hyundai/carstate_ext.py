@@ -18,4 +18,4 @@ class CarStateExt:
   def update(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp = can_parsers[Bus.pt]
 
-    ret.brakeLightsDEPRECATED = cp.vl["TCS13"]["BrakeLight"]
+    ret.brakeLightsDEPRECATED = bool(cp.vl["TCS13"]["BrakeLight"])

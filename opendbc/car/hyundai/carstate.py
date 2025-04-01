@@ -29,7 +29,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     CarStateBase.__init__(self, CP, CP_SP)
     EsccCarStateBase.__init__(self)
     MadsCarState.__init__(self, CP, CP_SP)
-    CarStateExt.__init__(self, CP, CP_SP)
+    CarStateExt.__init__(self)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
 
     self.cruise_buttons: deque = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
