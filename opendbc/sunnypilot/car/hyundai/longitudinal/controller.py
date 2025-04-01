@@ -16,12 +16,6 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 STANDSTILL_DELAY = 0.9  # Delay in which commands from model are not sent
 
 
-class JerkOutput:
-  def __init__(self, jerk_upper, jerk_lower):
-    self.jerk_upper = jerk_upper
-    self.jerk_lower = jerk_lower
-
-
 @dataclass
 class LongitudinalState:
   accel: float = 0.0
