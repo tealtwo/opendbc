@@ -32,6 +32,7 @@ class LongitudinalController:
     self.CP_SP = CP_SP
     self.tuning = LongitudinalTuningController(CP, CP_SP) if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING else None
     self.long_state = LongitudinalState()
+    self.force_zero = False
     self.last_stop_req_frame = 0  # Time when StopReq changed from 1 to 0 (note: StopReq uses stopping)
 
   def calculate_and_get_jerk(self, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
@@ -45,6 +46,14 @@ class LongitudinalController:
     """Calculate acceleration based on tuning and return the value."""
     self.long_state.accel = self.tuning.calculate_accel(CC, CS)
 
+  def stopped_to_start_trans(self, long_control_state: LongCtrlState, frame: int) -> None:
+    # Determine if zero acceleration should be forced
+    if long_control_state == LongCtrlState.stopping:
+      self.last_stop_req_frame = frame
+
+    in_standstill_delay = (frame - self.last_stop_req_frame) * DT_CTRL < STANDSTILL_DELAY
+    self.force_zero = self.tuning is not None and in_standstill_delay
+
   def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
     actuators = CC.actuators
@@ -52,19 +61,10 @@ class LongitudinalController:
 
     self.calculate_and_get_jerk(CS, long_control_state)
     self.calculate_accel(CC, CS)
+    self.stopped_to_start_trans(long_control_state, frame)
 
-    # Determine if zero acceleration should be forced
-    if long_control_state == LongCtrlState.stopping:
-      self.last_stop_req_frame = frame
-
-    in_standstill_delay = (frame - self.last_stop_req_frame) * DT_CTRL < STANDSTILL_DELAY
-    force_zero = self.tuning is not None and in_standstill_delay
-
-    if force_zero:
+    if self.force_zero:
       # Force zero acceleration during standstill delay of 0.9 seconds
       self.long_state.accel = 0.0
       self.long_state.jerk_upper = 0.0
       self.long_state.jerk_lower = 0.0
-    else:
-      # Not transitioning from stopping
-      self.long_state.accel = self.calculate_accel(CC, CS)
