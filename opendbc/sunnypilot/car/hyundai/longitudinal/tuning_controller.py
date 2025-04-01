@@ -8,13 +8,12 @@ See the LICENSE.md file in the root directory for more details.
 import numpy as np
 from dataclasses import dataclass
 
-from opendbc.car import DT_CTRL, structs
+from opendbc.car import structs
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import CarControllerParams
 
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
-from opendbc.sunnypilot.interpolation_utils import catmull_rom_interp
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
