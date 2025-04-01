@@ -29,8 +29,6 @@ class LongitudinalController:
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
     self.tuning = LongitudinalTuningController(CP, CP_SP)
     self.long_state = LongitudinalState()
-    self.in_standstill_delay = False
-    self.last_stop_req_frame = 0  # Time when StopReq changed from True to False (note: StopReq uses stopping)
 
   def calculate_and_get_jerk(self, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
     """Calculate jerk based on tuning."""
@@ -43,13 +41,6 @@ class LongitudinalController:
     """Calculate acceleration based on tuning and return the value."""
     self.long_state.accel = self.tuning.calculate_accel(CC, CS)
 
-  def stopped_to_start_trans(self, long_control_state: LongCtrlState, frame: int) -> None:
-    # Determine if zero acceleration should be forced
-    if long_control_state == LongCtrlState.stopping:
-      self.last_stop_req_frame = frame
-
-    self.in_standstill_delay = (frame - self.last_stop_req_frame) * DT_CTRL < TCS_STANDSTILL_DELAY
-
   def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
     actuators = CC.actuators
@@ -57,10 +48,8 @@ class LongitudinalController:
 
     self.calculate_and_get_jerk(CS, long_control_state)
     self.calculate_accel(CC, CS)
-    self.stopped_to_start_trans(long_control_state, frame)
 
-    if self.in_standstill_delay:
+    if CS.out.brakeLightsDEPRECATED and not CS.out.brakePressed:
       # Force zero acceleration during standstill delay of 0.9 seconds
-      self.long_state.accel = 0.0
       self.long_state.jerk_upper = 0.0
       self.long_state.jerk_lower = 0.0
