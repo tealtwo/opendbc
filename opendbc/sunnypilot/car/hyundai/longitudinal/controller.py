@@ -27,7 +27,6 @@ class LongitudinalController:
   """Longitudinal controller which gets injected into CarControllerParams."""
 
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
-    self.CP_SP = CP_SP
     self.tuning = LongitudinalTuningController(CP, CP_SP)
     self.long_state = LongitudinalState()
     self.in_standstill_delay = False
