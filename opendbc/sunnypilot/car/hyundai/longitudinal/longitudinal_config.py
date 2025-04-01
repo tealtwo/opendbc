@@ -42,7 +42,7 @@ TUNING_CONFIGS = {
     brake_response=(1.25, 1.85, 2.55, 3.5),
     accel_limits=(-3.5, 2.0),
   ),
-  "ICE": CarTuningConfig(
+  "DEFAULT": CarTuningConfig(
     v_ego_stopping=0.25,
     v_ego_starting=0.1,
     stopping_decel_rate=0.30,

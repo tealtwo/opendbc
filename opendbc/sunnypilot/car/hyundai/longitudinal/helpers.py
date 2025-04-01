@@ -19,7 +19,7 @@ def get_car_config(CP: structs.CarParams) -> CarTuningConfig:
     elif CP.flags & HyundaiFlags.HYBRID:
       car_config = TUNING_CONFIGS["HYBRID"]
     else:
-      car_config = TUNING_CONFIGS["ICE"]
+      car_config = TUNING_CONFIGS["DEFAULT"]
 
   return car_config
 
