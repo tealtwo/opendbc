@@ -41,7 +41,6 @@ class LongitudinalTuningController:
   def reset(self) -> None:
     self.state.accel_last = 0.0
     self.state.accel_last_jerk = 0.0
-    self.state.jerk = 0.0
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
 
@@ -55,7 +54,8 @@ class LongitudinalTuningController:
 
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CS.out.aEgo
-    self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.125  # Try 0.32 as it is smooooth
+    upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.125
+    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.30
     self.state.accel_last_jerk = current_accel
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
@@ -69,8 +69,8 @@ class LongitudinalTuningController:
 
     accel_jerk_max = self.car_config.jerk_limits[2] if LongCtrlState == LongCtrlState.pid else 1.0
 
-    self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk), accel_jerk_max)
-    self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state.jerk), decel_jerk_max)
+    self.jerk_upper = min(max(self.car_config.jerk_limits[0], upper_band_jerk), accel_jerk_max)
+    self.jerk_lower = min(max(self.car_config.jerk_limits[0], -lower_band_jerk), decel_jerk_max)
 
   def calculate_accel(self, CC: structs.CarControl, CS: CarStateBase) -> float:
     """Calculate acceleration with cruise control status handling."""

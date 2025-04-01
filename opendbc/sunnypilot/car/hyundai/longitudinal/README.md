@@ -12,13 +12,15 @@ Jerk is calculated by taking current acceleration (in the form of m/s^2), subtra
 dividing that by time. In our tune you will see the following equation:
 
     current_accel = CS.out.aEgo
-    self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.125
+    upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.125
+    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.30
     self.state.accel_last_jerk = current_accel
 
-For time, in this equation we are using 50 hz which as a decimal is 0.125 to represent time for our calculations.
+For time, in this equation we are using 0.125 to represent time for our upper jerk calculations.
 For example, lets say our current acceleration is 0.7 m/s^2 and our previous acceleration was 0.2 m/s^2; This would lead to us having 0.5 m/s^2 divided by
-0.125 (our timestep), which leads to a calculated jerk value of 4.0 m/s^3. This then goes through our minimum and maximum clipping which forces a value between our set min and max,
-which I discuss later in this readme.
+0.125 (our timestep), which leads to a calculated jerk value of 4.0 m/s^3. Furthermore, we are using 0.30 as our timestep for lower
+jerk calculations. An example of this would, using the same example above, would equal 1.667 m/s^3 jerk, which gets inputed to lower jerk.
+This then goes through our minimum and maximum clipping which forces a value between our set min and max, which I discuss later in this readme.
 
 Moving on, the accel_last_jerk, stores current accel after each iteration and uses that in the calculation as previous accel for
 our jerk calculations. Now we see the calculation of jerk max and jerk min. **Lets dive into how jerk lower limit max is calculated:**
@@ -53,36 +55,5 @@ This research study identified the average lower jerk used in comfortable drivin
 In this equation, the minimum has been rounded to 0.6 m/s^3 for maintainability and consistency.
 
 
-**Next, we have our acceleration smoothing**. This is limited to above 17 m/s for safety. This smoothing uses a catmull rom interpolation
-which helps create smoother trajectory than linear interpolation. The equation for acceleration is set below:
-
-    # Normal operation = above 17 m/s
-    if CS.out.vEgo > 17.0 and target_accel < 0.01:
-      brake_ratio = np.clip(abs(target_accel / self.car_config.accel_limits[0]), 0.0, 1.0)
-      # Array comes from longitudinal_config.py, 1.0 = -3.5 accel, which will never be less than -3.5 EVER
-      accel_rate_down = self.DT_CTRL * catmull_rom_interp(brake_ratio,
-                                                          np.array([0.25, 0.5, 0.75, 1.0]),
-                                                          np.array(self.car_config.brake_response))
-      accel = max(target_accel, self.state.accel_last - accel_rate_down)
-    else:
-      accel = actuators.accel
-
-As we can see, there are checks to ensure the Ego is above 17 m/s, and is currently applying negative acceleration (i.e., braking).
-Then we use our accel limits, which vary slightly car by car but generally, the values will be about:
-
-    self.car_config.brake_response=(1.25, 1.85, 2.55, 3.5)
-
-This gets plugged into the equation as follows. Brake_ratio is our x value. This is the input value we interpolate at. Next, we have our
-x coordinates which is the first numpy array:
-
-    [0.25, 0.5, 0.75, 1.0]
-
-This represents 25% brake force all the way to 100% brake force (also known as -0.875 m/s^2 and -3.5 m/s^2). Next we input our
-y coordinates as the second numpy array. These are the self.car_config.brake_response:
-
-    [1.25, 1.85, 2.55, 3.5]
-
-These values represent our negative acceleration squared. These values are then extrapolated in a catmull rom interpolation
-calcuation using an alpha level of 0.5 centripetal. To read more about how catmull_rom interpolations work view the
-[interpolation_utils.py]((opendbc/sunnypilot/interpolation_utils.py)), in the codebase, or click on this
-[catmull rom splines](https://qroph.github.io/2018/07/30/smooth-paths-using-catmull-rom-splines.html) hyperlink to learn more.
+**Next, we have our acceleration smoothing**.
+RED DIFF THAT :) @sunny explain how the TCS signal works lol
