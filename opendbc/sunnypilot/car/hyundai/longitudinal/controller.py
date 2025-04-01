@@ -41,13 +41,9 @@ class LongitudinalController:
     self.long_state.jerk_upper = self.tuning.jerk_upper
     self.long_state.jerk_lower = self.tuning.jerk_lower
 
-  def calculate_accel(self, CC: structs.CarControl, CS: CarStateBase) -> float:
+  def calculate_accel(self, CC: structs.CarControl, CS: CarStateBase) -> None:
     """Calculate acceleration based on tuning and return the value."""
-    if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING and self.tuning is not None:
-      accel = self.tuning.calculate_accel(CC, CS)
-    else:
-      accel = float(np.clip(CC.actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
-    return accel
+    self.long_state.accel = self.tuning.calculate_accel(CC, CS)
 
   def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
@@ -55,6 +51,7 @@ class LongitudinalController:
     long_control_state = actuators.longControlState
 
     self.calculate_and_get_jerk(CS, long_control_state)
+    self.calculate_accel(CC, CS)
 
     # Determine if zero acceleration should be forced
     if long_control_state == LongCtrlState.stopping:

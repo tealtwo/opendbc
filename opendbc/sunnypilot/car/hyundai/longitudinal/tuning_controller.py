@@ -93,5 +93,9 @@ class LongitudinalTuningController:
       self.state.accel_last = 0.0
       return 0.0
 
-    accel = self.calculate_limited_accel(CC, CS)
+    if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING and self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
+      accel = self.calculate_limited_accel(CC, CS)
+    else:
+      accel = CC.actuators.accel
+
     return float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
