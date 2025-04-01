@@ -47,7 +47,7 @@ class LongitudinalTuningController:
     self.jerk_lower = 0.0
 
   def make_jerk(self, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
-    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
+    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
       jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
 
       self.jerk_upper = jerk_limit
@@ -56,7 +56,7 @@ class LongitudinalTuningController:
 
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CS.out.aEgo
-    self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.125  # 50 hz time step division
+    self.state.jerk = (current_accel - self.state.accel_last_jerk) / 0.125  # Try 0.32 as it is smooooth
     self.state.accel_last_jerk = current_accel
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
@@ -73,36 +73,12 @@ class LongitudinalTuningController:
     self.jerk_upper = min(max(self.car_config.jerk_limits[0], self.state.jerk), accel_jerk_max)
     self.jerk_lower = min(max(self.car_config.jerk_limits[0], -self.state.jerk), decel_jerk_max)
 
-  def calculate_limited_accel(self, CC: structs.CarControl, CS: CarStateBase) -> float:
-    """Adaptive acceleration limiting."""
-    actuators = CC.actuators
-    target_accel = actuators.accel
-
-    # Normal operation = above 17 m/s
-    if CS.out.vEgo > 17.0 and target_accel < 0.01:
-      brake_ratio = np.clip(abs(target_accel / self.car_config.accel_limits[0]), 0.0, 1.0)
-      # Array comes from longitudinal_config.py, 1.0 = -3.5 accel, which will never be less than -3.5 EVER
-      accel_rate_down = DT_CTRL * catmull_rom_interp(brake_ratio,
-                                                     np.array([0.25, 0.5, 0.75, 1.0]),
-                                                     np.array(self.car_config.brake_response))
-      accel = max(target_accel, self.state.accel_last - accel_rate_down)
-    else:
-      accel = actuators.accel
-
-    target_accel = accel + (target_accel - self.state.accel_last)
-    accel = target_accel
-    self.state.accel_last = accel
-    return accel
-
   def calculate_accel(self, CC: structs.CarControl, CS: CarStateBase) -> float:
     """Calculate acceleration with cruise control status handling."""
     if not CC.enabled:
       self.reset()
       return 0.0
 
-    if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING and self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
-      accel = self.calculate_limited_accel(CC, CS)
-    else:
-      accel = CC.actuators.accel
+    accel = CC.actuators.accel
 
     return float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
