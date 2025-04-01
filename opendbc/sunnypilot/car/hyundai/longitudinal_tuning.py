@@ -143,7 +143,7 @@ class LongitudinalController:
 
   def calculate_accel(self, actuators: structs.CarControl.Actuators, CS: CarStateBase, CP: structs.CarParams) -> float:
     """Calculate acceleration based on tuning and return the value."""
-    if CP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING and self.tuning is not None:
+    if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING and self.tuning is not None:
       accel = self.tuning.calculate_accel(actuators, CS)
     else:
       accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
