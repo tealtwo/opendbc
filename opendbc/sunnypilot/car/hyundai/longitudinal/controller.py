@@ -1,10 +1,8 @@
-import numpy as np
 from dataclasses import dataclass
 
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.interfaces import CarStateBase
 from opendbc.sunnypilot.car.hyundai.longitudinal.tuning_controller import LongitudinalTuningController
-from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
