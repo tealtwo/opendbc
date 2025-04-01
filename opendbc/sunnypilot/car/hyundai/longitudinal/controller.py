@@ -13,7 +13,7 @@ from opendbc.sunnypilot.car.hyundai.longitudinal.tuning_controller import Longit
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
-STANDSTILL_DELAY = 0.9  # Delay in which commands from model are not sent
+TCS_STANDSTILL_DELAY = 0.9  # Delay in which commands from model are not sent
 
 
 @dataclass
@@ -48,7 +48,7 @@ class LongitudinalController:
     if long_control_state == LongCtrlState.stopping:
       self.last_stop_req_frame = frame
 
-    self.in_standstill_delay = (frame - self.last_stop_req_frame) * DT_CTRL < STANDSTILL_DELAY
+    self.in_standstill_delay = (frame - self.last_stop_req_frame) * DT_CTRL < TCS_STANDSTILL_DELAY
 
   def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
