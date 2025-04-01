@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.interfaces import CarStateBase
-from opendbc.car.hyundai.values import CarControllerParams
 from opendbc.sunnypilot.car.hyundai.longitudinal.tuning_controller import LongitudinalTuningController
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
@@ -30,10 +29,10 @@ class LongitudinalController:
 
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
     self.CP_SP = CP_SP
-    self.tuning = LongitudinalTuningController(CP, CP_SP) if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING else None
+    self.tuning = LongitudinalTuningController(CP, CP_SP)
     self.long_state = LongitudinalState()
-    self.force_zero = False
-    self.last_stop_req_frame = 0  # Time when StopReq changed from 1 to 0 (note: StopReq uses stopping)
+    self.in_standstill_delay = False
+    self.last_stop_req_frame = 0  # Time when StopReq changed from True to False (note: StopReq uses stopping)
 
   def calculate_and_get_jerk(self, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
     """Calculate jerk based on tuning."""
@@ -51,8 +50,7 @@ class LongitudinalController:
     if long_control_state == LongCtrlState.stopping:
       self.last_stop_req_frame = frame
 
-    in_standstill_delay = (frame - self.last_stop_req_frame) * DT_CTRL < STANDSTILL_DELAY
-    self.force_zero = self.tuning is not None and in_standstill_delay
+    self.in_standstill_delay = (frame - self.last_stop_req_frame) * DT_CTRL < STANDSTILL_DELAY
 
   def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
@@ -63,7 +61,7 @@ class LongitudinalController:
     self.calculate_accel(CC, CS)
     self.stopped_to_start_trans(long_control_state, frame)
 
-    if self.force_zero:
+    if self.in_standstill_delay:
       # Force zero acceleration during standstill delay of 0.9 seconds
       self.long_state.accel = 0.0
       self.long_state.jerk_upper = 0.0
