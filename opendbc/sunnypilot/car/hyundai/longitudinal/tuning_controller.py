@@ -39,7 +39,8 @@ class LongitudinalTuningController:
     self.last_decel_time = 0.0
     self.min_cancel_delay = 0.1
 
-  def reset_jerk(self) -> None:
+  def reset(self) -> None:
+    self.state.accel_last = 0.0
     self.state.accel_last_jerk = 0.0
     self.state.jerk = 0.0
     self.jerk_upper = 0.0
@@ -96,8 +97,7 @@ class LongitudinalTuningController:
   def calculate_accel(self, CC: structs.CarControl, CS: CarStateBase) -> float:
     """Calculate acceleration with cruise control status handling."""
     if not CC.enabled:
-      self.reset_jerk()
-      self.state.accel_last = 0.0
+      self.reset()
       return 0.0
 
     if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING and self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
