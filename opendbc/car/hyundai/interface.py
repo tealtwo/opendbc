@@ -172,6 +172,13 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   @staticmethod
+  def _get_longitudinal_tuning(stock_cp: structs.CarParams, ret: structs.CarParamsSP) -> structs.CarParamsSP:
+    if ret.flags & HyundaiFlagsSP.LONG_TUNING:
+      get_longitudinal_tune(stock_cp)
+
+    return ret
+
+  @staticmethod
   def init(CP, CP_SP, can_recv, can_send):
     if CP.openpilotLongitudinalControl and not ((CP.flags & (HyundaiFlags.CANFD_CAMERA_SCC | HyundaiFlags.CAMERA_SCC)) or
                                                 (CP_SP.flags & HyundaiFlagsSP.ENHANCED_SCC)):
@@ -187,8 +194,3 @@ class CarInterface(CarInterfaceBase):
     if CP_SP.flags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
       enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
 
-  @staticmethod
-  def _get_longitudinal_tuning(stock_cp: structs.CarParams, ret: structs.CarParamsSP) -> structs.CarParamsSP:
-    if ret.flags & HyundaiFlagsSP.LONG_TUNING:
-      get_longitudinal_tune(stock_cp)
-    return ret
