@@ -1,8 +1,8 @@
 from opendbc.car import Bus, get_safety_config, structs
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC, \
-  CANFD_UNSUPPORTED_LONGITUDINAL_CAR, \
-  UNSUPPORTED_LONGITUDINAL_CAR, HyundaiSafetyFlags
+                                                   CANFD_UNSUPPORTED_LONGITUDINAL_CAR, \
+                                                   UNSUPPORTED_LONGITUDINAL_CAR, HyundaiSafetyFlags
 from opendbc.car.hyundai.radar_interface import RADAR_START_ADDR
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.disable_ecu import disable_ecu
@@ -12,7 +12,7 @@ from opendbc.car.hyundai.radar_interface import RadarInterface
 
 from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
-from opendbc.sunnypilot.car.hyundai.longitudinal_tuning import LongitudinalController
+from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_longitudinal_tune
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
@@ -172,6 +172,13 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   @staticmethod
+  def _get_longitudinal_tuning(stock_cp: structs.CarParams, ret: structs.CarParamsSP) -> structs.CarParamsSP:
+    if ret.flags & HyundaiFlagsSP.LONG_TUNING:
+      get_longitudinal_tune(stock_cp)
+
+    return ret
+
+  @staticmethod
   def init(CP, CP_SP, can_recv, can_send):
     if CP.openpilotLongitudinalControl and not ((CP.flags & (HyundaiFlags.CANFD_CAMERA_SCC | HyundaiFlags.CAMERA_SCC)) or
                                                 (CP_SP.flags & HyundaiFlagsSP.ENHANCED_SCC)):
@@ -187,6 +194,3 @@ class CarInterface(CarInterfaceBase):
     if CP_SP.flags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
       enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
 
-  @classmethod
-  def apply_longitudinal_tuning(cls, CP, CP_SP):
-    LongitudinalController(CP, CP_SP).apply_tune(CP)

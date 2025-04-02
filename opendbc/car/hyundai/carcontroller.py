@@ -8,7 +8,7 @@ from opendbc.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParam
 from opendbc.car.interfaces import CarControllerBase
 
 from opendbc.sunnypilot.car.hyundai.escc import EsccCarController
-from opendbc.sunnypilot.car.hyundai.longitudinal_tuning import LongitudinalController
+from opendbc.sunnypilot.car.hyundai.longitudinal.controller import LongitudinalController
 from opendbc.sunnypilot.car.hyundai.mads import MadsCarController
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
@@ -64,7 +64,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
     MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
-    LongitudinalController.update(self, CC, CS, self.CP, self.frame)
+    LongitudinalController.update(self, CC, CS, self.frame)
     actuators = CC.actuators
     hud_control = CC.hudControl
 
@@ -87,7 +87,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     self.apply_torque_last = apply_torque
 
     # accel + longitudinal
-    accel = float(np.clip(self.state.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+    accel = float(np.clip(self.long_state.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     stopping = actuators.longControlState == LongCtrlState.stopping
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
 
@@ -151,8 +151,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
       use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
-      can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, self.jerk_upper,
-                                                      self.jerk_lower, int(self.frame / 2),
+      can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, self.long_state, int(self.frame / 2),
                                                       hud_control, set_speed_in_units, stopping,
                                                       CC.cruiseControl.override, use_fca, self.CP,
                                                       CS.main_cruise_enabled, self.ESCC))
@@ -200,7 +199,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         can_sends.extend(hyundaicanfd.create_fca_warning_light(self.packer, self.CAN, self.frame))
       if self.frame % 2 == 0:
         can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CAN, CC.enabled, self.accel_last, accel, stopping, CC.cruiseControl.override,
-                                                         self.jerk_upper, self.jerk_lower, set_speed_in_units, hud_control, CS.main_cruise_enabled))
+                                                         self.long_state, set_speed_in_units, hud_control, CS.main_cruise_enabled))
         self.accel_last = accel
     else:
       # button presses
