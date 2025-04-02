@@ -33,12 +33,16 @@ class LongitudinalTuningController:
 
     self.state = LongitudinalTuningState()
     self.car_config = get_car_config(CP)
+    self.accel_raw = 0.0
+    self.accel_value = 0.0
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
     self.last_decel_time = 0.0
     self.min_cancel_delay = 0.1
 
   def reset(self) -> None:
+    self.accel_raw = 0.0
+    self.accel_value = 0.0
     self.state.accel_last = 0.0
     self.state.accel_last_jerk = 0.0
     self.jerk_upper = 0.0
@@ -54,7 +58,7 @@ class LongitudinalTuningController:
 
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CS.out.aEgo
-    upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.15
+    upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.32
     lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.3
     self.state.accel_last_jerk = current_accel
 
@@ -72,7 +76,7 @@ class LongitudinalTuningController:
     self.jerk_upper = min(max(self.car_config.jerk_limits[0], upper_band_jerk), accel_jerk_max)
     self.jerk_lower = min(max(self.car_config.jerk_limits[0], -lower_band_jerk), decel_jerk_max)
 
-  def calculate_accel(self, CC: structs.CarControl, CS: CarStateBase) -> float:
+  def calculate_accel(self, CC: structs.CarControl) -> float:
     """Calculate acceleration with cruise control status handling."""
     if not CC.enabled:
       self.reset()
@@ -81,3 +85,18 @@ class LongitudinalTuningController:
     accel = CC.actuators.accel
 
     return float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+
+  def calculate_a_value(self, CC: structs.CarControl) -> float:
+    jerk = 5
+    jerk_number = jerk / 50
+    if not CC.enabled:
+      self.reset()
+      return 0.0
+
+    self.accel_raw = CC.actuators.accel
+
+    self.accel_value = np.clip(self.accel_raw, self.state.accel_last - jerk_number, self.state.accel_last + jerk_number)
+
+    self.state.accel_last = self.accel_value
+
+    return self.accel_value

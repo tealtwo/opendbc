@@ -150,7 +150,7 @@ def create_acc_commands(packer, enabled, accel, long_state, idx, hud_control, se
       "ACCMode": 2 if enabled and long_override else 1 if enabled else 0,
       "StopReq": 1 if stopping else 0,
       "aReqRaw": accel,
-      "aReqValue": accel,  # stock ramps up and down respecting jerk limit until it reaches aReqRaw
+      "aReqValue": long_state.accel_value,  # stock ramps up and down respecting jerk limit until it reaches aReqRaw
       "CR_VSM_Alive": idx % 0xF,
     }
 

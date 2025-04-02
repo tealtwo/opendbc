@@ -49,10 +49,9 @@ Having our jerk max be clipped to these values not only allows for better consis
 Minimum jerk was chosen based off of the following guideline proposed by Handbook of Intellegent Vehicles (2012):
 `Ride comfort may be sacrificed only under emergency conditions when vehicle and occupant safety consideration may preclude comfort.`
 
-**The value of 0.6 m/s^3 as the lower limit was chosen based off of**
+**The value of 0.53 m/s^3 as the lower limit was chosen based off of**
 [Carlowitz et al. (2024).](https://www.researchgate.net/publication/382274551_User_evaluation_of_comfortable_deceleration_profiles_for_highly_automated_driving_Findings_from_a_test_track_study)
 This research study identified the average lower jerk used in comfortable driving settings, which is 0.53 m/s^3 respectively.
-In this equation, the minimum has been rounded to 0.6 m/s^3 for maintainability and consistency.
 
 
 **Next, we have our acceleration smoothing**
@@ -60,3 +59,7 @@ In this equation, the minimum has been rounded to 0.6 m/s^3 for maintainability 
 For acceleration changes, we use the new discovered (i.e., new discovered use) from TCS signal
 brakeLightsDEPRECATED to measure when to enact the standstill delay which stock SCC uses to enact smoother transitions in
 acceleration.
+
+**Next, we have our accel value calculations for hyundaican.py**
+
+For our accel value calculations... # TODO 

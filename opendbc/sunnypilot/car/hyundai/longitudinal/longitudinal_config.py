@@ -16,32 +16,32 @@ class CarTuningConfig:
   v_ego_starting: float
   stopping_decel_rate: float
   start_accel: float
-  jerk_limits: tuple[float, float, float]  # (min, max lower jerk, max upper jerk)
+  jerk_limits: tuple[float, float, float]  # (min jerk, max lower jerk, max upper jerk)
 
 
 # Default configurations for different car types
-# Min jerk is set to 0.60 per (Horn et al., 2024)
+# Min jerk is set to 0.53 per (Horn et al., 2024)
 TUNING_CONFIGS = {
   "EV": CarTuningConfig(
     v_ego_stopping=0.25,
     v_ego_starting=0.1,
     stopping_decel_rate=0.20,
     start_accel=1.6,
-    jerk_limits=(0.53, 5.0, 2.2),
+    jerk_limits=(0.53, 3.3, 2.2),
   ),
   "HYBRID": CarTuningConfig(
     v_ego_stopping=0.25,
     v_ego_starting=0.12,
     stopping_decel_rate=0.20,
     start_accel=1.5,
-    jerk_limits=(0.53, 5.0, 2.2),
+    jerk_limits=(0.53, 3.3, 2.2),
   ),
   "DEFAULT": CarTuningConfig(
     v_ego_stopping=0.25,
     v_ego_starting=0.1,
     stopping_decel_rate=0.30,
     start_accel=1.6,
-    jerk_limits=(0.53, 5.0, 2.2),
+    jerk_limits=(0.53, 3.3, 2.2),
   )
 }
 
@@ -51,7 +51,7 @@ CAR_SPECIFIC_CONFIGS = {
     v_ego_stopping=0.25,
     v_ego_starting=0.10,
     stopping_decel_rate=0.075,
-    start_accel=1.0,
-    jerk_limits=(0.53, 3.3, 2.2),   # Test SCC maximum jerk limit range.
+    start_accel=1.6,
+    jerk_limits=(0.53, 3.3, 2.2),
   )
 }
