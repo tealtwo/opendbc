@@ -13,8 +13,6 @@ from opendbc.sunnypilot.car.hyundai.longitudinal.tuning_controller import Longit
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
-TCS_STANDSTILL_DELAY = 0.9  # Delay in which commands from model are not sent
-
 
 @dataclass
 class LongitudinalState:
@@ -50,6 +48,6 @@ class LongitudinalController:
     self.calculate_accel(CC, CS)
 
     if CS.out.brakeLightsDEPRECATED and not CS.out.brakePressed:
-      # Force zero acceleration during standstill delay of 0.9 seconds
+      # Force zero acceleration during standstill delay
       self.long_state.jerk_upper = 0.0
       self.long_state.jerk_lower = 0.0

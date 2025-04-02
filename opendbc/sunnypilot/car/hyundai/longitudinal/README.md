@@ -55,5 +55,8 @@ This research study identified the average lower jerk used in comfortable drivin
 In this equation, the minimum has been rounded to 0.6 m/s^3 for maintainability and consistency.
 
 
-**Next, we have our acceleration smoothing**.
-RED DIFF THAT :) @sunny explain how the TCS signal works lol
+**Next, we have our acceleration smoothing**
+
+For acceleration changes, we use the new discovered (i.e., new discovered use) from TCS signal
+brakeLightsDEPRECATED to measure when to enact the standstill delay which stock SCC uses to enact smoother transitions in
+acceleration.
