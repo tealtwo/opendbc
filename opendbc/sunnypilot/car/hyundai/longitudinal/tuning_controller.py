@@ -54,8 +54,8 @@ class LongitudinalTuningController:
 
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CS.out.aEgo
-    upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.125    # This is fine for now
-    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.3  # Try SPSS calculated var
+    upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.15
+    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.3
     self.state.accel_last_jerk = current_accel
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
