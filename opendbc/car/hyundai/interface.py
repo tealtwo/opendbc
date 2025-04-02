@@ -193,4 +193,3 @@ class CarInterface(CarInterfaceBase):
 
     if CP_SP.flags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
       enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
-
