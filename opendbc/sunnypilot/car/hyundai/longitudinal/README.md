@@ -5,7 +5,7 @@ To start this readme, I would like to first present the safety guidelines follow
 
 Our main safety guideline considered is [ISO 15622:2018](https://www.iso.org/obp/ui/en/#iso:std:iso:15622:ed-3:v1:en)
 This provides the groundwork of safety limits this tune must adhere too, and therefore, must be followed.
-For example, in our jerk calculations throughout this tune, you will see how jerk is clipped using the equation ISO standards.
+For example, in our jerk calculations throughout this tune, you will see how maximum jerk is clipped using the equation provided.
 
 In the tuning you will see a set of equations, the first being jerk, **but what exactly is jerk?**
 Jerk is calculated by taking current acceleration (in the form of m/s^2), subtracting that by previous acceleration, and
