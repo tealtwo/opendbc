@@ -1,6 +1,4 @@
 import numpy as np
-from openpilot.common.params import Params
-
 from opendbc.can.packer import CANPacker
 from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, \
                         make_tester_present_msg, structs
@@ -54,7 +52,6 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     MadsCarController.__init__(self)
     self.CAN = CanBus(CP)
     self.params = CarControllerParams(CP)
-    self._params = Params()
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.car_fingerprint = CP.carFingerprint
 
@@ -64,7 +61,6 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     self.lkas_max_torque = 0
     self.last_button_frame = 0
     self.angle_limit_counter = 0
-    self.smoothing_factor = 0.6
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
@@ -72,9 +68,6 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     actuators = CC.actuators
     hud_control = CC.hudControl
     apply_torque = 0
-
-    if self.frame % 25 == 0 and (smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor")):
-      self.smoothing_factor = float(smoothingFactorParam) / 10.0
 
     # TODO: needed for angle control cars?
     # >90 degree steering fault prevention
@@ -103,11 +96,8 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
       # Reset apply_angle_last if the driver is intervening
       if CS.out.steeringPressed:
         self.apply_angle_last = actuators.steeringAngleDeg
-      intended_angle = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
+      self.apply_angle_last = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
                                                            CS.out.steeringAngleDeg, CC.latActive, self.params.ANGLE_LIMITS)
-
-      # We apply EMA smoothing to the steering angle to avoid sudden changes
-      self.apply_angle_last = (self.smoothing_factor * intended_angle + (1 - self.smoothing_factor) * self.apply_angle_last)
 
       # Dynamic torque adjustment based on driver override
       USER_OVERRIDING = abs(CS.out.steeringTorque) > self.params.STEER_THRESHOLD
@@ -122,6 +112,12 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
         # Calculate target torque based on the absolute curvature value.
         # Higher curvature should naturally command higher torque.
         target_torque = float(np.interp(abs(actuators.curvature), CURVATURE_BREAKPOINTS, TORQUE_VALUES_AT_CURVATURE))
+
+        # Optionally, reduce torque when near center to avoid overreacting on small corrections.
+        NEAR_CENTER_ANGLE = 0.0  # Define a small-angle threshold (in degrees) for "near center"
+        if abs(self.apply_angle_last) < NEAR_CENTER_ANGLE:
+          adaptive_max_torque = float(np.interp(abs(self.apply_angle_last), [0, NEAR_CENTER_ANGLE], [0.5, 1.0]))
+          target_torque = min(target_torque, self.params.ANGLE_MAX_TORQUE * adaptive_max_torque)
 
         # Ramp up or down toward the target torque smoothly
         if self.lkas_max_torque > target_torque:
