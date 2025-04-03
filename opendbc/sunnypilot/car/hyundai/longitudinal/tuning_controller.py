@@ -59,7 +59,7 @@ class LongitudinalTuningController:
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CS.out.aEgo
     upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.32
-    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.3
+    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.275
     self.state.accel_last_jerk = current_accel
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
@@ -88,7 +88,7 @@ class LongitudinalTuningController:
 
   def calculate_a_value(self, CC: structs.CarControl) -> float:
     jerk = 5
-    jerk_number = jerk / 50
+    jerk_number = jerk / 50   # This equals 0.1, but why not just 0.1? Maybe we can try self.jerk_lower?
     if not CC.enabled:
       self.reset()
       return 0.0
