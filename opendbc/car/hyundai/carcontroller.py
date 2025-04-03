@@ -89,6 +89,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
 
     # angle control
     else:
+      new_angle = actuators.steeringAngleDeg
       # Example values for curvature-based torque scaling (tune these as needed)
       speed_multiplier = np.interp(CS.out.vEgoRaw, [0, 16.67, 30.0], [1.0, 1.4, 1.8])
       CURVATURE_BREAKPOINTS = [0.0, 0.003, 0.01, 0.018, 0.025]
@@ -100,14 +101,13 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
                                     0.75 * self.params.ANGLE_MAX_TORQUE * speed_multiplier,
                                     self.params.ANGLE_MAX_TORQUE]
 
+      new_angle = (self.smoothing_factor * new_angle + (1 - self.smoothing_factor) * self.apply_angle_last)
+
       # Reset apply_angle_last if the driver is intervening
       if CS.out.steeringPressed:
-        self.apply_angle_last = actuators.steeringAngleDeg
-      intended_angle = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
+        self.apply_angle_last = actuators.steeringAngleDeg # We go straight to the desired angle if the driver is intervening
+      self.apply_angle_last = apply_std_steer_angle_limits(new_angle, self.apply_angle_last, CS.out.vEgoRaw,
                                                            CS.out.steeringAngleDeg, CC.latActive, self.params.ANGLE_LIMITS)
-
-      # We apply EMA smoothing to the steering angle to avoid sudden changes
-      self.apply_angle_last = (self.smoothing_factor * intended_angle + (1 - self.smoothing_factor) * self.apply_angle_last)
 
       # Dynamic torque adjustment based on driver override
       USER_OVERRIDING = abs(CS.out.steeringTorque) > self.params.STEER_THRESHOLD
