@@ -58,7 +58,7 @@ class LongitudinalTuningController:
 
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CS.out.aEgo
-    upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.32
+    upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.30
     lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.20
     self.state.accel_last_jerk = current_accel
 
@@ -71,7 +71,7 @@ class LongitudinalTuningController:
       decel_jerk_max = 2.5
       accel_jerk_max = 1.65
     else:
-      decel_jerk_max = 5.83 - (velocity / 6)
+      decel_jerk_max = 3.64284 - (0.05714 * velocity)
       accel_jerk_max = self.car_config.jerk_limits[2]
 
     accel_jerk = accel_jerk_max if LongCtrlState == LongCtrlState.pid else 1.0

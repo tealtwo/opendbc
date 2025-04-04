@@ -12,14 +12,14 @@ Jerk is calculated by taking current acceleration (in the form of m/s^2), subtra
 dividing that by time. In our tune you will see the following equation:
 
     current_accel = CS.out.aEgo
-    upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.125
-    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.30
+    upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.30
+    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.20
     self.state.accel_last_jerk = current_accel
 
-For time, in this equation we are using 0.125 to represent time for our upper jerk calculations.
+For time, in this equation we are using 0.20 to represent time for our upper jerk calculations.
 For example, lets say our current acceleration is 0.7 m/s^2 and our previous acceleration was 0.2 m/s^2; This would lead to us having 0.5 m/s^2 divided by
-0.125 (our timestep), which leads to a calculated jerk value of 4.0 m/s^3. Furthermore, we are using 0.30 as our timestep for lower
-jerk calculations. An example of this would, using the same example above, would equal 1.667 m/s^3 jerk, which gets inputed to lower jerk.
+0.20 (our timestep), which leads to a calculated jerk value of 1.667 m/s^3. Furthermore, we are using 0.20 as our timestep for lower
+jerk calculations. An example of this would, using the same example above, would equal 2.5 m/s^3 jerk, which gets inputed to lower jerk.
 This then goes through our minimum and maximum clipping which forces a value between our set min and max, which I discuss later in this readme.
 
 Moving on, the accel_last_jerk, stores current accel after each iteration and uses that in the calculation as previous accel for
@@ -31,14 +31,18 @@ our jerk calculations. Now we see the calculation of jerk max and jerk min. **Le
     elif velocity > 20.0:
       decel_jerk_max = 2.5
     else:
-      decel_jerk_max = 5.83 - (velocity / 6)
+      decel_jerk_max = 3.64284 - 0.05714 * velocity
 
-This equation above is set by ISO 15622, and dictates that jerk lower limit can only be five when below 5 m/s.
+This equation above is set by ISO 15622, and dictates that jerk lower limit can only be five when below 5 m/s. In our equation,
+
+    self.car_config.jerk_limits[1] 
+
+Jerk_limits[1] represents a jerk value of 3.3 m/s^3, which is the maximum analyzed lower jerk rate seen on stock SCC CAN.
 Between 5 m/s and 20 m/s jerk is capped using the calculation:
 
-    5.83 - (current velocity / 6 )
+    decel_jerk_max = 3.64284 - 0.05714 * velocity
 
-This means that if current velocity is say, 15 m/s the final jerk value would be capped at 3.33 m/s^3.
+This means that if current velocity is say, 15 m/s the final jerk max value would be capped at 2.78 m/s^3.
 Anything above 20 m/s is capped to a lower jerk max of 2.5 m/s^3. This allows for a smoother jerk range, while complying to ISO standards to a tee.
 The current jerk Lower Limit you will see in openpilot before this tune, is 5.0 m/s^3; Which as you can see from using the above calculation,
 the 5.0 m/s^3 technically does not comply with ISO standards at any speed above 5.0 m/s^3.
@@ -53,6 +57,15 @@ Minimum jerk was chosen based off of the following guideline proposed by Handboo
 [Carlowitz et al. (2024).](https://www.researchgate.net/publication/382274551_User_evaluation_of_comfortable_deceleration_profiles_for_highly_automated_driving_Findings_from_a_test_track_study)
 This research study identified the average lower jerk used in comfortable driving settings, which is 0.53 m/s^3 respectively.
 
+**The multiplication factors in the upper and lower jerk equation, and what they represent**
+
+In the equation you will see:
+
+` upper_band_jerk * 2.0`  `-lower_band_jerk * 1.5`
+
+These multiplications factors are meant to bring the final calcualted jerk value to higher limits, making it more
+representative of true upper/lower band jerk sent over CAN. This also allows a higher safety factor, by allowing jerk to
+sufficiently slow the car.
 
 **Next, we have our acceleration smoothing**
 

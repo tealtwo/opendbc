@@ -50,7 +50,7 @@ CAR_SPECIFIC_CONFIGS = {
   CAR.KIA_NIRO_EV: CarTuningConfig(
     v_ego_stopping=0.25,
     v_ego_starting=0.10,
-    stopping_decel_rate=0.10,
+    stopping_decel_rate=0.05,
     start_accel=1.0,
     jerk_limits=(0.53, 3.3, 2.2),
   )
