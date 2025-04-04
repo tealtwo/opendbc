@@ -75,9 +75,10 @@ class LongitudinalTuningController:
       accel_jerk_max = self.car_config.jerk_limits[2]
 
     accel_jerk = accel_jerk_max if LongCtrlState == LongCtrlState.pid else 1.0
+    min_lower_jerk = self.car_config.jerk_limits[0] if (velocity > 6.5) else 0.9
 
     self.jerk_upper = min(max(self.car_config.jerk_limits[0], upper_band_jerk * 2.0), accel_jerk)
-    self.jerk_lower = min(max(0.9, -lower_band_jerk * 2.0), decel_jerk_max)
+    self.jerk_lower = min(max(min_lower_jerk, -lower_band_jerk * 2.0), decel_jerk_max)
 
   def calculate_accel(self, CC: structs.CarControl) -> float:
     """Calculate acceleration with cruise control status handling."""
