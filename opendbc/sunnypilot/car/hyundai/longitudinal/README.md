@@ -42,11 +42,13 @@ Between 5 m/s and 20 m/s jerk is capped using the calculation:
 
     decel_jerk_max = 3.64284 - 0.05714 * velocity
 
+This equation calculates the linear jerk from 6m/s to 19m/s, scaling down from 3.3 to 2.5 m/s^3.
 This means that if current velocity is say, 15 m/s the final jerk max value would be capped at 2.78 m/s^3.
 Anything above 20 m/s is capped to a lower jerk max of 2.5 m/s^3. This allows for a smoother jerk range, while complying to ISO standards to a tee.
 The current jerk Lower Limit you will see in openpilot before this tune, is 5.0 m/s^3; Which as you can see from using the above calculation,
 the 5.0 m/s^3 technically does not comply with ISO standards at any speed above 5.0 m/s^3.
-Having our jerk max be clipped to these values not only allows for better consistency with ISO standards, but also enables us to have a much smoother braking experience.
+Having our jerk max be clipped to these values not only allows for better consistency with ISO standards, 
+but also enables us to have a much smoother braking experience.
 
 **Getting into our next topic, I would like to explain how our minimum jerk was chosen.**
 
@@ -57,8 +59,8 @@ Minimum jerk was chosen based off of the following guideline proposed by Handboo
 [Carlowitz et al. (2024).](https://www.researchgate.net/publication/382274551_User_evaluation_of_comfortable_deceleration_profiles_for_highly_automated_driving_Findings_from_a_test_track_study)
 This research study identified the average lower jerk used in comfortable driving settings, which is 0.53 m/s^3 respectively.
 This represents the value used in upper jerk absolute minimum.
-For our lower jerk minimum 0.53 m/s^3 is used for speeds under 6.71 m/s (15mph/24kph), and a more responsive 0.9 m/s^3 is
-the minimum jerk for speeds above 6.71 m/s.
+For our lower jerk minimum 0.53 m/s^3 is used for speeds under 8.333 m/s (18.641mph/30kph), and a more responsive 0.9 m/s^3 is
+the minimum jerk for speeds above 8.333 m/s.
 
 **The multiplication factors in the upper and lower jerk equation, and what they represent**
 
