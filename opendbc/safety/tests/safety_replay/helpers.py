@@ -18,7 +18,7 @@ def is_steering_msg(mode, param, addr):
     ret = addr == (0x191 if param & ToyotaSafetyFlags.LTA else 0x2E4)
   elif mode == CarParams.SafetyModel.gm:
     ret = addr == 384
-  elif mode == CarParams.SafetyModel.hyundai:
+  elif mode in (CarParams.SafetyModel.hyundai, CarParams.SafetyModel.hyundaiLegacy):
     ret = addr == 832
   elif mode == CarParams.SafetyModel.hyundaiCanfd:
     ret = addr == (0x110 if param & HyundaiSafetyFlags.CANFD_LKA_STEERING_ALT else
@@ -54,7 +54,7 @@ def get_steer_value(mode, param, to_send):
   elif mode == CarParams.SafetyModel.gm:
     torque = ((to_send.data[0] & 0x7) << 8) | to_send.data[1]
     torque = to_signed(torque, 11)
-  elif mode == CarParams.SafetyModel.hyundai:
+  elif mode in (CarParams.SafetyModel.hyundai, CarParams.SafetyModel.hyundaiLegacy):
     torque = (((to_send.data[3] & 0x7) << 8) | to_send.data[2]) - 1024
   elif mode == CarParams.SafetyModel.hyundaiCanfd:
     torque = ((to_send.data[5] >> 1) | (to_send.data[6] & 0xF) << 7) - 1024
@@ -93,12 +93,14 @@ def init_segment(safety, msgs, mode, param):
   torque, angle = get_steer_value(mode, param, to_send)
   if torque != 0:
     safety.set_controls_allowed(1)
+    safety.set_controls_allowed_lat(1)
     safety.set_desired_torque_last(torque)
     safety.set_rt_torque_last(torque)
     safety.set_torque_meas(torque, torque)
     safety.set_torque_driver(torque, torque)
   elif angle != 0:
     safety.set_controls_allowed(1)
+    safety.set_controls_allowed_lat(1)
     safety.set_desired_angle_last(angle)
     safety.set_angle_meas(angle, angle)
   assert safety.safety_tx_hook(to_send), "failed to initialize panda safety for segment"
