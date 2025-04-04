@@ -66,15 +66,18 @@ class LongitudinalTuningController:
     velocity = CS.out.vEgo
     if velocity < 5.0:
       decel_jerk_max = self.car_config.jerk_limits[1]
+      accel_jerk_max = 1.0
     elif velocity > 20.0:
       decel_jerk_max = 2.5
+      accel_jerk_max = 1.65
     else:
       decel_jerk_max = 5.83 - (velocity / 6)
+      accel_jerk_max = self.car_config.jerk_limits[2]
 
-    accel_jerk_max = self.car_config.jerk_limits[2] if LongCtrlState == LongCtrlState.pid else 1.0
+    accel_jerk = accel_jerk_max if LongCtrlState == LongCtrlState.pid else 1.0
 
-    self.jerk_upper = min(max(self.car_config.jerk_limits[0], upper_band_jerk), accel_jerk_max)
-    self.jerk_lower = min(max(self.car_config.jerk_limits[0], -lower_band_jerk), decel_jerk_max)
+    self.jerk_upper = min(max(self.car_config.jerk_limits[0], upper_band_jerk * 2.0), accel_jerk)
+    self.jerk_lower = min(max(self.car_config.jerk_limits[0], -lower_band_jerk * 1.5), decel_jerk_max)
 
   def calculate_accel(self, CC: structs.CarControl) -> float:
     """Calculate acceleration with cruise control status handling."""

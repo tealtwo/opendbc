@@ -26,14 +26,14 @@ TUNING_CONFIGS = {
     v_ego_stopping=0.25,
     v_ego_starting=0.1,
     stopping_decel_rate=0.265,
-    start_accel=1.6,
+    start_accel=1.0,
     jerk_limits=(0.53, 3.3, 2.2),
   ),
   "HYBRID": CarTuningConfig(
     v_ego_stopping=0.25,
     v_ego_starting=0.12,
     stopping_decel_rate=0.28,
-    start_accel=1.5,
+    start_accel=1.0,
     jerk_limits=(0.53, 3.3, 2.2),
   ),
   "DEFAULT": CarTuningConfig(
@@ -51,7 +51,7 @@ CAR_SPECIFIC_CONFIGS = {
     v_ego_stopping=0.25,
     v_ego_starting=0.10,
     stopping_decel_rate=0.075,
-    start_accel=1.6,
+    start_accel=1.0,
     jerk_limits=(0.53, 3.3, 2.2),
   )
 }
