@@ -70,14 +70,15 @@ class LongitudinalTuningController:
     elif velocity > 20.0:
       decel_jerk_max = 2.5
       accel_jerk_max = 1.65
-    else:
+    else:   # Between 5 m/s and 20 m/s
       decel_jerk_max = 3.64284 - (0.05714 * velocity)
       accel_jerk_max = self.car_config.jerk_limits[2]
 
     accel_jerk = accel_jerk_max if LongCtrlState == LongCtrlState.pid else 1.0
-    min_lower_jerk = self.car_config.jerk_limits[0] if (velocity < 8.333) else 0.9
+    min_lower_jerk = self.car_config.jerk_limits[0] if (velocity < 6.700) else 0.90
+    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.75
 
-    self.jerk_upper = min(max(self.car_config.jerk_limits[0], upper_band_jerk * 2.0), accel_jerk)
+    self.jerk_upper = min(max(min_upper_jerk, upper_band_jerk * 2.0), accel_jerk)
     self.jerk_lower = min(max(min_lower_jerk, -lower_band_jerk * 2.0), decel_jerk_max)
 
   def calculate_accel(self, CC: structs.CarControl) -> float:
