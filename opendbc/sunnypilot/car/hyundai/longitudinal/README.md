@@ -56,6 +56,9 @@ Minimum jerk was chosen based off of the following guideline proposed by Handboo
 **The value of 0.53 m/s^3 as the lower limit was chosen based off of**
 [Carlowitz et al. (2024).](https://www.researchgate.net/publication/382274551_User_evaluation_of_comfortable_deceleration_profiles_for_highly_automated_driving_Findings_from_a_test_track_study)
 This research study identified the average lower jerk used in comfortable driving settings, which is 0.53 m/s^3 respectively.
+This represents the value used in upper jerk absolute minimum.
+For our lower jerk minimum 0.53 m/s^3 is used for speeds under 6.71 m/s (15mph/24kph), and a more responsive 0.9 m/s^3 is
+the minimum jerk for speeds above 6.71 m/s.
 
 **The multiplication factors in the upper and lower jerk equation, and what they represent**
 
