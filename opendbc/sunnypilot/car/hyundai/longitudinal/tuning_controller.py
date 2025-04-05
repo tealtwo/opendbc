@@ -57,12 +57,16 @@ class LongitudinalTuningController:
       self.jerk_lower = jerk_limit
       return
 
-    # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
-    current_accel = CC.actuators.accel
-    delta = current_accel - self.state.accel_last_jerk
+    # Blend planned acceleration with current speed.
+    planned_accel = CC.actuators.accel
+    current_accel = CS.out.vEgo
+    blended_value = 0.65 * planned_accel + 0.35 * current_accel
+
+    delta = blended_value - self.state.accel_last_jerk
+
     upper_band_jerk = math.copysign(delta * delta, delta)
-    lower_band_jerk = math.copysign(delta * delta, delta) / 0.52
-    self.state.accel_last_jerk = current_accel
+    lower_band_jerk = math.copysign(delta * delta, delta)
+    self.state.accel_last_jerk = blended_value
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
     velocity = CS.out.vEgo
