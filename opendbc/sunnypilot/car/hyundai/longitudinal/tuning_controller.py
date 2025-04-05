@@ -5,6 +5,7 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 
+import math
 import numpy as np
 from dataclasses import dataclass
 
@@ -58,8 +59,9 @@ class LongitudinalTuningController:
 
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
     current_accel = CC.actuators.accel
-    upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.40
-    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.420
+    delta = current_accel - self.state.accel_last_jerk
+    upper_band_jerk = math.copysign(delta * delta, delta) / 0.40
+    lower_band_jerk = math.copysign(delta * delta, delta) / 0.32
     self.state.accel_last_jerk = current_accel
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
