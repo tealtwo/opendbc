@@ -13,13 +13,13 @@ dividing that by time. In our tune you will see the following equation:
 
     current_accel = CC.actuators.accel
     upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.30
-    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.20
+    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.25
     self.state.accel_last_jerk = current_accel
 
-For time, in this equation we are using 0.20 to represent time for our upper jerk calculations.
+For time, in this equation we are using 0.30 to represent time for our upper jerk calculations.
 For example, lets say our current acceleration is 0.7 m/s^2 and our previous acceleration was 0.2 m/s^2; This would lead to us having 0.5 m/s^2 divided by
-0.20 (our timestep), which leads to a calculated jerk value of 1.667 m/s^3. Furthermore, we are using 0.20 as our timestep for lower
-jerk calculations. An example of this would, using the same example above, would equal 2.5 m/s^3 jerk, which gets inputed to lower jerk.
+0.30 (our timestep), which leads to a calculated jerk value of 1.667 m/s^3. Furthermore, we are using 0.25 as our timestep for lower
+jerk calculations. An example of this would, using the same example above, would equal 2.0 m/s^3 jerk, which gets inputed to lower jerk.
 This then goes through our minimum and maximum clipping which forces a value between our set min and max, which I discuss later in this readme.
 
 Moving on, the accel_last_jerk, stores current accel after each iteration and uses that in the calculation as previous accel for
@@ -79,8 +79,7 @@ takeoffs while not causing lag. For all other speeds, we use our normal jerk_lim
 
 In the equation you will see:
 
-    upper_band_jerk * 1.25
-    -lower_band_jerk * 2.0
+    -lower_band_jerk * 1.5
 
 These multiplications factors are meant to bring the final calcualted jerk value to higher limits, making it more
 representative of true upper/lower band jerk sent over CAN. This also allows a higher safety factor, by allowing jerk to
