@@ -38,8 +38,6 @@ class LongitudinalTuningController:
     self.accel_value = 0.0
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
-    self.last_decel_time = 0.0
-    self.min_cancel_delay = 0.1
 
   def reset(self) -> None:
     self.accel_raw = 0.0
