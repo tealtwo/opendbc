@@ -60,8 +60,11 @@ Minimum jerk was chosen based off of the following guideline proposed by Handboo
 [Carlowitz et al. (2024).](https://www.researchgate.net/publication/382274551_User_evaluation_of_comfortable_deceleration_profiles_for_highly_automated_driving_Findings_from_a_test_track_study)
 This research study identified the average lower jerk used in comfortable driving settings, which is 0.53 m/s^3.
 This is then rounded to 0.60 m/s^3 represents the value used in upper jerk absolute minimum.
-Our lower jerk minimum is used for speeds under 6.700 m/s (15mph/24kph), where a more responsive 0.9 m/s^3 is
-the minimum jerk for speeds above 8.333 m/s.
+
+     min_lower_jerk = self.car_config.jerk_limits[0] if (velocity < 6.700) else 0.90
+
+As shown above, lower jerk minimum of 0.60 is used for speeds under 6.700 m/s (15mph/24kph), where a more 
+responsive 0.9 m/s^3 is the minimum jerk for speeds above 8.333 m/s.
 
 **Why our minimum upper jerk is conditional**
 
@@ -83,11 +86,10 @@ These multiplications factors are meant to bring the final calcualted jerk value
 representative of true upper/lower band jerk sent over CAN. This also allows a higher safety factor, by allowing jerk to
 sufficiently slow the car.
 
-**Next, we have our acceleration smoothing**
+**Next, we have our acceleration limiting**
 
-For acceleration changes, we use the new discovered (i.e., new discovered use) from TCS signal
-brakeLightsDEPRECATED to measure when to enact the standstill delay which stock SCC uses to enact smoother transitions in
-acceleration.
+For acceleration limiting, we use TCS signal brakeLightsDEPRECATED to measure when to enact the standstill delay 
+which stock SCC uses to allow smoother transitions in acceleration.
 
 **Next, we have our accel value calculations for hyundaican.py**
 
