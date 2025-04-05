@@ -13,13 +13,13 @@ dividing that by time. In our tune you will see the following equation:
 
     current_accel = CC.actuators.accel
     upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.30
-    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.25
+    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.30
     self.state.accel_last_jerk = current_accel
 
 For time, in this equation we are using 0.30 to represent time for our upper jerk calculations.
 For example, lets say our current acceleration is 0.7 m/s^2 and our previous acceleration was 0.2 m/s^2; This would lead to us having 0.5 m/s^2 divided by
-0.30 (our timestep), which leads to a calculated jerk value of 1.667 m/s^3. Furthermore, we are using 0.25 as our timestep for lower
-jerk calculations. An example of this would, using the same example above, would equal 2.0 m/s^3 jerk, which gets inputed to lower jerk.
+0.30 (our timestep), which leads to a calculated jerk value of 1.667 m/s^3. Furthermore, we are using 0.30 as our timestep for lower
+jerk calculations. An example of this would, using the same example above, would equal 1.667 m/s^3 jerk, which gets inputed to lower jerk.
 This then goes through our minimum and maximum clipping which forces a value between our set min and max, which I discuss later in this readme.
 
 Moving on, the accel_last_jerk, stores current accel after each iteration and uses that in the calculation as previous accel for
@@ -59,31 +59,21 @@ Minimum jerk was chosen based off of the following guideline proposed by Handboo
 
 [Carlowitz et al. (2024).](https://www.researchgate.net/publication/382274551_User_evaluation_of_comfortable_deceleration_profiles_for_highly_automated_driving_Findings_from_a_test_track_study)
 This research study identified the average lower jerk used in comfortable driving settings, which is 0.53 m/s^3.
-This is then rounded to 0.60 m/s^3 represents the value used in upper jerk absolute minimum.
+This is then inputted to jerk_limits[0] as 0.53 m/s^3 represents the value used in upper jerk absolute minimum.
 
-     min_lower_jerk = self.car_config.jerk_limits[0] if (velocity < 6.700) else 0.90
+     min_lower_jerk = self.car_config.jerk_limits[0] if (velocity < 6.700) else 0.70
 
-As shown above, lower jerk minimum of 0.60 is used for speeds under 6.700 m/s (15mph/24kph), where a more 
-responsive 0.9 m/s^3 is the minimum jerk for speeds above 6.700 m/s.
+As shown above, lower jerk minimum of 0.53 is used for speeds under 6.700 m/s (15mph/24kph), where a more 
+responsive 0.70 m/s^3 is the minimum jerk for speeds above 6.700 m/s.
 
 **Why our minimum upper jerk is conditional**
 
 Our minimum upper band jerk is conditional as well and is denoted below:
 
-    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.70
+    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.65
 
-This means that for speeds under 3.611 m/s (8.077 mph/ 13 kph) we have a minimum jerk of 0.70. This allows for smooth
-takeoffs while not causing lag. For all other speeds, we use our normal jerk_limit for minimum, which is 0.60.
-
-**The multiplication factors in the upper and lower jerk equation, and what they represent**
-
-In the equation you will see:
-
-    -lower_band_jerk * 1.5
-
-These multiplications factors are meant to bring the final calcualted jerk value to higher limits, making it more
-representative of true upper/lower band jerk sent over CAN. This also allows a higher safety factor, by allowing jerk to
-sufficiently slow the car.
+This means that for speeds under 3.611 m/s (8.077 mph/ 13 kph) we have a minimum jerk of 0.65. This allows for smooth
+takeoffs while not causing lag. For all other speeds, we use our normal jerk_limit for minimum, which is 0.53.
 
 **Next, we have our acceleration limiting**
 
