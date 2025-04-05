@@ -1,5 +1,5 @@
 
-# **How our custom longitudinal tuning works for Hyundai/Kia/Genesis vehicles.**
+# **How custom longitudinal tuning works for Hyundai/Kia/Genesis vehicles in sunnypilot.**
 
 To start this readme, I would like to first present the safety guidelines followed to create the tune:
 
@@ -11,7 +11,7 @@ In the tuning you will see a set of equations, the first being jerk, **but what 
 Jerk is calculated by taking current acceleration (in the form of m/s^2), subtracting that by previous acceleration, and
 dividing that by time. In our tune you will see the following equation:
 
-    current_accel = CS.out.aEgo
+    current_accel = CC.actuators.accel
     upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.30
     lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.20
     self.state.accel_last_jerk = current_accel
@@ -55,18 +55,29 @@ but also enables us to have a much smoother braking experience.
 Minimum jerk was chosen based off of the following guideline proposed by Handbook of Intellegent Vehicles (2012):
 `Ride comfort may be sacrificed only under emergency conditions when vehicle and occupant safety consideration may preclude comfort.`
 
-**The value of 0.53 m/s^3 as the lower limit was chosen based off of**
+**What the value of 0.60 m/s^3 as the conditional lower limit was chosen based off of**
+
 [Carlowitz et al. (2024).](https://www.researchgate.net/publication/382274551_User_evaluation_of_comfortable_deceleration_profiles_for_highly_automated_driving_Findings_from_a_test_track_study)
-This research study identified the average lower jerk used in comfortable driving settings, which is 0.53 m/s^3 respectively.
-This represents the value used in upper jerk absolute minimum.
-For our lower jerk minimum 0.53 m/s^3 is used for speeds under 8.333 m/s (18.641mph/30kph), and a more responsive 0.9 m/s^3 is
+This research study identified the average lower jerk used in comfortable driving settings, which is 0.53 m/s^3.
+This is then rounded to 0.60 m/s^3 represents the value used in upper jerk absolute minimum.
+Our lower jerk minimum is used for speeds under 6.700 m/s (15mph/24kph), where a more responsive 0.9 m/s^3 is
 the minimum jerk for speeds above 8.333 m/s.
+
+**Why our minimum upper jerk is conditional**
+
+Our minimum upper band jerk is conditional as well and is denoted below:
+
+    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.70
+
+This means that for speeds under 3.611 m/s (8.077 mph/ 13 kph) we have a minimum jerk of 0.70. This allows for smooth
+takeoffs while not causing lag. For all other speeds, we use our normal jerk_limit for minimum, which is 0.60.
 
 **The multiplication factors in the upper and lower jerk equation, and what they represent**
 
 In the equation you will see:
 
-` upper_band_jerk * 2.0`  `-lower_band_jerk * 1.5`
+    upper_band_jerk * 1.25
+    -lower_band_jerk * 2.0
 
 These multiplications factors are meant to bring the final calcualted jerk value to higher limits, making it more
 representative of true upper/lower band jerk sent over CAN. This also allows a higher safety factor, by allowing jerk to
@@ -80,4 +91,11 @@ acceleration.
 
 **Next, we have our accel value calculations for hyundaican.py**
 
-For our accel value calculations... # TODO 
+For our accel value calculations we have the following:
+
+   `self.accel_value = np.clip(self.accel_raw, self.state.accel_last - jerk_number, self.state.accel_last + jerk_number)`
+
+This essentialy means that we have our accel_raw, which is acceleration (m/s^2), followed by our clipping variables. 
+jerk_number in this equation represents exactly `0.1`, which is subtracted or added by self.state.accel_last, which is 
+previous calculated accel_value. Furthermore, we have `self.state.accel_last`, which is caculated as the stored accel from
+the above calculations.

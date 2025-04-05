@@ -48,7 +48,7 @@ class LongitudinalTuningController:
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
 
-  def make_jerk(self, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
+  def make_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
       jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
 
@@ -57,7 +57,7 @@ class LongitudinalTuningController:
       return
 
     # Jerk is calculated using current accel - last accel divided by ΔT (delta time)
-    current_accel = CS.out.aEgo
+    current_accel = CC.actuators.accel
     upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.30
     lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.20
     self.state.accel_last_jerk = current_accel
@@ -76,9 +76,9 @@ class LongitudinalTuningController:
 
     accel_jerk = accel_jerk_max if LongCtrlState == LongCtrlState.pid else 1.0
     min_lower_jerk = self.car_config.jerk_limits[0] if (velocity < 6.700) else 0.90
-    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.75
+    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.70
 
-    self.jerk_upper = min(max(min_upper_jerk, upper_band_jerk * 2.0), accel_jerk)
+    self.jerk_upper = min(max(min_upper_jerk, upper_band_jerk * 1.25), accel_jerk)
     self.jerk_lower = min(max(min_lower_jerk, -lower_band_jerk * 2.0), decel_jerk_max)
 
   def calculate_accel(self, CC: structs.CarControl) -> float:
