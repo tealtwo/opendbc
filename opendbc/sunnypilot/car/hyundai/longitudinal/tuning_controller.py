@@ -57,15 +57,13 @@ class LongitudinalTuningController:
       self.jerk_lower = jerk_limit
       return
 
-    # Blend planned acceleration with current speed.
+    # Blend planned acceleration with current acceleration.
     planned_accel = CC.actuators.accel
     current_accel = CS.out.vEgo
-    blended_value = 0.65 * planned_accel + 0.35 * current_accel
-
+    blended_value = 0.50 * planned_accel + 0.50 * current_accel
     delta = blended_value - self.state.accel_last_jerk
 
-    upper_band_jerk = math.copysign(delta * delta, delta)
-    lower_band_jerk = math.copysign(delta * delta, delta)
+    self.state.jerk = math.copysign(delta * delta, delta)
     self.state.accel_last_jerk = blended_value
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
@@ -81,11 +79,11 @@ class LongitudinalTuningController:
       accel_jerk_max = self.car_config.jerk_limits[2]
 
     accel_jerk = accel_jerk_max if LongCtrlState == LongCtrlState.pid else 1.0
-    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.65
+    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.60
     min_lower_jerk = self.car_config.jerk_limits[0]
 
-    self.jerk_upper = min(max(min_upper_jerk, upper_band_jerk), accel_jerk)
-    self.jerk_lower = min(max(min_lower_jerk, -lower_band_jerk), decel_jerk_max)
+    self.jerk_upper = min(max(min_upper_jerk, self.state.jerk), accel_jerk)
+    self.jerk_lower = min(max(min_lower_jerk, -self.state.jerk), decel_jerk_max)
 
   def calculate_accel(self, CC: structs.CarControl) -> float:
     """Calculate acceleration with cruise control status handling."""
