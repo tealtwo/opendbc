@@ -11,19 +11,24 @@ In the tuning you will see a set of equations, the first being jerk, **but what 
 Jerk is calculated by taking current acceleration (in the form of m/s^2), subtracting that by previous acceleration, and
 dividing that by time. In our tune you will see the following equation:
 
-    current_accel = CC.actuators.accel
-    upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.30
-    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.35
-    self.state.accel_last_jerk = current_accel
+    planned_accel = CC.actuators.accel
+    current_accel = CS.out.vEgo
+    blended_value = 0.50 * planned_accel + 0.50 * current_accel
+    delta = blended_value - self.state.accel_last_jerk
 
-For time, in this equation we are using 0.30 to represent time for our upper jerk calculations.
-For example, lets say our current acceleration is 0.7 m/s^2 and our previous acceleration was 0.2 m/s^2; This would lead to us having 0.5 m/s^2 divided by
-0.30 (our timestep), which leads to a calculated jerk value of 1.667 m/s^3. Furthermore, we are using 0.35 as our timestep for lower
-jerk calculations. An example of this would, using the same example above, would equal 1.428 m/s^3 jerk, which gets inputed to lower jerk.
+    self.state.jerk = math.copysign(delta * delta, delta)
+    self.state.accel_last_jerk = blended_value
+
+Instead of using a hardcoded time, we are focused on making jerk parabolic. First we have our planned acceleration from longitudinal_planner.
+Then we have our current carstate acceleration. These are then blended together 50/50 to form our blended value.
+Following this, we have our delta which subtracts our blended_value from our previous acceleration `self.state.accel_last_jerk`
+Lastly, we have our finalized jerk calculation, which squares the delta to create a parabolic response while retaining the original sign.
 This then goes through our minimum and maximum clipping which forces a value between our set min and max, which I discuss later in this readme.
 
 Moving on, the accel_last_jerk, stores current accel after each iteration and uses that in the calculation as previous accel for
-our jerk calculations. Now we see the calculation of jerk max and jerk min. **Lets dive into how jerk lower limit max is calculated:**
+our jerk calculations. Now we see the calculation of jerk max and jerk min. 
+
+**Lets dive into how jerk lower limit max is calculated:**
 
      velocity = CS.out.vEgo
     if velocity < 5.0:
@@ -71,7 +76,7 @@ Our minimum upper band jerk is conditional as well and is denoted below:
 
     min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.65
 
-This means that for speeds under 3.611 m/s (8.077 mph/ 13 kph) we have a minimum jerk of 0.65. This allows for smooth
+This means that for speeds under 3.611 m/s (8.077 mph/ 13 kph) we have a minimum jerk of 0.60. This allows for smooth
 takeoffs while not causing lag. For all other speeds, we use our normal jerk_limit for minimum, which is 0.53.
 
 **Next, we have our acceleration limiting**
