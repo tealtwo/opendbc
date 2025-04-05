@@ -64,7 +64,7 @@ This is then rounded to 0.60 m/s^3 represents the value used in upper jerk absol
      min_lower_jerk = self.car_config.jerk_limits[0] if (velocity < 6.700) else 0.90
 
 As shown above, lower jerk minimum of 0.60 is used for speeds under 6.700 m/s (15mph/24kph), where a more 
-responsive 0.9 m/s^3 is the minimum jerk for speeds above 8.333 m/s.
+responsive 0.9 m/s^3 is the minimum jerk for speeds above 6.700 m/s.
 
 **Why our minimum upper jerk is conditional**
 
