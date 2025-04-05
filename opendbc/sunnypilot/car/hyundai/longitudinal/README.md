@@ -13,13 +13,13 @@ dividing that by time. In our tune you will see the following equation:
 
     current_accel = CC.actuators.accel
     upper_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.30
-    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.30
+    lower_band_jerk = (current_accel - self.state.accel_last_jerk) / 0.35
     self.state.accel_last_jerk = current_accel
 
 For time, in this equation we are using 0.30 to represent time for our upper jerk calculations.
 For example, lets say our current acceleration is 0.7 m/s^2 and our previous acceleration was 0.2 m/s^2; This would lead to us having 0.5 m/s^2 divided by
-0.30 (our timestep), which leads to a calculated jerk value of 1.667 m/s^3. Furthermore, we are using 0.30 as our timestep for lower
-jerk calculations. An example of this would, using the same example above, would equal 1.667 m/s^3 jerk, which gets inputed to lower jerk.
+0.30 (our timestep), which leads to a calculated jerk value of 1.667 m/s^3. Furthermore, we are using 0.35 as our timestep for lower
+jerk calculations. An example of this would, using the same example above, would equal 1.428 m/s^3 jerk, which gets inputed to lower jerk.
 This then goes through our minimum and maximum clipping which forces a value between our set min and max, which I discuss later in this readme.
 
 Moving on, the accel_last_jerk, stores current accel after each iteration and uses that in the calculation as previous accel for
@@ -55,16 +55,15 @@ but also enables us to have a much smoother braking experience.
 Minimum jerk was chosen based off of the following guideline proposed by Handbook of Intellegent Vehicles (2012):
 `Ride comfort may be sacrificed only under emergency conditions when vehicle and occupant safety consideration may preclude comfort.`
 
-**What the value of 0.60 m/s^3 as the conditional lower limit was chosen based off of**
+**What the value of 0.53 m/s^3 of the jerk lower limit was chosen based off of**
 
 [Carlowitz et al. (2024).](https://www.researchgate.net/publication/382274551_User_evaluation_of_comfortable_deceleration_profiles_for_highly_automated_driving_Findings_from_a_test_track_study)
 This research study identified the average lower jerk used in comfortable driving settings, which is 0.53 m/s^3.
 This is then inputted to jerk_limits[0] as 0.53 m/s^3 represents the value used in upper jerk absolute minimum.
 
-     min_lower_jerk = self.car_config.jerk_limits[0] if (velocity < 6.700) else 0.70
+     min_lower_jerk = self.car_config.jerk_limits[0]
 
-As shown above, lower jerk minimum of 0.53 is used for speeds under 6.700 m/s (15mph/24kph), where a more 
-responsive 0.70 m/s^3 is the minimum jerk for speeds above 6.700 m/s.
+As shown above, lower jerk minimum of 0.53 is used for our lower_jerk minimum bounds.
 
 **Why our minimum upper jerk is conditional**
 
