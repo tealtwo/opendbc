@@ -22,13 +22,14 @@ dividing that by time. In our tune you will see the following equation:
 Instead of using a hardcoded time, we are focused on making jerk parabolic. First we have our planned acceleration from longitudinal_planner.
 Then we have our current carstate acceleration. These are then blended together 50/50 to form our blended value.
 Following this, we have our delta which subtracts our blended_value from our previous acceleration `self.state.accel_last_jerk`
-Lastly, we have our finalized jerk calculation, which squares the delta to create a parabolic response while retaining the original sign.
-This then goes through our minimum and maximum clipping which forces a value between our set min and max, which I discuss later in this readme.
+Lastly, we have our finalized jerk calculation, which squares the delta to create a parabolic response while retaining the original sign,
+which could be positive or negative (e.g., 5.0 or -5.0). This then goes through our minimum and maximum clipping
+which forces a value between our set min and max, which I discuss later in this readme.
 
 Moving on, the accel_last_jerk, stores current accel after each iteration and uses that in the calculation as previous accel for
 our jerk calculations. Now we see the calculation of jerk max and jerk min. 
 
-**Lets dive into how jerk lower limit max is calculated:**
+**Let's dive into how jerk lower limit max is calculated:**
 
      velocity = CS.out.vEgo
     if velocity < 5.0:

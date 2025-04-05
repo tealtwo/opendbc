@@ -62,6 +62,7 @@ class LongitudinalTuningController:
     delta = blended_value - self.state.accel_last_jerk
 
     self.state.jerk = math.copysign(delta * delta, delta)
+
     self.state.accel_last_jerk = blended_value
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
