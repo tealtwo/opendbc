@@ -126,6 +126,8 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
       else:
         # Calculate target torque based on the absolute curvature value and the speed. Higher curvature and speeds should naturally command higher torque.
         target_torque = float(np.interp(abs(actuators.curvature), self.params.CURVATURE_BREAKPOINTS, TORQUE_VALUES_AT_CURVATURE))
+        target_torque = min(target_torque, self.params.ANGLE_MAX_TORQUE)  # Capping it to be safe
+        target_torque = max(target_torque, self.params.ANGLE_MIN_TORQUE)  # Capping it to be safe
 
         # Ramp up or down toward the target torque smoothly
         if self.lkas_max_torque > target_torque:
