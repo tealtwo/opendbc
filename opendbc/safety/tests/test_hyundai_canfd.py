@@ -28,6 +28,19 @@ class TestHyundaiCanfdBase(HyundaiButtonBase, common.PandaCarSafetyTest):
   STANDSTILL_THRESHOLD = 0.375 * 0.03125  # kph
   FWD_BLACKLISTED_ADDRS = {2: [0x50, 0x2a4]}
 
+  MAX_RATE_UP = 2
+  MAX_RATE_DOWN = 3
+  MAX_TORQUE_LOOKUP = [0], [270]
+
+  MAX_RT_DELTA = 112
+
+  DRIVER_TORQUE_ALLOWANCE = 250
+  DRIVER_TORQUE_FACTOR = 2
+
+  # Safety around steering req bit
+  MIN_VALID_STEERING_FRAMES = 89
+  MAX_INVALID_STEERING_FRAMES = 2
+
   PT_BUS = 0
   SCC_BUS = 2
   STEER_BUS = 0
