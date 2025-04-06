@@ -12,15 +12,15 @@ Jerk is calculated by taking current acceleration (in the form of m/s^2), subtra
 dividing that by time. In our tune you will see the following equation:
 
     planned_accel = CC.actuators.accel
-    current_accel = CS.out.vEgo
-    blended_value = 0.50 * planned_accel + 0.50 * current_accel
+    current_accel = CS.out.aEgo
+    blended_value = 0.65 * planned_accel + 0.35 * current_accel
     delta = blended_value - self.state.accel_last_jerk
 
     self.state.jerk = math.copysign(delta * delta, delta)
     self.state.accel_last_jerk = blended_value
 
 Instead of using a hardcoded time, we are focused on making jerk parabolic. First we have our planned acceleration from longitudinal_planner.
-Then we have our current carstate acceleration. These are then blended together 50/50 to form our blended value.
+Then we have our current carstate acceleration. These are then blended together 65/35 to form our blended value.
 Following this, we have our delta which subtracts our blended_value from our previous acceleration `self.state.accel_last_jerk`
 Lastly, we have our finalized jerk calculation, which squares the delta to create a parabolic response while retaining the original sign,
 which could be positive or negative (e.g., 5.0 or -5.0). This then goes through our minimum and maximum clipping
