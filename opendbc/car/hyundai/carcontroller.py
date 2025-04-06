@@ -76,10 +76,12 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     if self.frame % 25 == 0:
       if smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor"):
         self.smoothing_factor = float(smoothingFactorParam) / 10.0
-      if (minTorqueParam := self._params.get("HkgTuningAngleMinTorque")) and minTorqueParam != self.params.ANGLE_MIN_TORQUE:
+      if (minTorqueParam := int(self._params.get("HkgTuningAngleMinTorque"))) and minTorqueParam != self.params.ANGLE_MIN_TORQUE:
         self.params.ANGLE_MIN_TORQUE = int(minTorqueParam)
-      if (maxTorqueParam := self._params.get("HkgTuningAngleMaxTorque")) and maxTorqueParam != self.params.ANGLE_MAX_TORQUE:
+      if (maxTorqueParam := int(self._params.get("HkgTuningAngleMaxTorque"))) and maxTorqueParam != self.params.ANGLE_MAX_TORQUE:
         self.params.ANGLE_MAX_TORQUE = int(maxTorqueParam)
+      if (overrideCyclesParam := int(self._params.get("HkgTuningOverridingCycles"))) and overrideCyclesParam != self.params.ANGLE_TORQUE_OVERRIDE_CYCLES:
+        self.params.ANGLE_TORQUE_OVERRIDE_CYCLES = int(overrideCyclesParam)
 
     # TODO: needed for angle control cars?
     # >90 degree steering fault prevention
@@ -105,16 +107,15 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
 
       # Dynamic torque adjustment based on driver override
       USER_OVERRIDING = abs(CS.out.steeringTorque) > self.params.STEER_THRESHOLD
-      OVERRIDE_CYCLES = 17  # Number of cycles to ramp down to minimum torque
 
       if USER_OVERRIDING:
         # When the user is overriding, ramp down the torque gradually
         torque_delta = self.lkas_max_torque - self.params.ANGLE_MIN_TORQUE
-        adaptive_ramp_rate = max(torque_delta / OVERRIDE_CYCLES, 1)  # Ensure at least 1 unit per cycle
+        adaptive_ramp_rate = max(torque_delta / self.params.ANGLE_TORQUE_OVERRIDE_CYCLES, 1)  # Ensure at least 1 unit per cycle
         self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.params.ANGLE_MIN_TORQUE)
       else:
         # Calculate target torque based on the absolute curvature value and the speed. Higher curvature and speeds should naturally command higher torque.
-        speed_multiplier = np.interp(CS.out.vEgoRaw, [0, 16.67, 30.0], [1.2, 1.6, 1.8])
+        speed_multiplier = float(np.interp(CS.out.vEgoRaw, [0, 16.67, 30.0], [1.0, 1.4, 1.8]))
         torque_percentage = float(np.interp(abs(actuators.curvature), self.params.CURVATURE_BREAKPOINTS, self.params.BASE_TORQUE_VALUES))
         target_torque = min(torque_percentage * self.params.ANGLE_MAX_TORQUE * speed_multiplier, self.params.ANGLE_MAX_TORQUE)
 

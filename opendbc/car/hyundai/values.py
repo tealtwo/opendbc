@@ -30,7 +30,8 @@ class CarControllerParams:
   ANGLE_MIN_TORQUE = 25  # equivalent to ~0.8 m/s^2 of torque (based on ANGLE_MAX_TORQUE) when overriding
   ANGLE_TORQUE_UP_RATE = 1  # Indicates how fast the torque ramps up after user intervention.
   ANGLE_TORQUE_DOWN_RATE = 3  # Indicates how fast the torque ramps down during user intervention (handing off).
-  
+  ANGLE_TORQUE_OVERRIDE_CYCLES = 17  # The number of cycles it takes to ramp down to min torque when the user intervenes.
+
   # More torque optimization
   # The torque is calculated based on the curvature of the road and the speed of the car and it's a percentage of the maximum torque.
   CURVATURE_BREAKPOINTS = [0.0, 0.003, 0.01, 0.018, 0.025]
