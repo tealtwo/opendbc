@@ -35,7 +35,6 @@ class CarControllerParams:
   # More torque optimization
   # The torque is calculated based on the curvature of the road and the speed of the car and it's a percentage of the maximum torque.
   CURVATURE_BREAKPOINTS = [0.0, 0.003, 0.01, 0.018, 0.025]
-  BASE_TORQUE_VALUES = [0.25, 0.5, 0.65, 0.75, 1.0]  # As percentage of max
 
   def __init__(self, CP):
     self.STEER_DELTA_UP = 3

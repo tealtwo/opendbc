@@ -73,7 +73,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     hud_control = CC.hudControl
     apply_torque = 0
 
-    if self.frame % 25 == 0:
+    if self.frame % 100 == 0:
       if smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor"):
         self.smoothing_factor = float(smoothingFactorParam) / 10.0
       if (minTorqueParam := int(self._params.get("HkgTuningAngleMinTorque"))) and minTorqueParam != self.params.ANGLE_MIN_TORQUE:
@@ -99,6 +99,16 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
       new_angle = actuators.steeringAngleDeg
       new_angle = (self.smoothing_factor * new_angle + (1 - self.smoothing_factor) * self.apply_angle_last)
 
+      # Example values for curvature-based torque scaling (tune these as needed)
+      speed_multiplier = np.interp(CS.out.vEgoRaw, [0, 16.67, 30.0], [1.0, 1.4, 1.8])
+
+      # Define torque values at different curvature breakpoints factoring in speed.
+      TORQUE_VALUES_AT_CURVATURE = [0.25 * self.params.ANGLE_MAX_TORQUE * speed_multiplier,
+                                    0.50 * self.params.ANGLE_MAX_TORQUE * speed_multiplier,
+                                    0.65 * self.params.ANGLE_MAX_TORQUE * speed_multiplier,
+                                    0.75 * self.params.ANGLE_MAX_TORQUE * speed_multiplier,
+                                    self.params.ANGLE_MAX_TORQUE]
+
       # Reset apply_angle_last if the driver is intervening
       if CS.out.steeringPressed:
         self.apply_angle_last = actuators.steeringAngleDeg # We go straight to the desired angle if the driver is intervening
@@ -115,9 +125,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
         self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.params.ANGLE_MIN_TORQUE)
       else:
         # Calculate target torque based on the absolute curvature value and the speed. Higher curvature and speeds should naturally command higher torque.
-        speed_multiplier = float(np.interp(CS.out.vEgoRaw, [0, 16.67, 30.0], [1.0, 1.4, 1.8]))
-        torque_percentage = float(np.interp(abs(actuators.curvature), self.params.CURVATURE_BREAKPOINTS, self.params.BASE_TORQUE_VALUES))
-        target_torque = min(torque_percentage * self.params.ANGLE_MAX_TORQUE * speed_multiplier, self.params.ANGLE_MAX_TORQUE)
+        target_torque = float(np.interp(abs(actuators.curvature), self.params.CURVATURE_BREAKPOINTS, TORQUE_VALUES_AT_CURVATURE))
 
         # Ramp up or down toward the target torque smoothly
         if self.lkas_max_torque > target_torque:
