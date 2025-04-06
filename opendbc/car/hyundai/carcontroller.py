@@ -73,8 +73,13 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     hud_control = CC.hudControl
     apply_torque = 0
 
-    if self.frame % 25 == 0 and (smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor")):
-      self.smoothing_factor = float(smoothingFactorParam) / 10.0
+    if self.frame % 25 == 0:
+      if smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor"):
+        self.smoothing_factor = float(smoothingFactorParam) / 10.0
+      if (minTorqueParam := self._params.get("HkgTuningAngleMinTorque")) and minTorqueParam != self.params.ANGLE_MIN_TORQUE:
+        self.params.ANGLE_MIN_TORQUE = int(minTorqueParam)
+      if (maxTorqueParam := self._params.get("HkgTuningAngleMaxTorque")) and maxTorqueParam != self.params.ANGLE_MAX_TORQUE:
+        self.params.ANGLE_MAX_TORQUE = int(maxTorqueParam)
 
     # TODO: needed for angle control cars?
     # >90 degree steering fault prevention
