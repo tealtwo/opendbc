@@ -90,17 +90,6 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     # angle control
     else:
       new_angle = actuators.steeringAngleDeg
-      # Example values for curvature-based torque scaling (tune these as needed)
-      speed_multiplier = np.interp(CS.out.vEgoRaw, [0, 16.67, 30.0], [1.0, 1.4, 1.8])
-      CURVATURE_BREAKPOINTS = [0.0, 0.003, 0.01, 0.018, 0.025]
-
-      # Define torque values at different curvature breakpoints factoring in speed.
-      TORQUE_VALUES_AT_CURVATURE = [0.25 * self.params.ANGLE_MAX_TORQUE * speed_multiplier,
-                                    0.50 * self.params.ANGLE_MAX_TORQUE * speed_multiplier,
-                                    0.65 * self.params.ANGLE_MAX_TORQUE * speed_multiplier,
-                                    0.75 * self.params.ANGLE_MAX_TORQUE * speed_multiplier,
-                                    self.params.ANGLE_MAX_TORQUE]
-
       new_angle = (self.smoothing_factor * new_angle + (1 - self.smoothing_factor) * self.apply_angle_last)
 
       # Reset apply_angle_last if the driver is intervening
@@ -119,9 +108,10 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
         adaptive_ramp_rate = max(torque_delta / OVERRIDE_CYCLES, 1)  # Ensure at least 1 unit per cycle
         self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.params.ANGLE_MIN_TORQUE)
       else:
-        # Calculate target torque based on the absolute curvature value.
-        # Higher curvature should naturally command higher torque.
-        target_torque = float(np.interp(abs(actuators.curvature), CURVATURE_BREAKPOINTS, TORQUE_VALUES_AT_CURVATURE))
+        # Calculate target torque based on the absolute curvature value and the speed. Higher curvature and speeds should naturally command higher torque.
+        speed_multiplier = np.interp(CS.out.vEgoRaw, [0, 16.67, 30.0], [1.2, 1.6, 1.8])
+        torque_percentage = float(np.interp(abs(actuators.curvature), self.params.CURVATURE_BREAKPOINTS, self.params.BASE_TORQUE_VALUES))
+        target_torque = min(torque_percentage * self.params.ANGLE_MAX_TORQUE * speed_multiplier, self.params.ANGLE_MAX_TORQUE)
 
         # Ramp up or down toward the target torque smoothly
         if self.lkas_max_torque > target_torque:
