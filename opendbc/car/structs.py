@@ -62,7 +62,6 @@ class StrEnum(_StrEnum):
 @auto_dataclass
 class CarParamsSP:
   flags: int = auto_field()  # flags for car specific quirks
-  nnffLongTuning: str = "" # json string of tuned params
   safetyParam: int = auto_field()  # flags for custom safety flags
 
   neuralNetworkLateralControl: 'CarParamsSP.NeuralNetworkLateralControl' = field(default_factory=lambda: CarParamsSP.NeuralNetworkLateralControl())
