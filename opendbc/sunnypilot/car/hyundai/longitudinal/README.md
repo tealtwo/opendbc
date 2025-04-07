@@ -13,14 +13,14 @@ dividing that by time. In our tune you will see the following equation:
 
     planned_accel = CC.actuators.accel
     current_accel = CS.out.aEgo
-    blended_value = 0.70 * planned_accel + 0.30 * current_accel
+    blended_value = 0.65 * planned_accel + 0.35 * current_accel
     delta = blended_value - self.state.accel_last_jerk
 
     self.state.jerk = math.copysign(delta * delta, delta)
     self.state.accel_last_jerk = blended_value
 
 Instead of using a hardcoded time, we are focused on making jerk parabolic. First we have our planned acceleration from longitudinal_planner.
-Then we have our current carstate acceleration. These are then blended together 70/30 to form our blended value.
+Then we have our current carstate acceleration. These are then blended together 65/35 to form our blended value.
 Following this, we have our delta which subtracts our blended_value from our previous acceleration `self.state.accel_last_jerk`
 Lastly, we have our finalized jerk calculation, which squares the delta to create a parabolic response while retaining the original sign,
 which could be positive or negative (e.g., 5.0 or -5.0). This then goes through our minimum and maximum clipping
@@ -75,9 +75,9 @@ As shown above, lower jerk minimum of 0.53 is used for our lower_jerk minimum bo
 
 Our minimum upper band jerk is conditional as well and is denoted below:
 
-    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.675
+    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.60
 
-This means that for speeds under 3.611 m/s (8.077 mph/ 13 kph) we have a minimum jerk of 0.675. This allows for smooth
+This means that for speeds under 3.611 m/s (8.077 mph/ 13 kph) we have a minimum jerk of 0.60. This allows for smooth
 takeoffs while not causing lag. For all other speeds, we use our normal jerk_limit for minimum, which is 0.53.
 
 **Next, we have our acceleration limiting**
