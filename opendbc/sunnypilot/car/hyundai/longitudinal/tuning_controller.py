@@ -58,7 +58,7 @@ class LongitudinalTuningController:
     # Blend planned acceleration with current acceleration.
     planned_accel = CC.actuators.accel
     current_accel = CS.out.aEgo
-    blended_value = 0.65 * planned_accel + 0.35 * current_accel
+    blended_value = 0.60 * planned_accel + 0.40 * current_accel
     delta = blended_value - self.state.accel_last_jerk
 
     self.state.jerk = math.copysign(delta * delta, delta)
@@ -78,7 +78,7 @@ class LongitudinalTuningController:
       accel_jerk_max = self.car_config.jerk_limits[2]
 
     accel_jerk = accel_jerk_max if LongCtrlState == LongCtrlState.pid else 1.0
-    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.60
+    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.675
     min_lower_jerk = self.car_config.jerk_limits[0]
 
     self.jerk_upper = min(max(min_upper_jerk, self.state.jerk), accel_jerk)
