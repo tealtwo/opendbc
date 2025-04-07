@@ -97,7 +97,8 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     # angle control
     else:
       new_angle = actuators.steeringAngleDeg
-      new_angle = (self.smoothing_factor * new_angle + (1 - self.smoothing_factor) * self.apply_angle_last)
+      adjusted_alpha = min(float(np.interp(CS.out.vEgoRaw, self.params.SMOOTHING_ANGLE_VEGO_MATRIX, self.params.SMOOTHING_ANGLE_ALPHA_MATRIX)) + self.smoothing_factor, 1)
+      new_angle = (adjusted_alpha * new_angle + (1 - adjusted_alpha) * self.apply_angle_last)
 
       # Example values for curvature-based torque scaling (tune these as needed)
       speed_multiplier = np.interp(CS.out.vEgoRaw, [0, 16.67, 30.0], [1.0, 1.4, 1.8])
