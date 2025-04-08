@@ -54,11 +54,13 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
     # Test with PID state
     self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
+    print(f"[PID state] jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
     self.assertEqual(self.controller.jerk_upper, 3.0)
     self.assertEqual(self.controller.jerk_lower, 3.0)
 
     # Test with non-PID state
     self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.stopping)
+    print(f"[Non-PID state] jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
     self.assertEqual(self.controller.jerk_upper, 1.0)
     self.assertEqual(self.controller.jerk_lower, 1.0)
 
