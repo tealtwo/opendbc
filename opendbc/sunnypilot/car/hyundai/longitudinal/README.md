@@ -13,18 +13,20 @@ dividing that by time. In our tune you will see the following equation:
 
     planned_accel = CC.actuators.accel
     current_accel = CS.out.aEgo
-    blended_value = 0.67 * planned_accel + 0.33 * current_accel
+    blended_value = 0.75 * planned_accel + 0.25 * current_accel
     delta = blended_value - self.state.accel_last_jerk
 
-    self.state.jerk = math.copysign(delta * delta, delta)
+    self.state.jerk = math.copysign(max(abs(delta), math.sqrt(abs(delta))) * abs(delta), delta)
     self.state.accel_last_jerk = blended_value
 
 Instead of using a hardcoded time, we are focused on making jerk parabolic. First we have our planned acceleration from longitudinal_planner.
-Then we have our current carstate acceleration. These are then blended together 67:33 = 100% to form our blended value.
+Then we have our current carstate acceleration. These are then blended together 75:25 = 100% to form our blended value.
 Following this, we have our delta which subtracts our blended_value from our previous acceleration `self.state.accel_last_jerk`
-Lastly, we have our finalized jerk calculation, which squares the delta to create a parabolic response while retaining the original sign,
-which could be positive or negative (e.g., 5.0 or -5.0). This then goes through our minimum and maximum clipping
-which forces a value between our set min and max, which I discuss later in this readme.
+Lastly, we have our finalized jerk calculation, which looks at its absolute value, and then picks whichever is larger:
+that absolute value or its square root. It multiplies that by the absolute value again, then applies the original sign to the result,
+which could be positive or negative (e.g., 5.0 or -5.0). This approach makes very small deltas even smaller but not
+zero (since sqrt(delta) > delta when delta < 1) and keeps larger deltas closer to their actual value. This then goes 
+through our minimum and maximum clipping which forces a value between our set min and max, which I discuss later in this readme.
 
 Moving on, the accel_last_jerk, stores current accel after each iteration and uses that in the calculation as previous accel for
 our jerk calculations. Now we see the calculation of jerk max and jerk min. 
