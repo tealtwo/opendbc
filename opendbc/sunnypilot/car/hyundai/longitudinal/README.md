@@ -10,11 +10,11 @@ For example, in our jerk calculations throughout this tune, you will see how max
 In the tuning you will see a set of equations, the first being jerk, **but what exactly is jerk?**
 Jerk is the rate of change of acceleration (how quickly acceleration changes). It's calculated by finding the 
 difference between the new filtered acceleration and the previous one. This difference is divided by the
-time step (3 × 0.125 seconds = 0.375 seconds). The result tells you how quickly the acceleration is changing in m/s³:
+time step (3 × 0.1 seconds = 0.30 seconds). The result tells you how quickly the acceleration is changing in m/s³:
 
     planned_accel = CC.actuators.accel
     current_accel = CS.out.aEgo
-    blended_accel = 0.75 * planned_accel + 0.25 * current_accel
+    blended_accel = 0.8 * planned_accel + 0.2 * current_accel
 
     prev_filtered_accel = self.accel_filter.x
 
@@ -24,7 +24,7 @@ time step (3 × 0.125 seconds = 0.375 seconds). The result tells you how quickly
     self.state.jerk = (filtered_accel - prev_filtered_accel) / (self.timestep * 3)
 
 planned_accel is what the controller wants the car to do (target acceleration), where current_accel is what the
-car is actually doing right now (measured acceleration). The code combines these with a 75%/25% ratio to create
+car is actually doing right now (measured acceleration). The code combines these with an 80%/20% ratio to create
 a more realistic target. This prevents sudden jerkiness that can sometimes be produced. Before calculating anything
 new, the code saves the previous filtered acceleration. This value will be needed to calculate the rate of change (jerk)
 A first-order filter is like a smoothing function that reduces sudden changes. `update()` feeds the new

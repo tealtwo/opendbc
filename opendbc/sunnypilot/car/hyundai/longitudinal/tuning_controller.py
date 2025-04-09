@@ -37,7 +37,7 @@ class LongitudinalTuningController:
     self.accel_value = 0.0
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
-    self.timestep = 0.125
+    self.timestep = 0.1
     self.accel_filter = FirstOrderFilter(0.0, 0.25, self.timestep * 3)
 
   def reset(self) -> None:
@@ -60,7 +60,7 @@ class LongitudinalTuningController:
     # Blend planned acceleration with current acceleration
     planned_accel = CC.actuators.accel
     current_accel = CS.out.aEgo
-    blended_accel = 0.75 * planned_accel + 0.25 * current_accel
+    blended_accel = 0.8 * planned_accel + 0.2 * current_accel
 
     # Store previous filtered acceleration value
     prev_filtered_accel = self.accel_filter.x
@@ -86,7 +86,7 @@ class LongitudinalTuningController:
 
     accel_jerk = accel_jerk_max if long_control_state == LongCtrlState.pid else 1.0
     min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.60
-    min_lower_jerk = self.car_config.jerk_limits[0] if (velocity < 12.0) else 0.65
+    min_lower_jerk = self.car_config.jerk_limits[0] if (velocity < 12.0) else 0.625
 
     self.jerk_upper = min(max(min_upper_jerk, self.state.jerk), accel_jerk)
     self.jerk_lower = min(max(min_lower_jerk, -self.state.jerk), decel_jerk_max)
