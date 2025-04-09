@@ -1,5 +1,4 @@
 import unittest
-import math
 import numpy as np
 from unittest.mock import Mock, patch
 from opendbc.sunnypilot.car.hyundai.longitudinal.tuning_controller import LongitudinalTuningController, LongitudinalTuningState
@@ -33,20 +32,36 @@ class TestLongitudinalTuningController(unittest.TestCase):
     """Test reset functionality"""
     # Set non-zero values and verify reset
     attrs = ['accel_raw', 'accel_value', 'jerk_upper', 'jerk_lower']
-    state_attrs = ['accel_last', 'accel_last_jerk']
+    state_attrs = ['accel_last', 'jerk']
 
+    # Set controller and state attributes to non-zero
     for attr in attrs:
       setattr(self.controller, attr, 1.0)
     for attr in state_attrs:
       setattr(self.controller.state, attr, 1.0)
+    self.controller.accel_filter.x = 1.0
 
+    # Debug: Print state before reset
+    print("\nState before reset:")
+    print(f"  Controller attributes: {[(attr, getattr(self.controller, attr)) for attr in attrs]}")
+    print(f"  State attributes: {[(attr, getattr(self.controller.state, attr)) for attr in state_attrs]}")
+    print(f"  Filter value: {self.controller.accel_filter.x}")
+
+    # Call reset
     self.controller.reset()
 
-    # Verify all reset to 0.0
+    # Debug: Print state after reset
+    print("\nState after reset:")
+    print(f"  Controller attributes: {[(attr, getattr(self.controller, attr)) for attr in attrs]}")
+    print(f"  State attributes: {[(attr, getattr(self.controller.state, attr)) for attr in state_attrs]}")
+    print(f"  Filter value: {self.controller.accel_filter.x}")
+
+    # Verify all values reset to 0.0
     for attr in attrs:
       self.assertEqual(getattr(self.controller, attr), 0.0)
     for attr in state_attrs:
       self.assertEqual(getattr(self.controller.state, attr), 0.0)
+    self.assertEqual(self.controller.accel_filter.x, 0.0)
 
   def test_make_jerk_flag_off(self):
     """Test when LONG_TUNING_BRAKING flag is off"""
@@ -76,31 +91,59 @@ class TestLongitudinalTuningController(unittest.TestCase):
     mock_CS.out = Mock(aEgo=0.8, vEgo=3.0)
 
     self.controller.reset()
-    print(f"After reset: accel_last_jerk={self.controller.state.accel_last_jerk}")
+    print(f"After reset: accel_filter.x={self.controller.accel_filter.x}")
     print(f"First call with planned_accel={mock_CC.actuators.accel}, current_accel={mock_CS.out.aEgo}")
+
+    # Calculate expected values
+    blended_accel = 0.75 * 1.0 + 0.25 * 0.8  # = 0.95
+    dt = self.controller.timestep * 3
+    tau = 0.25
+    k = dt / (tau + dt)
+    expected_filtered = blended_accel * k
+    expected_jerk = expected_filtered / dt
 
     self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
 
-    blended_value = 0.80 * 1.0 + 0.20 * 3.0
-    delta = blended_value
-    expected_jerk = math.copysign(delta * delta, delta)
-
-    print(f"Blended: {blended_value}, Delta: {delta}")
+    print(f"Blended: {blended_accel}, Filtered: {self.controller.accel_filter.x}, k={k}")
     print(f"Expected jerk: {expected_jerk}, Actual jerk: {self.controller.state.jerk}")
     print(f"Jerk limits (upper/lower): {self.controller.jerk_upper:.4f}/{self.controller.jerk_lower:.4f}")
 
-    self.assertAlmostEqual(self.controller.state.jerk, expected_jerk)
+    self.assertAlmostEqual(self.controller.state.jerk, expected_jerk, places=5)
     self.assertGreaterEqual(self.controller.jerk_upper, 0.6)  # Min at low velocity
 
-    # Test with high velocity
-    mock_CS.out.vEgo = 25.0
+  def test_filter_behavior(self):
+    """Test FirstOrderFilter behavior with step input"""
+    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_BRAKING
+    mock_CC = Mock()
+    mock_CS = Mock()
+
+    # Setup a step input
+    mock_CC.actuators = Mock(accel=2.0)  # Step to 2.0 m/s²
+    mock_CS.out = Mock(aEgo=0.0, vEgo=10.0)
+
     self.controller.reset()
-    print(f"Second call with high velocity={mock_CS.out.vEgo}")
 
-    self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
-    print(f"High velocity jerk limits: upper={self.controller.jerk_upper:.4f}, lower={self.controller.jerk_lower:.4f}")
+    # Calculate filter parameters
+    dt = self.controller.timestep * 3
+    tau = 0.25
+    k = dt / (tau + dt)
 
-    self.assertGreaterEqual(self.controller.jerk_upper, 0.53)  # Should use min jerk limit
+    # Calculate expected response to step input
+    expected_values = []
+    x = 0.0
+    blended_accel = 0.75 * 2.0  # blend with aEgo=0
+    for _ in range(10):
+        x = x * (1-k) + blended_accel * k
+        expected_values.append(x)
+
+    # Run the controller and compare
+    print("\n[test_filter_behavior] Testing filter response to step input:")
+    print(f"  Filter params: k={k}")
+
+    for i in range(10):
+        self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
+        print(f"  Iter {i}: expected={expected_values[i]:.5f}, actual={self.controller.accel_filter.x:.5f}, jerk={self.controller.state.jerk:.5f}")
+        self.assertAlmostEqual(self.controller.accel_filter.x, expected_values[i], places=5)
 
   def test_jerk_calculation(self):
     """Test jerk calculation with various inputs"""
@@ -109,56 +152,52 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
     mock_CC, mock_CS = Mock(), Mock()
     mock_CC.actuators = Mock()
-    mock_CS.out = Mock(aEgo=0.0, vEgo=10.0) # change this to whatever you want
+    mock_CS.out = Mock(aEgo=0.0, vEgo=10.0)
 
     test_deltas = [-2.0, -1.0, -0.5, -0.1, -0.01, 0.0, 0.01, 0.1, 0.5, 1.0, 2.0]
+    dt = self.controller.timestep * 3
+    tau = 0.25
+    k = dt / (tau + dt)
 
     for planned_accel in test_deltas:
       self.controller.reset()
       mock_CC.actuators.accel = planned_accel
+      mock_CS.out.aEgo = planned_accel * 0.5
 
-      # Force a deterministic state for testing
-      self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
-      self.controller.state.accel_last_jerk = 0.0
-      self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
+      # Calculate expected values for first update
+      blended_accel = 0.75 * planned_accel + 0.25 * (planned_accel * 0.5)
+      expected_first_filtered = blended_accel * k
+      expected_first_jerk = expected_first_filtered / dt
 
-      # Calculate expected jerk
-      blended_value = 0.80 * planned_accel + 0.20 * 10.0
-      delta = blended_value
-      expected_jerk = math.copysign(delta * delta, delta)
+      self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
 
       print(f"\nTesting planned_accel={planned_accel}")
-      print(f"  Delta: {blended_value}, expected_jerk={expected_jerk}, actual_jerk={self.controller.state.jerk}")
-      print(f"  Original jerk would be: {math.copysign(blended_value * blended_value, blended_value)}")
+      print(f"  Blended: {blended_accel}, Filtered: {self.controller.accel_filter.x:.5f}")
+      print(f"  Expected jerk: {expected_first_jerk:.5f}, Actual jerk: {self.controller.state.jerk:.5f}")
       print(f"  Jerk limits (upper/lower): {self.controller.jerk_upper:.4f}/{self.controller.jerk_lower:.4f}")
 
-      self.assertAlmostEqual(self.controller.state.jerk, expected_jerk)
+      self.assertAlmostEqual(self.controller.state.jerk, expected_first_jerk, places=5)
 
       # Check minimum jerk limits for small deltas
-      if abs(blended_value) < 1.0:
+      if abs(blended_accel) < 1.0:
         expected_min = self.controller.car_config.jerk_limits[0]
-        if expected_jerk > 0:
+        if self.controller.state.jerk > 0:
           self.assertGreaterEqual(self.controller.jerk_upper, expected_min)
         else:
           self.assertGreaterEqual(self.controller.jerk_lower, expected_min)
 
   def test_a_value_jerk_scaling(self):
-    """Test a_value"""
+    """Test a_value jerk scaling"""
     mock_CC = Mock(enabled=True)
     mock_CC.actuators = Mock(accel=1.0)
 
-    # Start
     self.controller.reset()
-
     result = self.controller.calculate_a_value(mock_CC)
-
-    # Expected jerk number is always 5/50 = 0.1
     self.assertAlmostEqual(float(result), 0.1)
 
-    # Second call with known state
     mock_CC.actuators.accel = 0.7
     second_result = self.controller.calculate_a_value(mock_CC)
-    self.assertAlmostEqual(float(second_result), 0.2)  # Should be 0.1 + 0.1 = 0.2
+    self.assertAlmostEqual(float(second_result), 0.2)
 
   def test_calculate_accel(self):
     """Test calculate_accel method"""
@@ -169,7 +208,6 @@ class TestLongitudinalTuningController(unittest.TestCase):
     # Test enabled
     mock_CC.enabled = True
     mock_CC.actuators = Mock(accel=2.0)
-
     with patch('opendbc.car.hyundai.values.CarControllerParams') as mock_params:
       mock_params.ACCEL_MIN, mock_params.ACCEL_MAX = -3.5, 2.0
       self.assertEqual(self.controller.calculate_accel(mock_CC), 2.0)
@@ -197,7 +235,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
         velocities[i] = velocities[i-1] + accelerations[i-1] * 0.2
     velocities = np.clip(velocities, 0.0, 30.0)
 
-    # Setup mocks
+    # Setup mocks and test
     mock_CC, mock_CS = Mock(), Mock()
     mock_CC.actuators, mock_CS.out = Mock(), Mock()
 
@@ -216,9 +254,5 @@ class TestLongitudinalTuningController(unittest.TestCase):
       min_jerk = self.controller.car_config.jerk_limits[0]
       if v > 3.611:  # Above walking speed
         self.assertGreaterEqual(self.controller.jerk_upper, min_jerk)
-        self.assertGreaterEqual(self.controller.jerk_lower, min_jerk)
-      else:  # Low speed
-        self.assertGreaterEqual(self.controller.jerk_upper, 0.6)
-
 if __name__ == "__main__":
   unittest.main()

@@ -5,13 +5,13 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 
-import math
 import numpy as np
 from dataclasses import dataclass
 
 from opendbc.car import structs
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import CarControllerParams
+from opendbc.car.common.filter_simple import FirstOrderFilter
 
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
@@ -22,7 +22,6 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 @dataclass
 class LongitudinalTuningState:
   accel_last: float = 0.0
-  accel_last_jerk: float = 0.0
   jerk: float = 0.0
 
 
@@ -38,14 +37,17 @@ class LongitudinalTuningController:
     self.accel_value = 0.0
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
+    self.timestep = 0.125
+    self.accel_filter = FirstOrderFilter(0.0, 0.25, self.timestep * 3)
 
   def reset(self) -> None:
     self.accel_raw = 0.0
     self.accel_value = 0.0
     self.state.accel_last = 0.0
-    self.state.accel_last_jerk = 0.0
+    self.state.jerk = 0.0
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
+    self.accel_filter.x = 0.0
 
   def make_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
@@ -55,15 +57,20 @@ class LongitudinalTuningController:
       self.jerk_lower = jerk_limit
       return
 
-    # Blend planned acceleration with current acceleration.
+    # Blend planned acceleration with current acceleration
     planned_accel = CC.actuators.accel
-    current_speed = CS.out.vEgo
-    blended_value = 0.80 * planned_accel + 0.20 * current_speed
-    delta = blended_value - self.state.accel_last_jerk
+    current_accel = CS.out.aEgo
+    blended_accel = 0.75 * planned_accel + 0.25 * current_accel
 
-    # Use cubic root for small values to prevent them from becoming too small
-    self.state.jerk = math.copysign(delta * delta, delta)
-    self.state.accel_last_jerk = blended_value
+    # Store previous filtered acceleration value
+    prev_filtered_accel = self.accel_filter.x
+
+    # Apply first-order filter to smooth acceleration
+    self.accel_filter.update(blended_accel)
+    filtered_accel = self.accel_filter.x
+
+    # Calculate jerk
+    self.state.jerk = (filtered_accel - prev_filtered_accel) / (self.timestep * 3)
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
     velocity = CS.out.vEgo
