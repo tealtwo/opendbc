@@ -105,13 +105,13 @@ class LongitudinalTuningController:
 
   def calculate_a_value(self, CC: structs.CarControl) -> float:
     jerk = 5
-    jerk_number = jerk / 50   # This equals 0.1, but why not just 0.1? Maybe we can try self.jerk_lower?
+    jerk_number = float(jerk / 50)   # TODO: Try using jerk lower max for this value
     if not CC.enabled:
       self.reset()
       return 0.0
 
     self.accel_raw = CC.actuators.accel
-    self.accel_value = np.clip(self.accel_raw, self.state.accel_last - jerk_number, self.state.accel_last + jerk_number)
+    self.accel_value = float(np.clip(self.accel_raw, self.state.accel_last - jerk_number, self.state.accel_last + jerk_number))
     self.state.accel_last = self.accel_value
 
     return self.accel_value

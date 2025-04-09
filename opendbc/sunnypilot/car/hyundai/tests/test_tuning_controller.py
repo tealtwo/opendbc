@@ -241,16 +241,18 @@ class TestLongitudinalTuningController(unittest.TestCase):
     for i in range(1, len(accelerations)):
         velocities[i] = velocities[i-1] + accelerations[i-1] * 0.2
     velocities = np.clip(velocities, 0.0, 30.0)
+    accelerations_list = [float(a) for a in accelerations]
+    velocities_list = [float(v) for v in velocities]
 
     # Setup mocks and test
     mock_CC, mock_CS = Mock(), Mock()
     mock_CC.actuators, mock_CS.out = Mock(), Mock()
 
     print("\n[test_make_jerk_realistic_profile] Testing velocity profile:")
-    for i, (v, a) in enumerate(zip(velocities, accelerations, strict=True)):
-      mock_CS.out.vEgo = float(v)
-      mock_CS.out.aEgo = float(a)
-      mock_CC.actuators.accel = float(a)
+    for i, (v, a) in enumerate(zip(velocities_list, accelerations_list, strict=True)):
+      mock_CS.out.vEgo = v
+      mock_CS.out.aEgo = a
+      mock_CC.actuators.accel = a
 
       self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
 
