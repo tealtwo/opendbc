@@ -95,7 +95,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     print(f"First call with planned_accel={mock_CC.actuators.accel}, current_accel={mock_CS.out.aEgo}")
 
     # Calculate expected values
-    blended_accel = 0.75 * 1.0 + 0.25 * 0.8  # = 0.95
+    blended_accel = 0.8 * 1.0 + 0.2 * 0.8  # = 0.96
     dt = self.controller.timestep * 3
     tau = 0.25
     k = dt / (tau + dt)
@@ -131,7 +131,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     # Calculate expected response to step input
     expected_values = []
     x = 0.0
-    blended_accel = 0.75 * 2.0  # blend with aEgo=0
+    blended_accel = 0.8 * 2.0  # blend with aEgo=0
     for _ in range(10):
         x = x * (1-k) + blended_accel * k
         expected_values.append(x)
@@ -165,7 +165,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
       mock_CS.out.aEgo = planned_accel * 0.5
 
       # Calculate expected values for first update
-      blended_accel = 0.75 * planned_accel + 0.25 * (planned_accel * 0.5)
+      blended_accel = 0.8 * planned_accel + 0.2 * (planned_accel * 0.5)
       expected_first_filtered = blended_accel * k
       expected_first_jerk = expected_first_filtered / dt
 
@@ -254,5 +254,8 @@ class TestLongitudinalTuningController(unittest.TestCase):
       min_jerk = self.controller.car_config.jerk_limits[0]
       if v > 3.611:  # Above walking speed
         self.assertGreaterEqual(self.controller.jerk_upper, min_jerk)
+if __name__ == "__main__":
+  unittest.main()
+
 if __name__ == "__main__":
   unittest.main()
