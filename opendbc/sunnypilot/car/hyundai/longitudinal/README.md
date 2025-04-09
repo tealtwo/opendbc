@@ -84,7 +84,7 @@ Our minimum upper band jerk is conditional as well and is denoted below:
     min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.60
 
 This means that for speeds under 3.611 m/s (8.077 mph/ 13 kph) we have a minimum jerk of 0.60. This allows for smooth
-takeoffs while not causing lag. For all other speeds, we use our normal jerk_limit for minimum, which is 0.53.
+takeoffs while not causing lag. For all other speeds, we use our normal min jerk_limit, which is 0.53.
 
 **Next, we have our acceleration limiting**
 
