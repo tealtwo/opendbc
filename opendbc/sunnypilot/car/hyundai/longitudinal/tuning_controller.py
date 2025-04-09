@@ -62,10 +62,8 @@ class LongitudinalTuningController:
     current_accel = CS.out.aEgo
     blended_accel = 0.8 * planned_accel + 0.2 * current_accel
 
-    # Store previous filtered acceleration value
+    # Apply acceleration filter
     prev_filtered_accel = self.accel_filter.x
-
-    # Apply first-order filter to smooth acceleration
     self.accel_filter.update(blended_accel)
     filtered_accel = self.accel_filter.x
 

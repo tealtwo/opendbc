@@ -254,8 +254,6 @@ class TestLongitudinalTuningController(unittest.TestCase):
       min_jerk = self.controller.car_config.jerk_limits[0]
       if v > 3.611:  # Above walking speed
         self.assertGreaterEqual(self.controller.jerk_upper, min_jerk)
-if __name__ == "__main__":
-  unittest.main()
 
 if __name__ == "__main__":
   unittest.main()
