@@ -81,10 +81,9 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
     self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
 
-    # Calculate expected jerk
-    blended_value = 0.75 * 1.0 + 0.25 * 0.8
+    blended_value = 0.80 * 1.0 + 0.20 * 3.0
     delta = blended_value
-    expected_jerk = math.copysign(max(abs(delta), math.sqrt(abs(delta))) * abs(delta), delta)
+    expected_jerk = math.copysign(delta * delta, delta)
 
     print(f"Blended: {blended_value}, Delta: {delta}")
     print(f"Expected jerk: {expected_jerk}, Actual jerk: {self.controller.state.jerk}")
@@ -123,10 +122,10 @@ class TestLongitudinalTuningController(unittest.TestCase):
       self.controller.state.accel_last_jerk = 0.0
       self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
 
-      # Calculate expected values
-      blended_value = 0.75 * planned_accel
-      delta_abs = abs(blended_value)
-      expected_jerk = math.copysign(max(delta_abs, math.sqrt(delta_abs)) * delta_abs, blended_value)
+      # Calculate expected jerk
+      blended_value = 0.80 * planned_accel + 0.20 * 10.0
+      delta = blended_value
+      expected_jerk = math.copysign(delta * delta, delta)
 
       print(f"\nTesting planned_accel={planned_accel}")
       print(f"  Delta: {blended_value}, expected_jerk={expected_jerk}, actual_jerk={self.controller.state.jerk}")
