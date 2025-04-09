@@ -37,7 +37,7 @@ class LongitudinalTuningController:
     self.accel_value = 0.0
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
-    self.timestep = 0.1
+    self.timestep = 0.05
     self.accel_filter = FirstOrderFilter(0.0, 0.25, self.timestep * 3)
 
   def reset(self) -> None:
