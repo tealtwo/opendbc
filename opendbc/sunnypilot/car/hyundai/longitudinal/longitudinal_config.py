@@ -22,6 +22,13 @@ class CarTuningConfig:
 # Default configurations for different car types
 # Min jerk is set to 0.53 per (Horn et al., 2024)
 TUNING_CONFIGS = {
+  "CANFD": CarTuningConfig(
+    v_ego_stopping=0.25,
+    v_ego_starting=0.10,
+    stopping_decel_rate=0.35,
+    start_accel=1.0,
+    jerk_limits=(0.53, 5.0, 2.2),
+  ),
   "EV": CarTuningConfig(
     v_ego_stopping=0.25,
     v_ego_starting=0.10,
@@ -52,6 +59,6 @@ CAR_SPECIFIC_CONFIGS = {
     v_ego_starting=0.10,
     stopping_decel_rate=0.05,
     start_accel=1.0,
-    jerk_limits=(0.53, 3.3, 2.2),
+    jerk_limits=(0.53, 3.3, 2.0),
   )
 }

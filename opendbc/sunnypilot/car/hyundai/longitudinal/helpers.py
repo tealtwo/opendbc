@@ -14,7 +14,9 @@ def get_car_config(CP: structs.CarParams) -> CarTuningConfig:
   car_config = CAR_SPECIFIC_CONFIGS.get(CP.carFingerprint)
   # If car is not in specific configs, determine from flags
   if car_config is None:
-    if CP.flags & HyundaiFlags.EV:
+    if CP.flags & HyundaiFlags.CANFD:
+      car_config = TUNING_CONFIGS["CANFD"]
+    elif CP.flags & HyundaiFlags.EV:
       car_config = TUNING_CONFIGS["EV"]
     elif CP.flags & HyundaiFlags.HYBRID:
       car_config = TUNING_CONFIGS["HYBRID"]

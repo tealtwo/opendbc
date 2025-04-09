@@ -5,18 +5,19 @@ from opendbc.sunnypilot.car.hyundai.longitudinal.tuning_controller import Longit
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.car import structs
 from opendbc.car.interfaces import CarStateBase
+from opendbc.car.hyundai.values import HyundaiFlags
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 
 class TestLongitudinalTuningController(unittest.TestCase):
   def setUp(self):
-    self.mock_CP = Mock(carFingerprint="KIA_NIRO_EV")
+    self.mock_CP = Mock(carFingerprint="KIA_NIRO_EV", flags=0)
     self.mock_CP_SP = Mock(flags=0)
 
     # Mock car_config
     with patch('opendbc.sunnypilot.car.hyundai.longitudinal.helpers.get_car_config') as mock_get_config:
-      mock_get_config.return_value = Mock(jerk_limits=[0.53, 3.0, 2.0])  # min, decel, accel
+      mock_get_config.return_value = Mock(jerk_limits=[0.53, 3.3, 2.2])
       self.controller = LongitudinalTuningController(self.mock_CP, self.mock_CP_SP)
     print(f"\n[SETUP] Controller initialized with jerk limits: {self.controller.car_config.jerk_limits}")
 
@@ -82,6 +83,8 @@ class TestLongitudinalTuningController(unittest.TestCase):
   def test_make_jerk_flag_on(self):
     """Test when LONG_TUNING_BRAKING flag is on"""
     self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_BRAKING
+    # Also set CANFD flag on mock_CP for test coverage
+    self.controller.CP.flags = HyundaiFlags.CANFD
     print(f"\n[test_make_jerk_flag_on] LONG_TUNING_BRAKING flag set: {self.controller.CP_SP.flags}")
 
     # Setup test mocks
@@ -114,6 +117,8 @@ class TestLongitudinalTuningController(unittest.TestCase):
   def test_filter_behavior(self):
     """Test FirstOrderFilter behavior with step input"""
     self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_BRAKING
+    # Add CANFD flag for coverage
+    self.controller.CP.flags = HyundaiFlags.CANFD
     mock_CC = Mock()
     mock_CS = Mock()
 
@@ -148,6 +153,8 @@ class TestLongitudinalTuningController(unittest.TestCase):
   def test_jerk_calculation(self):
     """Test jerk calculation with various inputs"""
     self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_BRAKING
+    # Add CANFD flag for coverage
+    self.controller.CP.flags = HyundaiFlags.CANFD
     print("\n[test_jerk_calculation] Testing with various acceleration values")
 
     mock_CC, mock_CS = Mock(), Mock()

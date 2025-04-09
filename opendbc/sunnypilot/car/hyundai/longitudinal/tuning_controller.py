@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from opendbc.car import structs
 from opendbc.car.interfaces import CarStateBase
-from opendbc.car.hyundai.values import CarControllerParams
+from opendbc.car.hyundai.values import CarControllerParams, HyundaiFlags
 from opendbc.car.common.filter_simple import FirstOrderFilter
 
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
@@ -29,6 +29,7 @@ class LongitudinalTuningController:
   """Longitudinal tuning methodology for HKG"""
 
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
+    self.CP = CP
     self.CP_SP = CP_SP
 
     self.state = LongitudinalTuningState()
@@ -79,7 +80,10 @@ class LongitudinalTuningController:
       decel_jerk_max = 2.5
       accel_jerk_max = 1.65
     else:   # Between 5 m/s and 20 m/s
-      decel_jerk_max = 3.64284 - (0.05714 * velocity)
+      if self.CP.flags & HyundaiFlags.CANFD:
+        decel_jerk_max = 5.83 - (velocity/6)
+      else:
+        decel_jerk_max = 3.64284 - (0.05714 * velocity)
       accel_jerk_max = self.car_config.jerk_limits[2]
 
     accel_jerk = accel_jerk_max if long_control_state == LongCtrlState.pid else 1.0
@@ -107,9 +111,7 @@ class LongitudinalTuningController:
       return 0.0
 
     self.accel_raw = CC.actuators.accel
-
     self.accel_value = np.clip(self.accel_raw, self.state.accel_last - jerk_number, self.state.accel_last + jerk_number)
-
     self.state.accel_last = self.accel_value
 
     return self.accel_value
