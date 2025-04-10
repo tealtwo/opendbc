@@ -16,7 +16,7 @@ from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
-DT_MDL = 0.05  # model timestep
+DT_MDL = 0.01  # model timestep TODO: This is a test
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 
