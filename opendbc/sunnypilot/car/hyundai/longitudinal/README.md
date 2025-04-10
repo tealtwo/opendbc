@@ -10,7 +10,7 @@ For example, in our jerk calculations throughout this tune, you will see how max
 In the tuning you will see a set of equations, the first being jerk, **but what exactly is jerk?**
 Jerk is the rate of change of acceleration (how quickly acceleration changes). It's calculated by finding the 
 difference between the new filtered acceleration and the previous one. This difference is divided by the
-time step (3 × 0.1 seconds = 0.30 seconds). The result tells you how quickly the acceleration is changing in m/s³:
+time step (3 × 0.05 seconds = 0.15 seconds). The result tells you how quickly the acceleration is changing in m/s³:
 
     planned_accel = CC.actuators.accel
     current_accel = CS.out.aEgo
@@ -21,7 +21,7 @@ time step (3 × 0.1 seconds = 0.30 seconds). The result tells you how quickly th
     self.accel_filter.update(blended_accel)
     filtered_accel = self.accel_filter.x
 
-    self.state.jerk = (filtered_accel - prev_filtered_accel) / (self.timestep * 3)
+    self.state.jerk = (filtered_accel - prev_filtered_accel) / (DT_MDL * 3)
 
 planned_accel is what the controller wants the car to do (target acceleration), where current_accel is what the
 car is actually doing right now (measured acceleration). The code combines these with an 80%/20% ratio to create
@@ -43,7 +43,10 @@ our jerk calculations. Now we see the calculation of jerk max and jerk min.
     elif velocity > 20.0:
       decel_jerk_max = 2.5
     else:
-      decel_jerk_max = 3.64284 - 0.05714 * velocity
+      if self.CP.flags & HyundaiFlags.CANFD:
+        decel_jerk_max = 5.83 - (velocity/6)
+      else:
+        decel_jerk_max = 3.64284 - (0.05714 * velocity)
 
 This equation above is set by ISO 15622, and dictates that jerk lower limit can only be five when below 5 m/s. In our equation,
 
@@ -52,9 +55,11 @@ This equation above is set by ISO 15622, and dictates that jerk lower limit can 
 Jerk_limits[1] represents a jerk value of 3.3 m/s^3, which is the maximum analyzed lower jerk rate seen on stock SCC CAN.
 Between 5 m/s and 20 m/s jerk is capped using the calculation:
 
+    decel_jerk_max = 5.83 - (velocity/6)
     decel_jerk_max = 3.64284 - 0.05714 * velocity
 
-This equation calculates the linear jerk from 6m/s to 19m/s, scaling down from 3.3 to 2.5 m/s^3.
+This equation first determines if the user is in a CANFD vehicle, to which higher jerk lower limits are requested, 
+then it calculates the linear jerk from 6m/s to 19m/s, scaling down from 3.3 to 2.5 m/s^3.
 This means that if current velocity is say, 15 m/s the final jerk max value would be capped at 2.78 m/s^3.
 Anything above 20 m/s is capped to a lower jerk max of 2.5 m/s^3. This allows for a smoother jerk range, while complying to ISO standards to a tee.
 The current jerk Lower Limit you will see in openpilot before this tune, is 5.0 m/s^3; Which as you can see from using the above calculation,
@@ -85,6 +90,15 @@ Our minimum upper band jerk is conditional as well and is denoted below:
 
 This means that for speeds under 3.611 m/s (8.077 mph/ 13 kph) we have a minimum jerk of 0.60. This allows for smooth
 takeoffs while not causing lag. For all other speeds, we use our normal min jerk_limit, which is 0.53.
+
+**Why our minimum lower jerk is conditional** 
+
+Our minimum lower band is conditional, and is based on the following condition:
+    
+    min_lower_jerk = self.car_config.jerk_limits[0] if (velocity < 12.0) else 0.625
+
+This means that for speeds under 12 m/s, we have our minimum jerk of 0.53 (jerk_limits[0]), but for all other speeds,
+minimum jerk is set to 0.625. 
 
 **Next, we have our acceleration limiting**
 
