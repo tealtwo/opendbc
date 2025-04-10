@@ -38,7 +38,7 @@ class LongitudinalTuningController:
     self.accel_value = 0.0
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
-    self.timestep = 0.05
+    self.timestep = 0.05    # DT_MDL Timestep
     self.accel_filter = FirstOrderFilter(0.0, 0.25, self.timestep * 3)
 
   def reset(self) -> None:
@@ -104,7 +104,7 @@ class LongitudinalTuningController:
     return float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
   def calculate_a_value(self, CC: structs.CarControl) -> float:
-    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
+    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
       self.accel_value = CC.actuators.accel
       return self.accel_value
 
@@ -112,11 +112,8 @@ class LongitudinalTuningController:
       self.reset()
       return 0.0
 
-    jerk = 5
-    jerk_number = float(jerk / 50)   # TODO: Try using jerk lower max for this value
-
     self.accel_raw = CC.actuators.accel
-    self.accel_value = float(np.clip(self.accel_raw, self.state.accel_last - jerk_number, self.state.accel_last + jerk_number))
+    self.accel_value = float(np.clip(self.accel_raw, self.state.accel_last - 0.1, self.state.accel_last + 0.1))
     self.state.accel_last = self.accel_value
 
     return self.accel_value

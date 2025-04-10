@@ -56,5 +56,6 @@ class LongitudinalController:
 
     if (CS.out.brakeLightsDEPRECATED and CS.out.standstill) and not CS.out.brakePressed:
       # Force zero acceleration during standstill delay
+      self.long_state.accel_value = 0.0
       self.long_state.jerk_upper = 0.0
       self.long_state.jerk_lower = 0.0

@@ -195,7 +195,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
   def test_a_value_jerk_scaling(self):
     """Test a_value jerk scaling"""
-    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_BRAKING
+    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING
     mock_CC = Mock(enabled=True)
     mock_CC.actuators = Mock(accel=1.0)
 
