@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from unittest.mock import Mock, patch
-from opendbc.sunnypilot.car.hyundai.longitudinal.tuning_controller import LongitudinalTuningController, LongitudinalTuningState
+from opendbc.sunnypilot.car.hyundai.longitudinal.tuning_controller import DT_MDL, LongitudinalTuningController, LongitudinalTuningState
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.car import structs
 from opendbc.car.interfaces import CarStateBase
@@ -99,7 +99,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
     # Calculate expected values
     blended_accel = 0.8 * 1.0 + 0.2 * 0.8  # = 0.96
-    dt = self.controller.timestep * 3
+    dt = DT_MDL * 3
     tau = 0.25
     k = dt / (tau + dt)
     expected_filtered = blended_accel * k
@@ -129,7 +129,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     self.controller.reset()
 
     # Calculate filter parameters
-    dt = self.controller.timestep * 3
+    dt = DT_MDL * 3
     tau = 0.25
     k = dt / (tau + dt)
 
@@ -162,7 +162,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     mock_CS.out = Mock(aEgo=0.0, vEgo=10.0)
 
     test_deltas = [-2.0, -1.0, -0.5, -0.1, -0.01, 0.0, 0.01, 0.1, 0.5, 1.0, 2.0]
-    dt = self.controller.timestep * 3
+    dt = DT_MDL * 3
     tau = 0.25
     k = dt / (tau + dt)
 

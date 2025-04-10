@@ -16,8 +16,8 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 @dataclass
 class LongitudinalState:
-  desired_accel: float = 0.0
   actual_accel: float = 0.0
+  desired_accel: float = 0.0
   jerk_upper: float = 0.0
   jerk_lower: float = 0.0
 

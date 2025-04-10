@@ -16,6 +16,7 @@ from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
+DT_MDL = 0.05  # model timestep
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 
@@ -34,21 +35,21 @@ class LongitudinalTuningController:
 
     self.state = LongitudinalTuningState()
     self.car_config = get_car_config(CP)
-    self.desired_accel = 0.0
+    self.accel_filter = FirstOrderFilter(0.0, 0.25, DT_MDL * 3)
     self.actual_accel = 0.0
+    self.desired_accel = 0.0
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
-    self.timestep = 0.05    # DT_MDL Timestep
-    self.accel_filter = FirstOrderFilter(0.0, 0.25, self.timestep * 3)
+
 
   def reset(self) -> None:
-    self.desired_accel = 0.0
+    self.accel_filter.x = 0.0
     self.actual_accel = 0.0
+    self.desired_accel = 0.0
     self.state.accel_last = 0.0
     self.state.jerk = 0.0
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
-    self.accel_filter.x = 0.0
 
   def make_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
@@ -69,7 +70,7 @@ class LongitudinalTuningController:
     filtered_accel = self.accel_filter.x
 
     # Calculate jerk
-    self.state.jerk = (filtered_accel - prev_filtered_accel) / (self.timestep * 3)
+    self.state.jerk = (filtered_accel - prev_filtered_accel) / (DT_MDL * 3)
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
     velocity = CS.out.vEgo
