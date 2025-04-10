@@ -24,15 +24,15 @@ class TestLongitudinalTuningController(unittest.TestCase):
   def test_init(self):
     """Test controller initialization"""
     self.assertIsInstance(self.controller.state, LongitudinalTuningState)
-    self.assertEqual(self.controller.accel_raw, 0.0)
-    self.assertEqual(self.controller.accel_value, 0.0)
+    self.assertEqual(self.controller.desired_accel, 0.0)
+    self.assertEqual(self.controller.actual_accel, 0.0)
     self.assertEqual(self.controller.jerk_upper, 0.0)
     self.assertEqual(self.controller.jerk_lower, 0.0)
 
   def test_reset(self):
     """Test reset functionality"""
     # Set non-zero values and verify reset
-    attrs = ['accel_raw', 'accel_value', 'jerk_upper', 'jerk_lower']
+    attrs = ['desired_accel', 'actual_accel', 'jerk_upper', 'jerk_lower']
     state_attrs = ['accel_last', 'jerk']
 
     # Set controller and state attributes to non-zero

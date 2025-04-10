@@ -34,16 +34,16 @@ class LongitudinalTuningController:
 
     self.state = LongitudinalTuningState()
     self.car_config = get_car_config(CP)
-    self.accel_raw = 0.0
-    self.accel_value = 0.0
+    self.desired_accel = 0.0
+    self.actual_accel = 0.0
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
     self.timestep = 0.05    # DT_MDL Timestep
     self.accel_filter = FirstOrderFilter(0.0, 0.25, self.timestep * 3)
 
   def reset(self) -> None:
-    self.accel_raw = 0.0
-    self.accel_value = 0.0
+    self.desired_accel = 0.0
+    self.actual_accel = 0.0
     self.state.accel_last = 0.0
     self.state.jerk = 0.0
     self.jerk_upper = 0.0
@@ -105,15 +105,15 @@ class LongitudinalTuningController:
 
   def calculate_a_value(self, CC: structs.CarControl) -> float:
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
-      self.accel_value = CC.actuators.accel
-      return self.accel_value
+      self.actual_accel = CC.actuators.accel
+      return self.actual_accel
 
     if not CC.enabled:
       self.reset()
       return 0.0
 
-    self.accel_raw = CC.actuators.accel
-    self.accel_value = float(np.clip(self.accel_raw, self.state.accel_last - 0.1, self.state.accel_last + 0.1))
-    self.state.accel_last = self.accel_value
+    self.desired_accel = CC.actuators.accel
+    self.actual_accel = float(np.clip(self.desired_accel, self.state.accel_last - 0.1, self.state.accel_last + 0.1))
+    self.state.accel_last = self.actual_accel
 
-    return self.accel_value
+    return self.actual_accel

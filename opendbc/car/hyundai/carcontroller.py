@@ -87,7 +87,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     self.apply_torque_last = apply_torque
 
     # accel + longitudinal
-    accel = float(np.clip(self.long_state.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+    accel = float(np.clip(self.long_state.desired_accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     stopping = actuators.longControlState == LongCtrlState.stopping
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
 

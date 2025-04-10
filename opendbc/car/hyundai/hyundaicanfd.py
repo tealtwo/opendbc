@@ -137,7 +137,7 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "ACCMode": 0 if not enabled else (2 if gas_override else 1),
     "MainMode_ACC": 1 if main_cruise_enabled else 0,
     "StopReq": 1 if stopping else 0,
-    "aReqValue": long_state.accel_value if enabled else a_val,
+    "aReqValue": long_state.actual_accel if enabled else a_val,
     "aReqRaw": a_raw,
     "VSetDis": set_speed,
     "JerkLowerLimit": long_state.jerk_lower if enabled else 1,
