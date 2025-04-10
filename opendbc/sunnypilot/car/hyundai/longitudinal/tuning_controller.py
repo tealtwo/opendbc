@@ -104,11 +104,16 @@ class LongitudinalTuningController:
     return float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
   def calculate_a_value(self, CC: structs.CarControl) -> float:
-    jerk = 5
-    jerk_number = float(jerk / 50)   # TODO: Try using jerk lower max for this value
+    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
+      self.accel_value = CC.actuators.accel
+      return self.accel_value
+
     if not CC.enabled:
       self.reset()
       return 0.0
+
+    jerk = 5
+    jerk_number = float(jerk / 50)   # TODO: Try using jerk lower max for this value
 
     self.accel_raw = CC.actuators.accel
     self.accel_value = float(np.clip(self.accel_raw, self.state.accel_last - jerk_number, self.state.accel_last + jerk_number))
