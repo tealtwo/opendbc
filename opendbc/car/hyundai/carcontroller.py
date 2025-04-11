@@ -63,7 +63,6 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     MadsCarController.__init__(self)
     self.CAN = CanBus(CP)
     self.params = CarControllerParams(CP)
-    self._params = Params()
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.car_fingerprint = CP.carFingerprint
 
@@ -79,6 +78,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     self.angle_max_torque = self.params.ANGLE_MAX_TORQUE
     self.angle_torque_override_cycles = self.params.ANGLE_TORQUE_OVERRIDE_CYCLES
     self.live_tuning = LIVE_TUNING
+    self._params = Params() if self.live_tuning else None
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
@@ -87,7 +87,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     hud_control = CC.hudControl
     apply_torque = 0
 
-    if self.live_tuning and self.frame % 500 == 0:
+    if self._params and self.live_tuning and self.frame % 500 == 0:
       if (smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor")) and float(smoothingFactorParam) != self.smoothing_factor:
         self.smoothing_factor = float(smoothingFactorParam) / 10.0
       if (minTorqueParam := self._params.get("HkgTuningAngleMinTorque")) and int(minTorqueParam) != self.angle_min_torque:
