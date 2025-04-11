@@ -1196,13 +1196,13 @@
     ],
     "package": "Highway Driving Assist"
   },
-  "Hyundai Ioniq 5 PE (with HDA II) 2025+": {
+  "Hyundai Ioniq 5 PE (with HDA II & LFA2) 2025+": {
     "platform": "HYUNDAI_IONIQ_5_PE",
     "make": "Hyundai",
     "brand": "hyundai",
-    "model": "Ioniq 5 PE (with HDA II) 2025+",
+    "model": "Ioniq 5 PE (with HDA II & LFA2) 2025+",
     "year": [],
-    "package": "Highway Driving Assist II"
+    "package": "Highway Driving Assist II & Lane Follow Assist 2"
   },
   "Hyundai Ioniq 6 (with HDA II) 2023-24": {
     "platform": "HYUNDAI_IONIQ_6",
