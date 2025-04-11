@@ -130,8 +130,8 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
   if not enabled or gas_override:
     a_val, a_raw = 0, 0
   else:
-    a_raw = accel
-    a_val = np.clip(accel, accel_last - jn, accel_last + jn)
+    a_raw = accel  # noqa: F841
+    a_val = np.clip(accel, accel_last - jn, accel_last + jn)  # noqa: F841
 
   values = {
     "ACCMode": 0 if not enabled else (2 if gas_override else 1),
