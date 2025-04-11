@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from opendbc.car import structs, DT_CTRL
 from opendbc.car.common.filter_simple import FirstOrderFilter
 
+from opendbc.car.hyundai.values import CarControllerParams
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
@@ -95,6 +96,6 @@ class LongitudinalTuningController:
       self.state.accel_last = 0.0
       return
 
-    self.desired_accel = CC.actuators.accel
+    self.desired_accel = float(np.clip(CC.actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     self.actual_accel = float(np.clip(self.desired_accel, self.state.accel_last - 0.1, self.state.accel_last + 0.1))
     self.state.accel_last = self.actual_accel
