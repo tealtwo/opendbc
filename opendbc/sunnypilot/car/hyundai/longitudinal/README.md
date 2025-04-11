@@ -10,7 +10,7 @@ For example, in our jerk calculations throughout this tune, you will see how max
 In the tuning you will see a set of equations, the first being jerk, **but what exactly is jerk?**
 Jerk is the rate of change of acceleration (how quickly acceleration changes). It's calculated by finding the 
 difference between the new filtered acceleration and the previous one. This difference is divided by the
-time step (3 × 0.05 seconds = 0.15 seconds). The result tells you how quickly the acceleration is changing in m/s³:
+time step (2 × 0.01 seconds = 0.02 seconds). The result tells you how quickly the acceleration is changing in m/s³:
 
     planned_accel = CC.actuators.accel
     current_accel = CS.out.aEgo
@@ -52,7 +52,7 @@ This equation above is set by ISO 15622, and dictates that jerk lower limit can 
 
     self.car_config.jerk_limits[1] 
 
-Jerk_limits[1] represents a jerk value of 3.3 m/s^3, which is the maximum analyzed lower jerk rate seen on stock SCC CAN.
+Jerk_limits[1] represents a jerk value of 5.0 m/s^3, which is the maximum analyzed lower jerk rate seen on stock SCC CAN.
 Between 5 m/s and 20 m/s jerk is capped using the calculation:
 
     decel_jerk_max = 5.83 - (velocity/6)
