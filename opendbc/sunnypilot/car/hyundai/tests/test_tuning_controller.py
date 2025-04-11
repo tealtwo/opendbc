@@ -207,19 +207,6 @@ class TestLongitudinalTuningController(unittest.TestCase):
     second_result = self.controller.calculate_a_value(mock_CC)
     self.assertAlmostEqual(float(second_result), 0.2)
 
-  def test_calculate_accel(self):
-    """Test calculate_accel method"""
-    # Test disabled
-    mock_CC = Mock(enabled=False)
-    self.assertEqual(self.controller.calculate_accel(mock_CC), 0.0)
-
-    # Test enabled
-    mock_CC.enabled = True
-    mock_CC.actuators = Mock(accel=2.0)
-    with patch('opendbc.car.hyundai.values.CarControllerParams') as mock_params:
-      mock_params.ACCEL_MIN, mock_params.ACCEL_MAX = -3.5, 2.0
-      self.assertEqual(self.controller.calculate_accel(mock_CC), 2.0)
-
   def test_make_jerk_realistic_profile(self):
     """Test make_jerk with realistic velocity and acceleration profile"""
     self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_BRAKING

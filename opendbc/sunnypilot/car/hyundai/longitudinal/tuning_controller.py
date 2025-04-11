@@ -9,8 +9,7 @@ import numpy as np
 from dataclasses import dataclass
 
 from opendbc.car import structs
-from opendbc.car.interfaces import CarStateBase
-from opendbc.car.hyundai.values import CarControllerParams, HyundaiFlags
+from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.car.common.filter_simple import FirstOrderFilter
 
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
@@ -51,7 +50,7 @@ class LongitudinalTuningController:
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
 
-  def make_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
+  def make_jerk(self, CC: structs.CarControl, CS: structs.CarState, long_control_state: LongCtrlState) -> None:
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
       jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
 
@@ -88,21 +87,11 @@ class LongitudinalTuningController:
       accel_jerk_max = self.car_config.jerk_limits[2]
 
     accel_jerk = accel_jerk_max if long_control_state == LongCtrlState.pid else 1.0
-    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.60
+    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.725
     min_lower_jerk = self.car_config.jerk_limits[0] if (velocity < 12.0) else 0.625
 
     self.jerk_upper = min(max(min_upper_jerk, self.state.jerk), accel_jerk)
     self.jerk_lower = min(max(min_lower_jerk, -self.state.jerk), decel_jerk_max)
-
-  def calculate_accel(self, CC: structs.CarControl) -> float:
-    """Calculate acceleration with cruise control status handling."""
-    if not CC.enabled:
-      self.reset()
-      return 0.0
-
-    accel = CC.actuators.accel
-
-    return float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
   def calculate_a_value(self, CC: structs.CarControl) -> float:
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
