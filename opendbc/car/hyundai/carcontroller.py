@@ -1,5 +1,14 @@
 import numpy as np
-from openpilot.common.params import Params
+from opendbc.car.carlog import carlog
+
+try:
+  # TODO-SP: We shouldn't really import params from here, but it's the easiest way to get the params for 
+  #  live tuning temporarily while we understand the angle steering better
+  from openpilot.common.params import Params
+  LIVE_TUNING = True
+except:
+  carlog.warning("Unable to import Params from openpilot.common.params.")
+  LIVE_TUNING = False
 
 from opendbc.can.packer import CANPacker
 from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, \
@@ -69,6 +78,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     self.angle_min_torque = self.params.ANGLE_MIN_TORQUE
     self.angle_max_torque = self.params.ANGLE_MAX_TORQUE
     self.angle_torque_override_cycles = self.params.ANGLE_TORQUE_OVERRIDE_CYCLES
+    self.live_tuning = LIVE_TUNING
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
@@ -77,7 +87,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     hud_control = CC.hudControl
     apply_torque = 0
 
-    if self.frame % 500 == 0:
+    if self.live_tuning and self.frame % 500 == 0:
       if smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor"):
         self.smoothing_factor = float(smoothingFactorParam) / 10.0
       if (minTorqueParam := int(self._params.get("HkgTuningAngleMinTorque"))) and minTorqueParam != self.angle_min_torque:
