@@ -2,11 +2,11 @@ import numpy as np
 from opendbc.car.carlog import carlog
 
 try:
-  # TODO-SP: We shouldn't really import params from here, but it's the easiest way to get the params for 
+  # TODO-SP: We shouldn't really import params from here, but it's the easiest way to get the params for
   #  live tuning temporarily while we understand the angle steering better
   from openpilot.common.params import Params
   LIVE_TUNING = True
-except:
+except ImportError:
   carlog.warning("Unable to import Params from openpilot.common.params.")
   LIVE_TUNING = False
 
