@@ -98,7 +98,7 @@ class LongitudinalTuningController:
       self.actual_accel = CC.actuators.accel
       return
 
-    if not CC.enabled:
+    if not CC.longActive:
       self.desired_accel = 0.0
       self.actual_accel = 0.0
       self.state.accel_last = 0.0
