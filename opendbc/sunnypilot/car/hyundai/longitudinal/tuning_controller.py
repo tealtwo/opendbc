@@ -91,7 +91,7 @@ class LongitudinalTuningController:
       else:
         val = self.jerk_lower * DT_CTRL * 2
 
-      return self.state.accel_last + val
+      return abs(self.state.accel_last + val)
 
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
       self.desired_accel = CC.actuators.accel
