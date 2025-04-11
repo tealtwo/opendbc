@@ -88,13 +88,13 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     apply_torque = 0
 
     if self.live_tuning and self.frame % 500 == 0:
-      if smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor"):
+      if (smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor")) and float(smoothingFactorParam) != self.smoothing_factor:
         self.smoothing_factor = float(smoothingFactorParam) / 10.0
-      if (minTorqueParam := int(self._params.get("HkgTuningAngleMinTorque"))) and minTorqueParam != self.angle_min_torque:
+      if (minTorqueParam := self._params.get("HkgTuningAngleMinTorque")) and int(minTorqueParam) != self.angle_min_torque:
         self.angle_min_torque = int(minTorqueParam)
-      if (maxTorqueParam := int(self._params.get("HkgTuningAngleMaxTorque"))) and maxTorqueParam != self.angle_max_torque:
+      if (maxTorqueParam := self._params.get("HkgTuningAngleMaxTorque")) and int(maxTorqueParam) != self.angle_max_torque:
         self.angle_max_torque = int(maxTorqueParam)
-      if (overrideCyclesParam := int(self._params.get("HkgTuningOverridingCycles"))) and overrideCyclesParam != self.angle_torque_override_cycles:
+      if (overrideCyclesParam := self._params.get("HkgTuningOverridingCycles")) and int(overrideCyclesParam) != self.angle_torque_override_cycles:
         self.angle_torque_override_cycles = int(overrideCyclesParam)
 
     # TODO: needed for angle control cars?
