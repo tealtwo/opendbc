@@ -40,7 +40,6 @@ class LongitudinalTuningController:
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
 
-
   def reset(self) -> None:
     self.accel_filter.x = 0.0
     self.actual_accel = 0.0
@@ -80,10 +79,7 @@ class LongitudinalTuningController:
       decel_jerk_max = 2.5
       accel_jerk_max = 1.65
     else:   # Between 5 m/s and 20 m/s
-      if self.CP.flags & HyundaiFlags.CANFD:
-        decel_jerk_max = 5.83 - (velocity/6)
-      else:
-        decel_jerk_max = 3.64284 - (0.05714 * velocity)
+      decel_jerk_max = 5.83 - (velocity/6)
       accel_jerk_max = self.car_config.jerk_limits[2]
 
     accel_jerk = accel_jerk_max if long_control_state == LongCtrlState.pid else 1.0
