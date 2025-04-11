@@ -8,14 +8,12 @@ See the LICENSE.md file in the root directory for more details.
 import numpy as np
 from dataclasses import dataclass
 
-from opendbc.car import structs
-from opendbc.car.hyundai.values import HyundaiFlags
+from opendbc.car import structs, DT_CTRL
 from opendbc.car.common.filter_simple import FirstOrderFilter
 
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
-DT_MDL = 0.01  # model timestep TODO: This is a test
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 
@@ -34,7 +32,7 @@ class LongitudinalTuningController:
 
     self.state = LongitudinalTuningState()
     self.car_config = get_car_config(CP)
-    self.accel_filter = FirstOrderFilter(0.0, 0.25, DT_MDL * 3)
+    self.accel_filter = FirstOrderFilter(0.0, 0.25, DT_CTRL * 2)
     self.actual_accel = 0.0
     self.desired_accel = 0.0
     self.jerk_upper = 0.0
@@ -68,7 +66,7 @@ class LongitudinalTuningController:
     filtered_accel = self.accel_filter.x
 
     # Calculate jerk
-    self.state.jerk = (filtered_accel - prev_filtered_accel) / (DT_MDL * 3)
+    self.state.jerk = (filtered_accel - prev_filtered_accel) / (DT_CTRL * 2)
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
     velocity = CS.out.vEgo

@@ -40,7 +40,7 @@ class LongitudinalController:
     """Calculate aReqValue."""
     self.long_state.actual_accel = self.tuning.calculate_a_value(CC)
 
-  def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> None:
+  def update(self, CC: structs.CarControl, CS: CarStateBase) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
     actuators = CC.actuators
     long_control_state = actuators.longControlState
