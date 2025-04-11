@@ -85,6 +85,14 @@ class LongitudinalTuningController:
     self.jerk_lower = min(max(min_lower_jerk, -self.state.jerk), decel_jerk_max)
 
   def calculate_a_value(self, CC: structs.CarControl) -> None:
+    def jerk_limited_integrator():
+      if self.desired_accel >= self.actual_accel:
+        val = self.jerk_upper * DT_CTRL * 2
+      else:
+        val = self.jerk_lower * DT_CTRL * 2
+
+      return self.state.accel_last + val
+
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
       self.desired_accel = CC.actuators.accel
       self.actual_accel = CC.actuators.accel
@@ -97,5 +105,6 @@ class LongitudinalTuningController:
       return
 
     self.desired_accel = float(np.clip(CC.actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
-    self.actual_accel = float(np.clip(self.desired_accel, self.state.accel_last - 0.1, self.state.accel_last + 0.1))
+    clipped_actual_accel = jerk_limited_integrator()
+    self.actual_accel = float(np.clip(self.desired_accel, -clipped_actual_accel, clipped_actual_accel))
     self.state.accel_last = self.actual_accel
