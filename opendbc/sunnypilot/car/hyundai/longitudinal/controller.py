@@ -51,8 +51,3 @@ class LongitudinalController:
 
     self.calculate_and_get_jerk(CC, CS, long_control_state)
     self.calculate_a_value(CC)
-
-    # Force zero aReqRaw during StopReq
-    if long_control_state == LongCtrlState.stopping:
-      # Force zero aReqRaw during standstill delay
-      self.long_state.desired_accel = 0.0

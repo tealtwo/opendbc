@@ -104,7 +104,12 @@ class LongitudinalTuningController:
       self.state.accel_last = 0.0
       return
 
-    self.desired_accel = float(np.clip(CC.actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+    # Force zero aReqRaw during StopReq
+    if CC.actuators.longControlState == LongCtrlState.stopping:
+      self.desired_accel = 0.0
+    else:
+      self.desired_accel = float(np.clip(CC.actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+
     clipped_actual_accel = jerk_limited_integrator()
     self.actual_accel = float(np.clip(self.desired_accel, -clipped_actual_accel, clipped_actual_accel))
     self.state.accel_last = self.actual_accel
