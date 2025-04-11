@@ -382,7 +382,10 @@ class CAR(Platforms):
     flags=HyundaiFlags.EV,
   )
   HYUNDAI_IONIQ_5_PE = HyundaiCanFDPlatformConfig(
-    [HyundaiCarDocs("Hyundai Ioniq 5 PE (with HDA II & LFA2) 2025+", "Highway Driving Assist II & Lane Follow Assist 2", car_parts=CarParts.common([CarHarness.hyundai_q]))],
+    [
+      HyundaiCarDocs("Hyundai Ioniq 5 PE (with HDA II & LFA2) 2025+", "Highway Driving Assist II & Lane Follow Assist 2", 
+                     car_parts=CarParts.common([CarHarness.hyundai_q]))
+    ],
     HYUNDAI_IONIQ_5.specs,
     flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
   )
@@ -628,8 +631,10 @@ class CAR(Platforms):
   )
   GENESIS_GV80_2025 = HyundaiCanFDPlatformConfig(
     [
-      HyundaiCarDocs("Genesis GV80 (3.5T Prestige Trim, with HDA II & LFA2) 2025", "Highway Driving Assist II & Lane Follow Assist 2", car_parts=CarParts.common([CarHarness.hyundai_q])),
-      HyundaiCarDocs("Genesis GV80 Coupe (with HDA II & LFA2) 2025", "Highway Driving Assist II & Lane Follow Assist 2", car_parts=CarParts.common([CarHarness.hyundai_q])),
+      HyundaiCarDocs("Genesis GV80 (3.5T Prestige Trim, with HDA II & LFA2) 2025", "Highway Driving Assist II & Lane Follow Assist 2", 
+                     car_parts=CarParts.common([CarHarness.hyundai_q])),
+      HyundaiCarDocs("Genesis GV80 Coupe (with HDA II & LFA2) 2025", "Highway Driving Assist II & Lane Follow Assist 2", 
+                     car_parts=CarParts.common([CarHarness.hyundai_q])),
     ],
     GENESIS_GV80.specs,
     flags=HyundaiFlags.CANFD_ANGLE_STEERING,
