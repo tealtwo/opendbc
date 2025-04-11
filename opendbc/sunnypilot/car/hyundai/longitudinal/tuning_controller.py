@@ -91,7 +91,7 @@ class LongitudinalTuningController:
       else:
         val = self.jerk_lower * DT_CTRL * 2
 
-      return abs(self.state.accel_last + val)
+      return self.state.accel_last + np.clip(self.desired_accel - self.state.accel_last, -val, val)
 
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
       self.desired_accel = CC.actuators.accel
@@ -110,6 +110,5 @@ class LongitudinalTuningController:
     else:
       self.desired_accel = float(np.clip(CC.actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
-    clipped_actual_accel = jerk_limited_integrator()
-    self.actual_accel = float(np.clip(self.desired_accel, -clipped_actual_accel, clipped_actual_accel))
+    self.actual_accel = jerk_limited_integrator()
     self.state.accel_last = self.actual_accel
