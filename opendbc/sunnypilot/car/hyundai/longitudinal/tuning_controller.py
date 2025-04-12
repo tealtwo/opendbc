@@ -82,7 +82,7 @@ class LongitudinalTuningController:
     min_lower_jerk = self.car_config.jerk_limits[0] if (velocity < 12.0) else 0.625
 
     self.jerk_upper = min(max(min_upper_jerk, self.state.jerk), accel_jerk)
-    self.jerk_lower = min(max(min_lower_jerk, -self.state.jerk), decel_jerk_max)
+    self.jerk_lower = min(max(min_lower_jerk, -self.state.jerk * 1.5), decel_jerk_max)
 
   def calculate_a_value(self, CC: structs.CarControl) -> None:
     def jerk_limited_integrator():
