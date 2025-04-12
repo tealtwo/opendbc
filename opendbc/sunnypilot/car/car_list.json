@@ -1507,16 +1507,6 @@
     ],
     "package": "All"
   },
-  "Hyundai Tucson 2025": {
-    "platform": "HYUNDAI_TUCSON_2025",
-    "make": "Hyundai",
-    "brand": "hyundai",
-    "model": "Tucson",
-    "year": [
-      "2025"
-    ],
-    "package": "Smart Cruise Control (SCC)"
-  },
   "Hyundai Tucson Diesel 2019": {
     "platform": "HYUNDAI_TUCSON",
     "make": "Hyundai",
