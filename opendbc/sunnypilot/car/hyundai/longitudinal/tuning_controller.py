@@ -44,7 +44,7 @@ class LongitudinalTuningController:
       jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
 
       self.jerk_upper = jerk_limit
-      self.jerk_lower = jerk_limit
+      self.jerk_lower = 5.0
       return
 
     if not CC.enabled:
