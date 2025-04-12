@@ -47,11 +47,6 @@ class LongitudinalTuningController:
       self.jerk_lower = 5.0
       return
 
-    if not CC.enabled:
-      self.jerk_upper = 0.0
-      self.jerk_lower = 0.0
-      return
-
     # Blend planned acceleration with current acceleration
     planned_accel = CC.actuators.accel
     current_accel = CS.out.aEgo
