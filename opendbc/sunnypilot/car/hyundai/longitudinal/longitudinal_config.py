@@ -15,8 +15,8 @@ class CarTuningConfig:
   v_ego_stopping: float
   v_ego_starting: float
   stopping_decel_rate: float
-  start_accel: float
   jerk_limits: tuple[float, float, float]  # (min jerk, max lower jerk, max upper jerk)
+  longitudinal_actuator_delay: float = 0.5
 
 
 # Default configurations for different car types
@@ -26,28 +26,24 @@ TUNING_CONFIGS = {
     v_ego_stopping=0.25,
     v_ego_starting=0.10,
     stopping_decel_rate=0.35,
-    start_accel=1.0,
     jerk_limits=(0.53, 5.0, 2.0),
   ),
   "EV": CarTuningConfig(
     v_ego_stopping=0.25,
     v_ego_starting=0.10,
     stopping_decel_rate=0.30,
-    start_accel=1.0,
     jerk_limits=(0.53, 5.0, 2.2),
   ),
   "HYBRID": CarTuningConfig(
     v_ego_stopping=0.25,
     v_ego_starting=0.12,
     stopping_decel_rate=0.35,
-    start_accel=1.0,
     jerk_limits=(0.53, 5.0, 2.2),
   ),
   "DEFAULT": CarTuningConfig(
     v_ego_stopping=0.25,
     v_ego_starting=0.10,
     stopping_decel_rate=0.30,
-    start_accel=1.0,
     jerk_limits=(0.53, 5.0, 2.0),
   )
 }
@@ -58,14 +54,13 @@ CAR_SPECIFIC_CONFIGS = {
     v_ego_stopping=0.1,
     v_ego_starting=0.10,
     stopping_decel_rate=0.20,
-    start_accel=1.0,
     jerk_limits=(0.53, 5.0, 1.6),
   ),
   CAR.KIA_NIRO_EV: CarTuningConfig(
     v_ego_stopping=0.1,
     v_ego_starting=0.10,
     stopping_decel_rate=0.05,
-    start_accel=1.0,
     jerk_limits=(0.53, 5.0, 1.6),
+    longitudinal_actuator_delay=0.15,
   )
 }
