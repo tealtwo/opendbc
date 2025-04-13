@@ -34,7 +34,7 @@ class LongitudinalController:
     """Calculate jerk based on tuning."""
     self.tuning.make_jerk(CC, CS, long_control_state)
 
-    if not CC.enabled:
+    if not CC.longActive:
       self.long_state.jerk_upper = 0.0
       self.long_state.jerk_lower = 0.0
       return
