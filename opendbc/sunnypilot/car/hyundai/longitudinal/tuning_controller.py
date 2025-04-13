@@ -61,7 +61,7 @@ class LongitudinalTuningController:
     velocity = CS.out.vEgo
     if velocity < 5.0:
       decel_jerk_max = self.car_config.jerk_limits[1]
-      accel_jerk_max = 1.0
+      accel_jerk_max = 1.8
     elif velocity > 20.0:
       decel_jerk_max = 2.5
       accel_jerk_max = 1.0
