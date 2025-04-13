@@ -39,8 +39,19 @@ class LongitudinalTuningController:
     self.actual_accel = 0.0
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
+    self.jerk_upper_target = 0.5
+    self.jerk_lower_target = 0.5
+    self.jerk_step = 0.1
+    self.jerk_threshold = 0.05
+    self.jerk_upper_filter = FirstOrderFilter(0.5, 0.2, DT_CTRL * 2)
+    self.jerk_lower_filter = FirstOrderFilter(0.5, 0.2, DT_CTRL * 2)
 
   def make_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
+    def ramp_update(current, target, step, threshold):
+      if abs(target - current) >threshold:
+        return current + float(np.clip(target - current, -step, step))
+      return current
+
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
       jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
 
@@ -71,8 +82,16 @@ class LongitudinalTuningController:
     min_lower_jerk = self.car_config.jerk_limits[0] if (planned_accel <= -0.1) else 0.5
     multiplier = 2.5 if self.CP.radarUnavailable else self.car_config.lower_jerk_multiplier
 
-    self.jerk_upper = min(max(min_upper_jerk, self.state.jerk), accel_jerk_max)
-    self.jerk_lower = min(max(min_lower_jerk, -self.state.jerk * multiplier), decel_jerk_max)
+    desired_jerk_upper = min(max(min_upper_jerk, self.state.jerk), accel_jerk_max)
+    desired_jerk_lower = min(max(min_lower_jerk, -self.state.jerk * multiplier), decel_jerk_max)
+
+    # Step toward target
+    self.jerk_upper_target = ramp_update(self.jerk_upper_target, desired_jerk_upper, self.jerk_step, self.jerk_threshold)
+    self.jerk_lower_target = ramp_update(self.jerk_lower_target, desired_jerk_lower, self.jerk_step, self.jerk_threshold)
+
+    # Smooth with FirstOrderFilter
+    self.jerk_upper = self.jerk_upper_filter.update(self.jerk_upper_target)
+    self.jerk_lower = self.jerk_lower_filter.update(self.jerk_lower_target)
 
   def calculate_a_value(self, CC: structs.CarControl) -> None:
     def jerk_limited_integrator():
