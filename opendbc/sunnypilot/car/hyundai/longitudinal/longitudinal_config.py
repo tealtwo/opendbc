@@ -23,11 +23,9 @@ class CarTuningConfig:
 # Min jerk is set to 0.53 per (Horn et al., 2024)
 TUNING_CONFIGS = {
   "CANFD": CarTuningConfig(
-    v_ego_starting=0.10,
     stopping_decel_rate=0.35,
   ),
   "EV": CarTuningConfig(
-    v_ego_starting=0.10,
     jerk_limits=(0.53, 5.0, 2.2),
   ),
   "HYBRID": CarTuningConfig(
