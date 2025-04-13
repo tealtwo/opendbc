@@ -51,7 +51,7 @@ TUNING_CONFIGS = {
 # Car-specific configs
 CAR_SPECIFIC_CONFIGS = {
   CAR.HYUNDAI_ELANTRA_2021: CarTuningConfig(
-    v_ego_stopping=0.1,
+    v_ego_stopping=0.25,
     v_ego_starting=0.10,
     stopping_decel_rate=0.20,
     jerk_limits=(0.53, 5.0, 1.6),
