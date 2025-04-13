@@ -25,7 +25,6 @@ TUNING_CONFIGS = {
   "CANFD": CarTuningConfig(
     v_ego_starting=0.10,
     stopping_decel_rate=0.35,
-    jerk_limits=(0.53, 5.0, 2.0),
   ),
   "EV": CarTuningConfig(
     v_ego_starting=0.10,
