@@ -61,20 +61,17 @@ class LongitudinalTuningController:
     velocity = CS.out.vEgo
     if velocity < 5.0:
       decel_jerk_max = self.car_config.jerk_limits[1]
-      accel_jerk_max = 1.8
     elif velocity > 20.0:
       decel_jerk_max = 2.5
-      accel_jerk_max = 1.0
     else:   # Between 5 m/s and 20 m/s
       decel_jerk_max = 5.83 - (velocity/6)
-      accel_jerk_max = self.car_config.jerk_limits[2]
 
-    accel_jerk = accel_jerk_max if long_control_state == LongCtrlState.pid else 1.0
+    accel_jerk_max = self.car_config.jerk_limits[2] if long_control_state == LongCtrlState.pid else 1.0
     min_upper_jerk = 0.5 if (velocity > 3.0) else 0.725
     min_lower_jerk = self.car_config.jerk_limits[0] if (planned_accel <= -0.1) else 0.5
     multiplier = 2.5 if self.CP.radarUnavailable else self.car_config.lower_jerk_multiplier
 
-    self.jerk_upper = min(max(min_upper_jerk, self.state.jerk), accel_jerk)
+    self.jerk_upper = min(max(min_upper_jerk, self.state.jerk), accel_jerk_max)
     self.jerk_lower = min(max(min_lower_jerk, -self.state.jerk * multiplier), decel_jerk_max)
 
   def calculate_a_value(self, CC: structs.CarControl) -> None:
