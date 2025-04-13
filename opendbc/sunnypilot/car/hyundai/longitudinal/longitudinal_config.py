@@ -41,10 +41,6 @@ TUNING_CONFIGS = {
 
 # Car-specific configs
 CAR_SPECIFIC_CONFIGS = {
-  CAR.HYUNDAI_ELANTRA_2021: CarTuningConfig(
-    stopping_decel_rate=0.20,
-    jerk_limits=(0.53, 5.0, 1.6),
-  ),
   CAR.KIA_NIRO_EV: CarTuningConfig(
     v_ego_stopping=0.1,
     stopping_decel_rate=0.05,
