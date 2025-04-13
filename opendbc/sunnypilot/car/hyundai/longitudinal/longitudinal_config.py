@@ -17,6 +17,7 @@ class CarTuningConfig:
   stopping_decel_rate: float = 0.30
   jerk_limits: tuple[float, float, float] = 0.53, 5.0, 2.0  # (min jerk, max lower jerk, max upper jerk)
   longitudinal_actuator_delay: float = 0.45
+  lower_jerk_multiplier: float = 1.0
 
 
 # Default configurations for different car types
@@ -43,5 +44,8 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.05,
     jerk_limits=(0.53, 5.0, 1.6),
     longitudinal_actuator_delay=0.15,
+  ),
+  CAR.HYUNDAI_IONIQ: CarTuningConfig(
+    lower_jerk_multiplier=3.0,
   )
 }
