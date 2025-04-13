@@ -29,7 +29,7 @@ class LongitudinalController:
     self.tuning = LongitudinalTuningController(CP, CP_SP)
     self.long_state = LongitudinalState()
 
-  def calculate_and_get_jerk(self, CC: structs.CarControl, CS: structs.CarState,
+  def calculate_and_get_jerk(self, CC: structs.CarControl, CS: CarStateBase,
                              long_control_state: LongCtrlState) -> None:
     """Calculate jerk based on tuning."""
     self.tuning.make_jerk(CC, CS, long_control_state)

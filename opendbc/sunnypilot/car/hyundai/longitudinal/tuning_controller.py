@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from opendbc.car import structs, DT_CTRL
 from opendbc.car.common.filter_simple import FirstOrderFilter
+from opendbc.car.interfaces import CarStateBase
 
 from opendbc.car.hyundai.values import CarControllerParams
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
@@ -39,7 +40,7 @@ class LongitudinalTuningController:
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
 
-  def make_jerk(self, CC: structs.CarControl, CS: structs.CarState, long_control_state: LongCtrlState) -> None:
+  def make_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
       jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
 
