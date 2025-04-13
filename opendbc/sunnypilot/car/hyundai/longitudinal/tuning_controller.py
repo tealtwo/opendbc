@@ -48,14 +48,10 @@ class LongitudinalTuningController:
       self.jerk_lower = 5.0
       return
 
-    # Blend planned acceleration with current acceleration
-    planned_accel = CC.actuators.accel
-    current_accel = CS.out.aEgo
-    blended_accel = 0.8 * planned_accel + 0.2 * current_accel
-
     # Apply acceleration filter
+    planned_accel = CC.actuators.accel
     prev_filtered_accel = self.accel_filter.x
-    self.accel_filter.update(blended_accel)
+    self.accel_filter.update(planned_accel)
     filtered_accel = self.accel_filter.x
 
     # Calculate jerk
@@ -74,9 +70,9 @@ class LongitudinalTuningController:
       accel_jerk_max = self.car_config.jerk_limits[2]
 
     accel_jerk = accel_jerk_max if long_control_state == LongCtrlState.pid else 1.0
-    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.725
-    min_lower_jerk = self.car_config.jerk_limits[0] if (velocity < 12.0) else 0.625
-    multiplier = 3.0 if self.CP.radarUnavailable else self.car_config.lower_jerk_multiplier
+    min_upper_jerk = 0.5 if (velocity > 3.0) else 0.725
+    min_lower_jerk = self.car_config.jerk_limits[0] if (planned_accel <= -0.1) else 0.5
+    multiplier = 2.0 if self.CP.radarUnavailable else self.car_config.lower_jerk_multiplier
 
     self.jerk_upper = min(max(min_upper_jerk, self.state.jerk), accel_jerk)
     self.jerk_lower = min(max(min_lower_jerk, -self.state.jerk * multiplier), decel_jerk_max)

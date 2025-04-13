@@ -62,7 +62,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     print(f"First call with planned_accel={mock_CC.actuators.accel}, current_accel={mock_CS.out.aEgo}")
 
     # Calculate expected values
-    blended_accel = 0.8 * 1.0 + 0.2 * 0.8  # = 0.96
+    blended_accel = 1.0
     dt = DT_CTRL * 2
     tau = 0.25
     k = dt / (tau + dt)
@@ -98,7 +98,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     # Calculate expected response to step input
     expected_values = []
     x = 0.0
-    blended_accel = 0.8 * 2.0  # blend with aEgo=0
+    blended_accel = 2.0  # blend with aEgo=0
     for _ in range(10):
         x = x * (1-k) + blended_accel * k
         expected_values.append(x)
@@ -133,23 +133,26 @@ class TestLongitudinalTuningController(unittest.TestCase):
       mock_CC.actuators.accel = planned_accel
       mock_CS.out.aEgo = planned_accel * 0.5
 
-      # Calculate expected values for first update
-      blended_accel = 0.8 * planned_accel + 0.2 * (planned_accel * 0.5)
-      expected_first_filtered = blended_accel * k
+      # Expected uses planned_accel only
+      expected_first_filtered = planned_accel * k
       expected_first_jerk = expected_first_filtered / dt
 
       self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
 
       print(f"\nTesting planned_accel={planned_accel}")
-      print(f"  Blended: {blended_accel}, Filtered: {self.controller.accel_filter.x:.5f}")
+      print(f"  Blended: {planned_accel}, Filtered: {self.controller.accel_filter.x:.5f}")
       print(f"  Expected jerk: {expected_first_jerk:.5f}, Actual jerk: {self.controller.state.jerk:.5f}")
       print(f"  Jerk limits (upper/lower): {self.controller.jerk_upper:.4f}/{self.controller.jerk_lower:.4f}")
 
       self.assertAlmostEqual(self.controller.state.jerk, expected_first_jerk, places=5)
 
       # Check minimum jerk limits for small deltas
-      if abs(blended_accel) < 1.0:
-        expected_min = self.controller.car_config.jerk_limits[0]
+      if abs(planned_accel) < 1.0:
+        # Use controller logic: if planned_accel < -0.1 use car_config value, otherwise 0.5
+        if planned_accel < -0.1:
+          expected_min = self.controller.car_config.jerk_limits[0]
+        else:
+          expected_min = 0.5
         if self.controller.state.jerk > 0:
           self.assertGreaterEqual(self.controller.jerk_upper, expected_min)
         else:

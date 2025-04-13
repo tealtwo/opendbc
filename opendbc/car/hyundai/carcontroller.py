@@ -121,7 +121,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     new_actuators = actuators.as_builder()
     new_actuators.torque = apply_torque / self.params.STEER_MAX
     new_actuators.torqueOutputCan = apply_torque
-    new_actuators.accel = accel
+    new_actuators.accel = self.long_state.actual_accel
 
     self.frame += 1
     return new_actuators, can_sends
