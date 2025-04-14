@@ -14,7 +14,6 @@ from opendbc.car.hyundai.values import CAR
 class CarTuningConfig:
   v_ego_stopping: float = 0.25
   v_ego_starting: float = 0.10
-  stopping_decel_rate: float = 0.25
   jerk_limits: tuple[float, float, float] = 2.50, 5.0, 3.0  # (min jerk, max lower jerk, max upper jerk)
   longitudinal_actuator_delay: float = 0.45
   lower_jerk_multiplier: float = 1.5
@@ -24,7 +23,6 @@ class CarTuningConfig:
 # Min jerk is set to 0.53 per (Horn et al., 2024)
 TUNING_CONFIGS = {
   "CANFD": CarTuningConfig(
-    stopping_decel_rate=0.275,
   ),
   "EV": CarTuningConfig(
     jerk_limits=(2.50, 5.0, 3.0),
@@ -32,7 +30,6 @@ TUNING_CONFIGS = {
   ),
   "HYBRID": CarTuningConfig(
     v_ego_starting=0.12,
-    stopping_decel_rate=0.30,
   ),
   "DEFAULT": CarTuningConfig()
 }
@@ -41,7 +38,6 @@ TUNING_CONFIGS = {
 CAR_SPECIFIC_CONFIGS = {
   CAR.KIA_NIRO_EV: CarTuningConfig(
     v_ego_stopping=0.1,
-    stopping_decel_rate=0.05,
     jerk_limits=(1.5, 3.3, 1.2),
     longitudinal_actuator_delay=0.15,
   )
