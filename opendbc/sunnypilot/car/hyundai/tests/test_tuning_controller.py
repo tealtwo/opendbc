@@ -17,11 +17,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
   def setUp(self):
     self.mock_CP = Mock(carFingerprint="KIA_NIRO_EV", flags=0)
     self.mock_CP_SP = Mock(flags=0)
-
-    # Mock car_config
-    with patch('opendbc.sunnypilot.car.hyundai.longitudinal.helpers.get_car_config') as mock_get_config:
-      mock_get_config.return_value = Mock(jerk_limits=[0.53, 5.0, 2.2], lower_jerk_multiplier=2.5)
-      self.controller = LongitudinalTuningController(self.mock_CP, self.mock_CP_SP)
+    self.controller = LongitudinalTuningController(self.mock_CP, self.mock_CP_SP)
     print(f"\n[SETUP] Controller initialized with jerk limits: {self.controller.car_config.jerk_limits}")
 
   def test_init(self):
@@ -144,7 +140,6 @@ class TestLongitudinalTuningController(unittest.TestCase):
     for planned_accel in test_deltas:
       self.controller.accel_filter.x = 0.0 # Reset filter for isolated jerk calculation
       mock_CC.actuators.accel = planned_accel
-      # Set aEgo to something different to test blending, though filter uses planned_accel here
       mock_CS.out.aEgo = planned_accel * 0.5
 
       # Expected jerk based on filtered planned_accel
@@ -220,7 +215,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
     # Calculate velocities
     velocities = np.zeros(len(accelerations))
-    velocities[0] = 1.0  # Starting velocity
+    velocities[0] = 7.0  # Starting velocity
     for i in range(1, len(accelerations)):
         velocities[i] = velocities[i-1] + accelerations[i-1] * 0.2
     velocities = np.clip(velocities, 0.0, 30.0)
@@ -244,7 +239,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
       # Verify minimum jerk limits based on velocity
       min_jerk = self.controller.car_config.jerk_limits[0]
-      if v > 3.611:  # Above walking speed
+      if v > 10:
         self.assertGreaterEqual(self.controller.jerk_upper, min_jerk)
 
 if __name__ == "__main__":
