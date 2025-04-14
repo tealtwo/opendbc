@@ -38,7 +38,7 @@ TUNING_CONFIGS = {
 CAR_SPECIFIC_CONFIGS = {
   CAR.KIA_NIRO_EV: CarTuningConfig(
     v_ego_stopping=0.1,
-    jerk_limits=(1.5, 3.3, 1.2),
+    jerk_limits=(2.5, 3.3, 1.2),
     longitudinal_actuator_delay=0.15,
   )
 }

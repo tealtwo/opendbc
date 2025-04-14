@@ -162,10 +162,11 @@ class TestLongitudinalTuningController(unittest.TestCase):
       # Desired Upper Jerk Calculation
       desired_jerk_upper = min(max(min_upper_jerk, actual_jerk), accel_jerk_max)
 
-      if planned_accel <= -0.3:
+      if planned_accel <= -0.5:
         min_lower_jerk_val = self.controller.car_config.jerk_limits[0]
-      elif planned_accel <= -0.1:
-        ratio = (-0.1 - planned_accel) / 0.2
+      elif planned_accel < -0.1:
+        # Scale the value from 1.0 (at -0.1) -> 2.5 (at -0.5)
+        ratio = (-0.1 - planned_accel) / 0.4
         min_lower_jerk_val = 1.0 + ratio * 1.5
       else:
         min_lower_jerk_val = 0.5
