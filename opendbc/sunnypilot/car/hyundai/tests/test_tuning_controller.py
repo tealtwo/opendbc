@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from opendbc.sunnypilot.car.hyundai.longitudinal.tuning_controller import LongitudinalTuningController, LongitudinalTuningState
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.car import DT_CTRL, structs
