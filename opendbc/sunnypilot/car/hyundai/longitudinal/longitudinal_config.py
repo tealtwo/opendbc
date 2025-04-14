@@ -17,7 +17,7 @@ class CarTuningConfig:
   stopping_decel_rate: float = 0.30
   jerk_limits: tuple[float, float, float] = 2.50, 5.0, 3.0  # (min jerk, max lower jerk, max upper jerk)
   longitudinal_actuator_delay: float = 0.45
-  lower_jerk_multiplier: float = 2.0
+  lower_jerk_multiplier: float = 1.5
 
 
 # Default configurations for different car types
