@@ -44,8 +44,5 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.05,
     jerk_limits=(1.0, 3.3, 1.2),
     longitudinal_actuator_delay=0.15,
-  ),
-  CAR.HYUNDAI_IONIQ: CarTuningConfig(
-    lower_jerk_multiplier=3.0,
   )
 }
