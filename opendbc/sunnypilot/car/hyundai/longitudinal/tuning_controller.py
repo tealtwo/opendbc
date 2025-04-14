@@ -19,7 +19,7 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 JERK_STEP = 0.1
-JERK_THRESHOLD = 0.05
+JERK_THRESHOLD = 0.1
 
 
 @dataclass
