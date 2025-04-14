@@ -594,10 +594,6 @@ class CAR(Platforms):
     CarSpecs(mass=2258, wheelbase=2.95, steerRatio=14.14),
     flags=HyundaiFlags.RADAR_SCC,
   )
-  KIA_NIRO_EV_1234 = HyundaiPlatformConfig(
-    [HyundaiCarDocs("Genesis G90 2017-20", "All", car_parts=CarParts.common([CarHarness.hyundai_c]))],
-    CarSpecs(mass=2200, wheelbase=3.15, steerRatio=12.069),
-  )
 
 
 class Buttons:
