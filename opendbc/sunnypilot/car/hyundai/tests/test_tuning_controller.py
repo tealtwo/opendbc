@@ -172,8 +172,8 @@ class TestLongitudinalTuningController(unittest.TestCase):
       desired_jerk_lower = min(max(min_lower_jerk_val, -actual_jerk * multiplier), decel_jerk_max)
 
       # Expected Ramped Limits Calculation
-      expected_upper = ramp_update(prev_upper, desired_jerk_upper, step=0.1, threshold=0.05)
-      expected_lower = ramp_update(prev_lower, desired_jerk_lower, step=0.1, threshold=0.05)
+      expected_upper = ramp_update(prev_upper, desired_jerk_upper, step=0.1, threshold=0.1)
+      expected_lower = ramp_update(prev_lower, desired_jerk_lower, step=0.1, threshold=0.1)
 
       print(f"  Desired limits (upper/lower): {desired_jerk_upper:.4f}/{desired_jerk_lower:.4f}")
       print(f"  Expected limits (upper/lower): {expected_upper:.4f}/{expected_lower:.4f}")
