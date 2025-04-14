@@ -18,6 +18,9 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
+JERK_STEP = 0.1
+JERK_THRESHOLD = 0.05
+
 
 @dataclass
 class LongitudinalTuningState:
@@ -71,16 +74,16 @@ class LongitudinalTuningController:
     min_lower_jerk = self.car_config.jerk_limits[0] if (planned_accel <= -0.1) else 0.5
     multiplier = 2.0 if self.CP.radarUnavailable else self.car_config.lower_jerk_multiplier
 
-    def ramp_update(current, target, step, threshold):
-      if abs(target - current) > threshold:
-        return current + float(np.clip(target - current, -step, step))
+    def ramp_update(current, target):
+      if abs(target - current) > JERK_THRESHOLD:
+        return current + float(np.clip(target - current, -JERK_STEP, JERK_STEP))
       return current
 
     desired_jerk_upper = min(max(min_upper_jerk, self.state.jerk), accel_jerk_max)
     desired_jerk_lower = min(max(min_lower_jerk, -self.state.jerk * multiplier), decel_jerk_max)
 
-    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper, step=0.1, threshold=0.05)
-    self.jerk_lower = ramp_update(self.jerk_lower, desired_jerk_lower, step=0.1, threshold=0.05)
+    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
+    self.jerk_lower = ramp_update(self.jerk_lower, desired_jerk_lower)
 
   def calculate_a_value(self, CC: structs.CarControl) -> None:
     def jerk_limited_integrator():
