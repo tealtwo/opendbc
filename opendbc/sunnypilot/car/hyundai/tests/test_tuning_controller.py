@@ -8,7 +8,10 @@ from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import HyundaiFlags
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
-
+def ramp_update(current, target, step, threshold):
+  if abs(target - current) > threshold:
+    return current + float(np.clip(target - current, -step, step))
+  return current
 
 class TestLongitudinalTuningController(unittest.TestCase):
   def setUp(self):
@@ -17,7 +20,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
     # Mock car_config
     with patch('opendbc.sunnypilot.car.hyundai.longitudinal.helpers.get_car_config') as mock_get_config:
-      mock_get_config.return_value = Mock(jerk_limits=[0.53, 5.0, 2.2])
+      mock_get_config.return_value = Mock(jerk_limits=[0.53, 5.0, 2.2], lower_jerk_multiplier=2.5)
       self.controller = LongitudinalTuningController(self.mock_CP, self.mock_CP_SP)
     print(f"\n[SETUP] Controller initialized with jerk limits: {self.controller.car_config.jerk_limits}")
 
@@ -26,8 +29,8 @@ class TestLongitudinalTuningController(unittest.TestCase):
     self.assertIsInstance(self.controller.state, LongitudinalTuningState)
     self.assertEqual(self.controller.desired_accel, 0.0)
     self.assertEqual(self.controller.actual_accel, 0.0)
-    self.assertEqual(self.controller.jerk_upper, 0.0)
-    self.assertEqual(self.controller.jerk_lower, 0.0)
+    self.assertEqual(self.controller.jerk_upper, 0.5)
+    self.assertEqual(self.controller.jerk_lower, 0.5)
 
   def test_make_jerk_flag_off(self):
     """Test when LONG_TUNING_BRAKING flag is off"""
@@ -128,35 +131,61 @@ class TestLongitudinalTuningController(unittest.TestCase):
     tau = 0.25
     k = dt / (tau + dt)
 
+    # Track previous limits for ramp updates
+    prev_upper = self.controller.jerk_upper
+    prev_lower = self.controller.jerk_lower
+
+    velocity = mock_CS.out.vEgo
+    decel_jerk_max = 5.83 - (velocity / 6)
+    accel_jerk_max = self.controller.car_config.jerk_limits[2] # PID state
+    min_upper_jerk = 0.5 # vEgo > 3.0
+    multiplier = self.controller.car_config.lower_jerk_multiplier # radarUnavailable is False
+
     for planned_accel in test_deltas:
-      self.controller.accel_filter.x = 0.0
+      self.controller.accel_filter.x = 0.0 # Reset filter for isolated jerk calculation
       mock_CC.actuators.accel = planned_accel
+      # Set aEgo to something different to test blending, though filter uses planned_accel here
       mock_CS.out.aEgo = planned_accel * 0.5
 
-      # Expected uses planned_accel only
+      # Expected jerk based on filtered planned_accel
       expected_first_filtered = planned_accel * k
       expected_first_jerk = expected_first_filtered / dt
 
+      # Run the controller's make_jerk
       self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
+      actual_jerk = self.controller.state.jerk
 
       print(f"\nTesting planned_accel={planned_accel}")
-      print(f"  Blended: {planned_accel}, Filtered: {self.controller.accel_filter.x:.5f}")
-      print(f"  Expected jerk: {expected_first_jerk:.5f}, Actual jerk: {self.controller.state.jerk:.5f}")
-      print(f"  Jerk limits (upper/lower): {self.controller.jerk_upper:.4f}/{self.controller.jerk_lower:.4f}")
+      print(f"  Filtered Accel: {self.controller.accel_filter.x:.5f}")
+      print(f"  Expected jerk: {expected_first_jerk:.5f}, Actual jerk: {actual_jerk:.5f}")
+      print(f"  Prev limits (upper/lower): {prev_upper:.4f}/{prev_lower:.4f}")
 
-      self.assertAlmostEqual(self.controller.state.jerk, expected_first_jerk, places=5)
+      # Verify the calculated jerk value
+      self.assertAlmostEqual(actual_jerk, expected_first_jerk, places=5)
 
-      # Check minimum jerk limits for small deltas
-      if abs(planned_accel) < 1.0:
-        # Use controller logic: if planned_accel < -0.1 use car_config value, otherwise 0.5
-        if planned_accel < -0.1:
-          expected_min = self.controller.car_config.jerk_limits[0]
-        else:
-          expected_min = 0.5
-        if self.controller.state.jerk > 0:
-          self.assertGreaterEqual(self.controller.jerk_upper, expected_min)
-        else:
-          self.assertGreaterEqual(self.controller.jerk_lower, expected_min)
+      # Calculate expected ramped limits based on the controller's logic
+      # Desired Upper Jerk Calculation
+      desired_jerk_upper = min(max(min_upper_jerk, actual_jerk), accel_jerk_max)
+
+      # Desired Lower Jerk Calculation
+      min_lower_jerk_val = self.controller.car_config.jerk_limits[0] if (planned_accel <= -0.1) else 0.5
+      desired_jerk_lower = min(max(min_lower_jerk_val, -actual_jerk * multiplier), decel_jerk_max)
+
+      # Expected Ramped Limits Calculation
+      expected_upper = ramp_update(prev_upper, desired_jerk_upper, step=0.1, threshold=0.05)
+      expected_lower = ramp_update(prev_lower, desired_jerk_lower, step=0.1, threshold=0.05)
+
+      print(f"  Desired limits (upper/lower): {desired_jerk_upper:.4f}/{desired_jerk_lower:.4f}")
+      print(f"  Expected limits (upper/lower): {expected_upper:.4f}/{expected_lower:.4f}")
+      print(f"  Actual limits (upper/lower): {self.controller.jerk_upper:.4f}/{self.controller.jerk_lower:.4f}")
+
+      # Verify the ramped jerk limits
+      self.assertAlmostEqual(self.controller.jerk_upper, expected_upper, places=5)
+      self.assertAlmostEqual(self.controller.jerk_lower, expected_lower, places=5)
+
+      # Update previous limits for the next iteration
+      prev_upper = self.controller.jerk_upper
+      prev_lower = self.controller.jerk_lower
 
   def test_a_value_jerk_scaling(self):
     """Test a_value jerk scaling"""
