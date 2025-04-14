@@ -164,7 +164,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
       if planned_accel <= -0.3:
         min_lower_jerk_val = self.controller.car_config.jerk_limits[0]
-      elif planned_accel < -0.1:
+      elif planned_accel <= -0.1:
         ratio = (-0.1 - planned_accel) / 0.2
         min_lower_jerk_val = 1.0 + ratio * 1.5
       else:

@@ -71,7 +71,7 @@ class LongitudinalTuningController:
 
     if planned_accel <= -0.3:
       min_jerk = self.car_config.jerk_limits[0]
-    elif planned_accel < -0.1:
+    elif planned_accel <= -0.1:
       ratio = (-0.1 - planned_accel) / 0.2  # This scales the value from 1.0 (-0.1) -> 2.5 (-0.3)
       min_jerk = 1.0 + ratio * 1.5
     else:
