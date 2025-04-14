@@ -48,7 +48,7 @@ class LongitudinalTuningController:
 
   def make_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
     def ramp_update(current, target, step, threshold):
-      if abs(target - current) > threshold:
+      if abs(target - current) >threshold:
         return current + float(np.clip(target - current, -step, step))
       return current
 
