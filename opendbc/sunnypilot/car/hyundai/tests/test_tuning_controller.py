@@ -161,7 +161,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
       # Calculate expected ramped limits based on the controller's logic
       # Desired Upper Jerk Calculation
       desired_jerk_upper = min(max(min_upper_jerk, actual_jerk), accel_jerk_max)
-      min_lower_jerk_val = self.controller.car_config.jerk_limits[0] if desired_accel <= -0.1 else 0.5
+      min_lower_jerk_val = self.controller.car_config.jerk_limits[0] if desired_accel <= -0.01 else 0.5
       desired_jerk_lower = min(max(min_lower_jerk_val, -actual_jerk * multiplier), decel_jerk_max)
 
       # Expected Ramped Limits Calculation
