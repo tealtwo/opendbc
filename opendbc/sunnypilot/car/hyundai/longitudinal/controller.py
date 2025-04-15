@@ -31,7 +31,7 @@ class LongitudinalController:
     self.long_state = LongitudinalState()
 
   def get_stopping_state(self, long_control_state: LongCtrlState) -> None:
-    self.get_stopping_state(long_control_state)
+    self.tuning.get_stopping_state(long_control_state)
     self.long_state.stopping = self.tuning.stopping
 
   def calculate_and_get_jerk(self, CC: structs.CarControl, CS: CarStateBase,
