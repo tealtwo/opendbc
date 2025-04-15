@@ -58,7 +58,7 @@ class LongitudinalTuningController:
       self.stopping_count = 0
       return
 
-    if self.stopping_count > 1 / DT_CTRL * 2:  # 1 second
+    if self.stopping_count > 1 / (DT_CTRL * 2):  # 1 second
       self.stopping = True
 
     self.stopping_count += 1
