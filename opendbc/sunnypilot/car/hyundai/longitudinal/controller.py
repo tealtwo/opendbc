@@ -20,6 +20,7 @@ class LongitudinalState:
   actual_accel: float = 0.0
   jerk_upper: float = 0.0
   jerk_lower: float = 0.0
+  stopping: bool = False
 
 
 class LongitudinalController:
@@ -28,6 +29,10 @@ class LongitudinalController:
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
     self.tuning = LongitudinalTuningController(CP, CP_SP)
     self.long_state = LongitudinalState()
+
+  def get_stopping_state(self, long_control_state: LongCtrlState) -> None:
+    self.get_stopping_state(long_control_state)
+    self.long_state.stopping = self.tuning.stopping
 
   def calculate_and_get_jerk(self, CC: structs.CarControl, CS: CarStateBase,
                              long_control_state: LongCtrlState) -> None:
@@ -54,5 +59,6 @@ class LongitudinalController:
     actuators = CC.actuators
     long_control_state = actuators.longControlState
 
+    self.get_stopping_state(long_control_state)
     self.calculate_and_get_jerk(CC, CS, long_control_state)
     self.calculate_a_value(CC)

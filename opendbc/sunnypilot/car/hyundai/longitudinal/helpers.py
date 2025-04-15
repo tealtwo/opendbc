@@ -31,5 +31,6 @@ def get_longitudinal_tune(CP: structs.CarParams) -> None:
   config = get_car_config(CP)
   CP.vEgoStopping = config.v_ego_stopping
   CP.vEgoStarting = config.v_ego_starting
+  CP.stoppingDecelRate = config.stopping_decel_rate
   CP.startingState = False
   CP.longitudinalActuatorDelay = config.longitudinal_actuator_delay

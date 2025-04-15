@@ -42,6 +42,26 @@ class LongitudinalTuningController:
     self.actual_accel = 0.0
     self.jerk_upper = 0.5
     self.jerk_lower = 0.5
+    self.stopping = False
+    self.stopping_count = 0
+
+  def get_stopping_state(self, long_control_state: LongCtrlState) -> None:
+    long_control_stopping = long_control_state == LongCtrlState.stopping
+
+    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
+      self.stopping = long_control_stopping
+      self.stopping_count = 0
+      return
+
+    if not long_control_stopping:
+      self.stopping = False
+      self.stopping_count = 0
+      return
+
+    if self.stopping_count > 1 / DT_CTRL * 2:  # 1 second
+      self.stopping = True
+
+    self.stopping_count += 1
 
   def make_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
@@ -106,7 +126,7 @@ class LongitudinalTuningController:
       return
 
     # Force zero aReqRaw during StopReq
-    if CC.actuators.longControlState == LongCtrlState.stopping:
+    if self.stopping:
       self.desired_accel = 0.0
     else:
       self.desired_accel = float(np.clip(CC.actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
