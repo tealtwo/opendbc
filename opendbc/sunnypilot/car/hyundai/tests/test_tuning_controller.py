@@ -58,7 +58,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     mock_CS.out = Mock(aEgo=0.8, vEgo=3.0)
 
 
-    print(f"First call with planned_accel={mock_CC.actuators.accel}, current_accel={mock_CS.out.aEgo}")
+    print(f"First call with desired_accel={mock_CC.actuators.accel}, current_accel={mock_CS.out.aEgo}")
 
     # Calculate expected values
     blended_accel = 1.0
@@ -137,20 +137,20 @@ class TestLongitudinalTuningController(unittest.TestCase):
     min_upper_jerk = 0.5 # vEgo > 3.0
     multiplier = self.controller.car_config.lower_jerk_multiplier # radarUnavailable is False
 
-    for planned_accel in test_deltas:
+    for desired_accel in test_deltas:
       self.controller.accel_filter.x = 0.0 # Reset filter for isolated jerk calculation
-      mock_CC.actuators.accel = planned_accel
-      mock_CS.out.aEgo = planned_accel * 0.5
+      mock_CC.actuators.accel = desired_accel
+      mock_CS.out.aEgo = desired_accel * 0.5
 
-      # Expected jerk based on filtered planned_accel
-      expected_first_filtered = planned_accel * k
+      # Expected jerk based on filtered desired_accel
+      expected_first_filtered = desired_accel * k
       expected_first_jerk = expected_first_filtered / dt
 
       # Run the controller's make_jerk
       self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
       actual_jerk = self.controller.state.jerk
 
-      print(f"\nTesting planned_accel={planned_accel}")
+      print(f"\nTesting desired_accel={desired_accel}")
       print(f"  Filtered Accel: {self.controller.accel_filter.x:.5f}")
       print(f"  Expected jerk: {expected_first_jerk:.5f}, Actual jerk: {actual_jerk:.5f}")
       print(f"  Prev limits (upper/lower): {prev_upper:.4f}/{prev_lower:.4f}")
@@ -162,11 +162,11 @@ class TestLongitudinalTuningController(unittest.TestCase):
       # Desired Upper Jerk Calculation
       desired_jerk_upper = min(max(min_upper_jerk, actual_jerk), accel_jerk_max)
 
-      if planned_accel <= -0.5:
+      if desired_accel <= -0.5:
         min_lower_jerk_val = self.controller.car_config.jerk_limits[0]
-      elif planned_accel < -0.1:
+      elif desired_accel < -0.1:
         # Scale the value from 1.0 (at -0.1) -> 2.5 (at -0.5)
-        ratio = (-0.1 - planned_accel) / 0.4
+        ratio = (-0.1 - desired_accel) / 0.4
         min_lower_jerk_val = 1.0 + ratio * 1.5
       else:
         min_lower_jerk_val = 0.5
