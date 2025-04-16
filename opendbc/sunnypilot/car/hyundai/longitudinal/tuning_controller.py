@@ -91,7 +91,7 @@ class LongitudinalTuningController:
 
     accel_jerk_max = self.car_config.jerk_limits[2] if long_control_state == LongCtrlState.pid else 1.0
     min_upper_jerk = 0.5 if (velocity > 3.0) else 0.725
-    min_lower_jerk = self.car_config.jerk_limits[0] if self.desired_accel <= -0.01 else 0.5
+    min_lower_jerk = self.car_config.jerk_limits[0] if (self.desired_accel - self.actual_accel) <= -0.01 else 0.5
     multiplier = self.car_config.lower_jerk_multiplier
 
     def ramp_update(current, target):
