@@ -8,7 +8,7 @@ See the LICENSE.md file in the root directory for more details.
 import numpy as np
 from dataclasses import dataclass
 
-from opendbc.car import structs, DT_CTRL
+from opendbc.car import structs, DT_CTRL, rate_limit
 from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.car.interfaces import CarStateBase
 
@@ -20,6 +20,15 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 JERK_STEP = 0.1
 JERK_THRESHOLD = 0.1
+
+
+def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower) -> float:
+  if desired_accel >= last_accel:
+    val = jerk_upper * DT_CTRL * 2
+  else:
+    val = jerk_lower * DT_CTRL * 2
+
+  return rate_limit(desired_accel, last_accel, -val, val)
 
 
 @dataclass
@@ -106,14 +115,6 @@ class LongitudinalTuningController:
     self.jerk_lower = ramp_update(self.jerk_lower, desired_jerk_lower)
 
   def calculate_a_value(self, CC: structs.CarControl) -> None:
-    def jerk_limited_integrator():
-      if self.desired_accel >= self.actual_accel:
-        val = self.jerk_upper * DT_CTRL * 2
-      else:
-        val = self.jerk_lower * DT_CTRL * 2
-
-      return self.state.accel_last + float(np.clip(self.desired_accel - self.state.accel_last, -val, val))
-
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
       self.desired_accel = CC.actuators.accel
       self.actual_accel = CC.actuators.accel
@@ -131,5 +132,5 @@ class LongitudinalTuningController:
     else:
       self.desired_accel = float(np.clip(CC.actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
-    self.actual_accel = jerk_limited_integrator()
+    self.actual_accel = jerk_limited_integrator(self.desired_accel, self.state.accel_last, self.jerk_upper, self.jerk_lower)
     self.state.accel_last = self.actual_accel
