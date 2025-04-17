@@ -95,7 +95,7 @@ class LongitudinalTuningController:
       decel_jerk_max = self.car_config.jerk_limits[1]
     elif velocity > 20.0:
       decel_jerk_max = 2.5
-    else:   # Between 5 m/s and 20 m/s
+    else:   # Between 5 m/s and 20 m/s.
       decel_jerk_max = 5.83 - (velocity/6)
 
     accel_jerk_max = self.car_config.jerk_limits[2] if long_control_state == LongCtrlState.pid else 1.0
