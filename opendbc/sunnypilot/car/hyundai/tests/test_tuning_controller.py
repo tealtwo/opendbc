@@ -33,13 +33,13 @@ class TestLongitudinalTuningController(unittest.TestCase):
     mock_CC, mock_CS = Mock(spec=structs.CarControl), Mock(spec=CarStateBase)
 
     # Test with PID state
-    self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
+    self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
     print(f"[PID state] jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
     self.assertEqual(self.controller.jerk_upper, 3.0)
     self.assertEqual(self.controller.jerk_lower, 5.0)
 
     # Test with non-PID state
-    self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.stopping)
+    self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.stopping)
     print(f"[Non-PID state] jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
     self.assertEqual(self.controller.jerk_upper, 1.0)
     self.assertEqual(self.controller.jerk_lower, 5.0)
@@ -69,7 +69,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     expected_filtered = blended_accel * k
     expected_jerk = expected_filtered / dt
 
-    self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
+    self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
 
     print(f"Blended: {blended_accel}, Filtered: {self.controller.accel_filter.x}, k={k}")
     print(f"Expected jerk: {expected_jerk}, Actual jerk: {self.controller.state.jerk}")
@@ -108,7 +108,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     print(f"  Filter params: k={k}")
 
     for i in range(10):
-        self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
+        self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
         print(f"  Iter {i}: expected={expected_values[i]:.5f}, actual={self.controller.accel_filter.x:.5f}, jerk={self.controller.state.jerk:.5f}")
         self.assertAlmostEqual(self.controller.accel_filter.x, expected_values[i], places=5)
 
@@ -144,7 +144,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
       expected_first_jerk = expected_first_filtered / dt
 
       # Run the controller's make_jerk
-      self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
+      self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
       actual_jerk = self.controller.state.jerk
 
       print(f"\nTesting desired_accel={desired_accel}")
@@ -207,7 +207,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
       mock_CS.out.aEgo = a
       mock_CC.actuators.accel = a
 
-      self.controller.make_jerk(mock_CC, mock_CS, LongCtrlState.pid)
+      self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
 
       print(f"  Step {i:2d}: v={v:5.2f} m/s, a={a:5.2f} m/s², jerk={self.controller.state.jerk:5.2f}, \
             jerk_upper={self.controller.jerk_upper:5.2f}, jerk_lower={self.controller.jerk_lower:5.2f}")
