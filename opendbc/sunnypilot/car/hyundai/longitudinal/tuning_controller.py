@@ -53,21 +53,24 @@ class LongitudinalTuningController:
     self.jerk_lower = 0.5
     self.stopping = False
     self.stopping_count = 0
+    self.long_control_state_last = LongCtrlState.off
 
   def get_stopping_state(self, long_control_state: LongCtrlState) -> None:
-    long_control_stopping = long_control_state == LongCtrlState.stopping
+    stopping = long_control_state == LongCtrlState.stopping
+    self.long_control_state_last = long_control_state
 
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
-      self.stopping = long_control_stopping
+      self.stopping = stopping
       self.stopping_count = 0
       return
 
-    if not long_control_stopping:
+    if not stopping:
       self.stopping = False
       self.stopping_count = 0
       return
 
-    if self.stopping_count > 1 / (DT_CTRL * 2):  # 1 second
+    # 1 second after entering stopping state or when the last state was off
+    if self.stopping_count > 1 / (DT_CTRL * 2) or self.long_control_state_last == LongCtrlState.off:
       self.stopping = True
 
     self.stopping_count += 1
