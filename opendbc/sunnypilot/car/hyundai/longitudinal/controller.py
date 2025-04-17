@@ -34,10 +34,9 @@ class LongitudinalController:
     self.tuning.get_stopping_state(long_control_state)
     self.long_state.stopping = self.tuning.stopping
 
-  def calculate_and_get_jerk(self, CC: structs.CarControl, CS: CarStateBase,
-                             long_control_state: LongCtrlState) -> None:
+  def calculate_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
     """Calculate jerk based on tuning."""
-    self.tuning.make_jerk(CC, CS, long_control_state)
+    self.tuning.calculate_jerk(CC, CS, long_control_state)
 
     if not CC.longActive:
       self.long_state.jerk_upper = 0.0
@@ -61,4 +60,4 @@ class LongitudinalController:
 
     self.get_stopping_state(long_control_state)
     self.calculate_a_value(CC)
-    self.calculate_and_get_jerk(CC, CS, long_control_state)
+    self.calculate_jerk(CC, CS, long_control_state)

@@ -104,7 +104,7 @@ class LongitudinalTuningController:
 
     return self.desired_accel, self.state.accel_last
 
-  def make_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
+  def calculate_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
       jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
 
