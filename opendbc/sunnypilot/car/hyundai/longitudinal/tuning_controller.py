@@ -72,17 +72,17 @@ class LongitudinalTuningController:
 
     self.stopping_count += 1
 
-  def calculate_a_value(self, CC: structs.CarControl) -> tuple[float, float] | None:
+  def calculate_a_value(self, CC: structs.CarControl) -> tuple[float, float]:
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
       self.desired_accel = CC.actuators.accel
       self.actual_accel = CC.actuators.accel
-      return None
+      return self.desired_accel, self.actual_accel
 
     if not CC.longActive:
       self.desired_accel = 0.0
       self.actual_accel = 0.0
       self.state.accel_last = 0.0
-      return None
+      return self.desired_accel, self.actual_accel
 
     # Force zero aReqRaw during StopReq
     if self.stopping:
