@@ -149,7 +149,7 @@ class RadarInterface(RadarInterfaceBase):
         return None
     elif self.radar == RADAR.DELPHI_MRR_64:
       _update, _errors = self._update_delphi_mrr_64()
-      _errors.extend(_errors)
+      errors.extend(_errors)
       if not _update:
         return None
 
