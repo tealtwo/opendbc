@@ -12,7 +12,7 @@ from opendbc.car import structs, DT_CTRL, rate_limit
 from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.car.interfaces import CarStateBase
 
-from opendbc.car.hyundai.values import CarControllerParams
+from opendbc.car.hyundai.values import CarControllerParams, HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
@@ -53,6 +53,7 @@ class LongitudinalTuningController:
     self.state = LongitudinalTuningState()
     self.car_config = get_car_config(CP)
     self.accel_filter = FirstOrderFilter(0.0, 0.25, DT_CTRL * 2)
+    self.aego = FirstOrderFilter(0.0, 0.25, DT_CTRL * 3)
     self.desired_accel = 0.0
     self.actual_accel = 0.0
     self.jerk_upper = 0.5
@@ -81,17 +82,17 @@ class LongitudinalTuningController:
 
     self.stopping_count += 1
 
-  def calculate_a_value(self, CC: structs.CarControl) -> tuple[float, float]:
+  def calculate_a_value(self, CC: structs.CarControl) -> None:
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
       self.desired_accel = CC.actuators.accel
       self.actual_accel = CC.actuators.accel
-      return self.desired_accel, self.actual_accel
+      return
 
     if not CC.longActive:
       self.desired_accel = 0.0
       self.actual_accel = 0.0
       self.state.accel_last = 0.0
-      return self.desired_accel, self.actual_accel
+      return
 
     # Force zero aReqRaw during StopReq
     if self.stopping:
@@ -102,8 +103,6 @@ class LongitudinalTuningController:
     self.actual_accel = jerk_limited_integrator(self.desired_accel, self.state.accel_last, self.jerk_upper, self.jerk_lower)
     self.state.accel_last = self.actual_accel
 
-    return self.desired_accel, self.state.accel_last
-
   def calculate_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
       jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
@@ -112,27 +111,34 @@ class LongitudinalTuningController:
       self.jerk_lower = 5.0
       return
 
-    # Apply acceleration filter
-    self.desired_accel = CC.actuators.accel
-    prev_filtered_accel = self.accel_filter.x
-    self.accel_filter.update(self.desired_accel)
-    filtered_accel = self.accel_filter.x
+    accel_cmd = CC.actuators.accel
+
+    if self.CP.flags & HyundaiFlags.CANFD:
+      a_ego_blended = CS.out.aEgo
+    else:
+      a_ego_blended = float(np.interp(CS.out.vEgo, [1.0, 2.0], [CS.aBasis, CS.out.aEgo]))
+
+    prev_aego = self.aego.x
+    self.aego.update(a_ego_blended)
+    j_ego = (self.aego.x - prev_aego) / (DT_CTRL * 2)
+
+    future_t = float(np.interp(CS.out.vEgo, [2., 5.], [0.25, 0.5]))
+    a_ego_future = a_ego_blended + j_ego * future_t
 
     # Calculate jerk
-    self.state.jerk = (filtered_accel - prev_filtered_accel) / (DT_CTRL * 2)
+    self.state.jerk = (accel_cmd - a_ego_future) / (DT_CTRL * 2)
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
     velocity = CS.out.vEgo
     speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
 
-    planned_accel, previous_accel = self.calculate_a_value(CC)
-    accel_error = planned_accel - previous_accel
+    accel_error = accel_cmd - self.state.accel_last
     interp_error = min(accel_error, -0.001)
 
     lower_jerk = 5.0 if self.CP.radarUnavailable else (
       float(np.interp(interp_error, [-0.001, -0.0025, -0.005, -0.01, -0.05, -0.5],
                                     [1.0, 1.35, 2.0, 2.5, 3.3, 5.0]))
-      if (accel_error <= -0.001 or self.desired_accel < -0.001) else 0.5
+      if (accel_error <= -0.001 or accel_cmd < -0.001) else 0.5
     )
 
     accel_jerk_max = self.car_config.jerk_limits[2] if long_control_state == LongCtrlState.pid else 1.0

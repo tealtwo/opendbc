@@ -14,8 +14,11 @@ from opendbc.can.parser import CANParser
 class CarStateExt:
   def __init__(self):
     super().__init__()
+    self.aBasis = 0.0
 
   def update(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp = can_parsers[Bus.pt]
 
     ret.brakeLightsDEPRECATED = bool(cp.vl["TCS13"]["BrakeLight"])
+
+    self.aBasis = cp.vl["TCS13"]["aBasis"]
