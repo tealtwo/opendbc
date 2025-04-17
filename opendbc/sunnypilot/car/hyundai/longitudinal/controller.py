@@ -60,5 +60,5 @@ class LongitudinalController:
     long_control_state = actuators.longControlState
 
     self.get_stopping_state(long_control_state)
-    self.calculate_and_get_jerk(CC, CS, long_control_state)
     self.calculate_a_value(CC)
+    self.calculate_and_get_jerk(CC, CS, long_control_state)
