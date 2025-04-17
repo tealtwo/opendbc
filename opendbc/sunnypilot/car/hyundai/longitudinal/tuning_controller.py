@@ -118,12 +118,15 @@ class LongitudinalTuningController:
 
     planned_accel, previous_accel = self.calculate_a_value(CC)
     accel_error = planned_accel - previous_accel
-    lower_jerk = 0.5
 
     if accel_error <= -0.001:
       # Interpolate min_lower_jerk from 1.0 at -0.001 to 5.0 at -1.0
       lower_jerk = float(np.interp(accel_error, [-0.001, -0.005, -0.03, -0.1, -1.0],
                                                 [1.0, 2.0, 2.5, 3.3, 5.0]))
+    elif self.CP.radarUnavailable:
+      lower_jerk = 3.0
+    else:
+      lower_jerk = 0.5
 
     accel_jerk_max = self.car_config.jerk_limits[2] if long_control_state == LongCtrlState.pid else 1.0
     min_upper_jerk = 0.5 if (velocity > 3.0) else 0.725
