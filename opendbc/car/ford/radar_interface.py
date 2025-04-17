@@ -189,7 +189,6 @@ class RadarInterface(RadarInterfaceBase):
     headerScanIndex = int(self.rcp.vl["MRR_Header_InformationDetections"]['CAN_SCAN_INDEX']) & 0b11
 
     errors = []
-    
     # In reverse, the radar continually sends the last messages. Mark this as invalid
     if (self.prev_headerScanIndex + 1) % 4 != headerScanIndex:
       self.radar_unavailable_cnt += 1
