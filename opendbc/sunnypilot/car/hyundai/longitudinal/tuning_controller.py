@@ -72,6 +72,29 @@ class LongitudinalTuningController:
 
     self.stopping_count += 1
 
+  def calculate_a_value(self, CC: structs.CarControl) -> tuple[float, float] | None:
+    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
+      self.desired_accel = CC.actuators.accel
+      self.actual_accel = CC.actuators.accel
+      return None
+
+    if not CC.longActive:
+      self.desired_accel = 0.0
+      self.actual_accel = 0.0
+      self.state.accel_last = 0.0
+      return None
+
+    # Force zero aReqRaw during StopReq
+    if self.stopping:
+      self.desired_accel = 0.0
+    else:
+      self.desired_accel = float(np.clip(CC.actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+
+    self.actual_accel = jerk_limited_integrator(self.desired_accel, self.state.accel_last, self.jerk_upper, self.jerk_lower)
+    self.state.accel_last = self.actual_accel
+
+    return self.desired_accel, self.state.accel_last
+
   def make_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
       jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
@@ -91,17 +114,19 @@ class LongitudinalTuningController:
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
     velocity = CS.out.vEgo
-    if velocity < 5.0:
-      decel_jerk_max = self.car_config.jerk_limits[1]
-    elif velocity > 20.0:
-      decel_jerk_max = 2.5
-    else:   # Between 5 m/s and 20 m/s.
-      decel_jerk_max = 5.83 - (velocity/6)
+    speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
+
+    planned_accel, previous_accel = self.calculate_a_value(CC)
+    accel_error = planned_accel - previous_accel
+
+    if accel_error <= -0.01:
+      # Interpolate min_lower_jerk from 1.0 at -0.01 to 5.0 at -3.5
+      lower_jerk = float(np.interp(accel_error, [-0.01, -0.15, -0.5, -3.5], [1.5, 2.5, 3.3, 5.0]))
+    else:
+      lower_jerk = 0.5
 
     accel_jerk_max = self.car_config.jerk_limits[2] if long_control_state == LongCtrlState.pid else 1.0
     min_upper_jerk = 0.5 if (velocity > 3.0) else 0.725
-    min_lower_jerk = self.car_config.jerk_limits[0] if (self.desired_accel - self.actual_accel) <= -0.01 else 0.5
-    multiplier = self.car_config.lower_jerk_multiplier
 
     def ramp_update(current, target):
       if abs(target - current) > JERK_THRESHOLD:
@@ -109,28 +134,7 @@ class LongitudinalTuningController:
       return current
 
     desired_jerk_upper = min(max(min_upper_jerk, self.state.jerk), accel_jerk_max)
-    desired_jerk_lower = min(max(min_lower_jerk, -self.state.jerk * multiplier), decel_jerk_max)
+    desired_jerk_lower = min(lower_jerk, speed_factor)
 
     self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
     self.jerk_lower = ramp_update(self.jerk_lower, desired_jerk_lower)
-
-  def calculate_a_value(self, CC: structs.CarControl) -> None:
-    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
-      self.desired_accel = CC.actuators.accel
-      self.actual_accel = CC.actuators.accel
-      return
-
-    if not CC.longActive:
-      self.desired_accel = 0.0
-      self.actual_accel = 0.0
-      self.state.accel_last = 0.0
-      return
-
-    # Force zero aReqRaw during StopReq
-    if self.stopping:
-      self.desired_accel = 0.0
-    else:
-      self.desired_accel = float(np.clip(CC.actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
-
-    self.actual_accel = jerk_limited_integrator(self.desired_accel, self.state.accel_last, self.jerk_upper, self.jerk_lower)
-    self.state.accel_last = self.actual_accel

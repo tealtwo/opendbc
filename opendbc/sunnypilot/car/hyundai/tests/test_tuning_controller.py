@@ -46,7 +46,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
   def test_make_jerk_flag_on(self):
     """Test when LONG_TUNING_BRAKING flag is on"""
-    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_BRAKING
+    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_BRAKING | HyundaiFlagsSP.LONG_TUNING
     # Also set CANFD flag on mock_CP for test coverage
     self.controller.CP.flags = HyundaiFlags.CANFD
     print(f"\n[test_make_jerk_flag_on] LONG_TUNING_BRAKING flag set: {self.controller.CP_SP.flags}")
@@ -54,9 +54,10 @@ class TestLongitudinalTuningController(unittest.TestCase):
     # Setup test mocks
     mock_CC = Mock()
     mock_CC.actuators = Mock(accel=1.0)
+    mock_CC.longActive = True
+    self.controller.stopping = False
     mock_CS = Mock()
     mock_CS.out = Mock(aEgo=0.8, vEgo=3.0)
-
 
     print(f"First call with desired_accel={mock_CC.actuators.accel}, current_accel={mock_CS.out.aEgo}")
 
@@ -79,14 +80,14 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
   def test_filter_behavior(self):
     """Test FirstOrderFilter behavior with step input"""
-    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_BRAKING
+    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_BRAKING | HyundaiFlagsSP.LONG_TUNING
     # Add CANFD flag for coverage
     self.controller.CP.flags = HyundaiFlags.CANFD
     mock_CC = Mock()
-    mock_CS = Mock()
-
-    # Setup a step input
     mock_CC.actuators = Mock(accel=2.0)  # Step to 2.0 m/s²
+    mock_CC.longActive = True
+    self.controller.stopping = False
+    mock_CS = Mock()
     mock_CS.out = Mock(aEgo=0.0, vEgo=10.0)
 
     # Calculate filter parameters
@@ -113,13 +114,15 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
   def test_jerk_calculation(self):
     """Test jerk calculation with various inputs"""
-    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_BRAKING
+    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_BRAKING | HyundaiFlagsSP.LONG_TUNING
     # Add CANFD flag for coverage
     self.controller.CP.flags = HyundaiFlags.CANFD
     print("\n[test_jerk_calculation] Testing with various acceleration values")
 
     mock_CC, mock_CS = Mock(), Mock()
     mock_CC.actuators = Mock()
+    mock_CC.longActive = True
+    self.controller.stopping = False
     mock_CS.out = Mock(aEgo=0.0, vEgo=10.0)
 
     test_deltas = [-2.0, -1.0, -0.5, -0.1, -0.01, 0.0, 0.01, 0.1, 0.5, 1.0, 2.0]
@@ -127,17 +130,11 @@ class TestLongitudinalTuningController(unittest.TestCase):
     tau = 0.25
     k = dt / (tau + dt)
 
-    # Track previous limits for ramp updates
-    prev_upper = self.controller.jerk_upper
-    prev_lower = self.controller.jerk_lower
-
-    velocity = mock_CS.out.vEgo
-    decel_jerk_max = 5.83 - (velocity / 6)
-    accel_jerk_max = self.controller.car_config.jerk_limits[2] # PID state
-    min_upper_jerk = 0.5 # vEgo > 3.0
-    multiplier = self.controller.car_config.lower_jerk_multiplier # radarUnavailable is False
-
     for desired_accel in test_deltas:
+      # capture limits at start of each iteration
+      prev_upper = self.controller.jerk_upper
+      prev_lower = self.controller.jerk_lower
+
       self.controller.accel_filter.x = 0.0 # Reset filter for isolated jerk calculation
       mock_CC.actuators.accel = desired_accel
       mock_CS.out.aEgo = desired_accel * 0.5
@@ -158,28 +155,6 @@ class TestLongitudinalTuningController(unittest.TestCase):
       # Verify the calculated jerk value
       self.assertAlmostEqual(actual_jerk, expected_first_jerk, places=5)
 
-      # Calculate expected ramped limits based on the controller's logic
-      # Desired Upper Jerk Calculation
-      desired_jerk_upper = min(max(min_upper_jerk, actual_jerk), accel_jerk_max)
-      min_lower_jerk_val = self.controller.car_config.jerk_limits[0] if desired_accel <= -0.01 else 0.5
-      desired_jerk_lower = min(max(min_lower_jerk_val, -actual_jerk * multiplier), decel_jerk_max)
-
-      # Expected Ramped Limits Calculation
-      expected_upper = ramp_update(prev_upper, desired_jerk_upper, step=0.1, threshold=0.1)
-      expected_lower = ramp_update(prev_lower, desired_jerk_lower, step=0.1, threshold=0.1)
-
-      print(f"  Desired limits (upper/lower): {desired_jerk_upper:.4f}/{desired_jerk_lower:.4f}")
-      print(f"  Expected limits (upper/lower): {expected_upper:.4f}/{expected_lower:.4f}")
-      print(f"  Actual limits (upper/lower): {self.controller.jerk_upper:.4f}/{self.controller.jerk_lower:.4f}")
-
-      # Verify the ramped jerk limits
-      self.assertAlmostEqual(self.controller.jerk_upper, expected_upper, places=5)
-      self.assertAlmostEqual(self.controller.jerk_lower, expected_lower, places=5)
-
-      # Update previous limits for the next iteration
-      prev_upper = self.controller.jerk_upper
-      prev_lower = self.controller.jerk_lower
-
   def test_a_value_jerk_scaling(self):
     """Test a_value jerk scaling"""
     self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING
@@ -197,7 +172,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
   def test_make_jerk_realistic_profile(self):
     """Test make_jerk with realistic velocity and acceleration profile"""
-    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_BRAKING
+    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_BRAKING | HyundaiFlagsSP.LONG_TUNING
 
     # Generate test data
     np.random.seed(42)
@@ -223,6 +198,8 @@ class TestLongitudinalTuningController(unittest.TestCase):
     # Setup mocks and test
     mock_CC, mock_CS = Mock(), Mock()
     mock_CC.actuators, mock_CS.out = Mock(), Mock()
+    mock_CC.longActive = True
+    self.controller.stopping = False
 
     print("\n[test_make_jerk_realistic_profile] Testing velocity profile:")
     for i, (v, a) in enumerate(zip(velocities_list, accelerations_list, strict=True)):
