@@ -31,6 +31,12 @@ def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower) -
   return rate_limit(desired_accel, last_accel, -val, val)
 
 
+def ramp_update(current, target):
+  if abs(target - current) > JERK_THRESHOLD:
+    return current + float(np.clip(target - current, -JERK_STEP, JERK_STEP))
+  return current
+
+
 @dataclass
 class LongitudinalTuningState:
   accel_last: float = 0.0
@@ -131,11 +137,6 @@ class LongitudinalTuningController:
 
     accel_jerk_max = self.car_config.jerk_limits[2] if long_control_state == LongCtrlState.pid else 1.0
     min_upper_jerk = 0.5 if (velocity > 3.0) else 0.725
-
-    def ramp_update(current, target):
-      if abs(target - current) > JERK_THRESHOLD:
-        return current + float(np.clip(target - current, -JERK_STEP, JERK_STEP))
-      return current
 
     desired_jerk_upper = min(max(min_upper_jerk, self.state.jerk), accel_jerk_max)
     desired_jerk_lower = min(lower_jerk, speed_factor)
