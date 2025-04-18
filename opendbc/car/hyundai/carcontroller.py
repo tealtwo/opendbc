@@ -5,10 +5,10 @@ try:
   # TODO-SP: We shouldn't really import params from here, but it's the easiest way to get the params for
   #  live tuning temporarily while we understand the angle steering better
   from openpilot.common.params import Params
-  LIVE_TUNING = True
+  PARAMS_AVAILABLE = True
 except ImportError:
   carlog.warning("Unable to import Params from openpilot.common.params.")
-  LIVE_TUNING = False
+  PARAMS_AVAILABLE = False
 
 from opendbc.can.packer import CANPacker
 from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, \
@@ -77,8 +77,14 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     self.angle_min_torque = self.params.ANGLE_MIN_TORQUE
     self.angle_max_torque = self.params.ANGLE_MAX_TORQUE
     self.angle_torque_override_cycles = self.params.ANGLE_TORQUE_OVERRIDE_CYCLES
-    self.live_tuning = LIVE_TUNING
-    self._params = Params() if self.live_tuning else None
+    self._params = Params() if PARAMS_AVAILABLE else None
+    if PARAMS_AVAILABLE:
+      self.live_tuning = self._params.get_bool("HkgAngleLiveTuning")
+      self.smoothing_factor = float(self._params.get("HkgTuningAngleSmoothingFactor")) / 10.0 if self._params.get("HkgTuningAngleSmoothingFactor") else 0.0
+      self.angle_min_torque = int(self._params.get("HkgTuningAngleMinTorque")) if self._params.get("HkgTuningAngleMinTorque") else 0
+      self.angle_max_torque = int(self._params.get("HkgTuningAngleMaxTorque")) if self._params.get("HkgTuningAngleMaxTorque") else 0
+      self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles")) if self._params.get("HkgTuningOverridingCycles") else 0
+
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
@@ -87,7 +93,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     hud_control = CC.hudControl
     apply_torque = 0
 
-    if self._params and self.live_tuning and self.frame % 500 == 0:
+    if PARAMS_AVAILABLE and self.live_tuning and self._params and self.frame % 500 == 0:
       if (smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor")) and float(smoothingFactorParam) != self.smoothing_factor:
         self.smoothing_factor = float(smoothingFactorParam) / 10.0
       if (minTorqueParam := self._params.get("HkgTuningAngleMinTorque")) and int(minTorqueParam) != self.angle_min_torque:
