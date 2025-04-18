@@ -187,6 +187,12 @@ class CarInterfaceBase(ABC):
     return ret
 
   @staticmethod
+  def get_longitudinal_tuning(stock_cp: structs.CarParams, ret: structs.CarParamsSP) -> structs.CarParamsSP:
+    """Apply longitudinal tuning specific to the car's brand. """
+    carlog.warning(f"Car {stock_cp.carFingerprint} does not have a get_longitudinal_tuning method, using defaults")
+    return ret
+
+  @staticmethod
   def init(CP: structs.CarParams, CP_SP: structs.CarParamsSP, can_recv: CanRecvCallable, can_send: CanSendCallable):
     pass
 
