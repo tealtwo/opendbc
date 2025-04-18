@@ -143,5 +143,5 @@ class LongitudinalTuningController:
     desired_jerk_upper = min(upper_jerk, upper_speed_factor)
     desired_jerk_lower = min(lower_jerk, lower_speed_factor)
 
-    self.jerk_upper = desired_jerk_upper
+    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
     self.jerk_lower = ramp_update(self.jerk_lower, desired_jerk_lower)
