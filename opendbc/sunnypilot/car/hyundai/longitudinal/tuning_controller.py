@@ -121,7 +121,7 @@ class LongitudinalTuningController:
     lower_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
     upper_speed_factor = 1.0
     if long_control_state == LongCtrlState.pid:
-      upper_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [1.0, 2.5, 1.0]))
+      upper_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [1.5, 3.0, 1.0]))
 
     accel_error = planned_accel - self.state.accel_last
     interp_error = min(accel_error, -0.001)
@@ -140,5 +140,5 @@ class LongitudinalTuningController:
     desired_jerk_upper = min(upper_jerk, upper_speed_factor)
     desired_jerk_lower = min(lower_jerk, lower_speed_factor)
 
-    self.jerk_upper = desired_jerk_upper
+    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
     self.jerk_lower = ramp_update(self.jerk_lower, desired_jerk_lower)
