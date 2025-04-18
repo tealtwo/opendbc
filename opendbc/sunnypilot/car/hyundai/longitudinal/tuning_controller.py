@@ -134,7 +134,7 @@ class LongitudinalTuningController:
     upper_jerk = (
       float(np.interp(planned_accel, [0.001, 0.25, 0.5, 1.0, 1.5, 2.0],
                                           [0.5, 0.6, 1.0, 1.5, 2.0, 2.5]))
-      if (planned_accel >= 0.001) else 0.5
+      if (planned_accel >= 0) else 0.5
     )
 
     desired_jerk_upper = min(upper_jerk, upper_speed_factor)
