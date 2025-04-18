@@ -9,7 +9,6 @@ import numpy as np
 from dataclasses import dataclass
 
 from opendbc.car import structs, DT_CTRL, rate_limit
-from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.car.interfaces import CarStateBase
 
 from opendbc.car.hyundai.values import CarControllerParams
@@ -52,7 +51,6 @@ class LongitudinalTuningController:
 
     self.state = LongitudinalTuningState()
     self.car_config = get_car_config(CP)
-    self.accel_filter = FirstOrderFilter(0.0, 0.25, DT_CTRL * 2)
     self.desired_accel = 0.0
     self.actual_accel = 0.0
     self.jerk_upper = 0.5
@@ -81,17 +79,17 @@ class LongitudinalTuningController:
 
     self.stopping_count += 1
 
-  def calculate_a_value(self, CC: structs.CarControl) -> tuple[float, float]:
+  def calculate_a_value(self, CC: structs.CarControl) -> None:
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING or self.CP.radarUnavailable:
       self.desired_accel = CC.actuators.accel
       self.actual_accel = CC.actuators.accel
-      return self.desired_accel, self.actual_accel
+      return
 
     if not CC.longActive:
       self.desired_accel = 0.0
       self.actual_accel = 0.0
       self.state.accel_last = 0.0
-      return self.desired_accel, self.actual_accel
+      return
 
     # Force zero aReqRaw during StopReq
     if self.stopping:
@@ -102,44 +100,41 @@ class LongitudinalTuningController:
     self.actual_accel = jerk_limited_integrator(self.desired_accel, self.state.accel_last, self.jerk_upper, self.jerk_lower)
     self.state.accel_last = self.actual_accel
 
-    return self.desired_accel, self.state.accel_last
+    return
 
   def calculate_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
-    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
+    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
       jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
 
       self.jerk_upper = jerk_limit
       self.jerk_lower = 5.0
       return
 
-    # Apply acceleration filter
-    self.desired_accel = CC.actuators.accel
-    prev_filtered_accel = self.accel_filter.x
-    self.accel_filter.update(self.desired_accel)
-    filtered_accel = self.accel_filter.x
-
-    # Calculate jerk
-    self.state.jerk = (filtered_accel - prev_filtered_accel) / (DT_CTRL * 2)
+    planned_accel = CC.actuators.accel
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
     velocity = CS.out.vEgo
-    speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
+    lower_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
+    upper_speed_factor = 1.0
+    if long_control_state == LongCtrlState.pid:
+      upper_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [1.0, 2.5, 1.0]))
 
-    planned_accel, previous_accel = self.calculate_a_value(CC)
-    accel_error = planned_accel - previous_accel
+    accel_error = planned_accel - self.state.accel_last
     interp_error = min(accel_error, -0.001)
 
     lower_jerk = 5.0 if self.CP.radarUnavailable else (
       float(np.interp(interp_error, [-0.001, -0.015, -0.025, -0.030, -0.25, -0.75],
                                     [1.0, 1.2, 1.35, 2.0, 2.5, 3.3]))
-      if (accel_error <= -0.001 or self.desired_accel < -0.001) else 0.5
+      if (accel_error <= -0.001 or planned_accel < -0.001) else 0.5
+    )
+    upper_jerk = (
+      float(np.interp(planned_accel, [0.001, 0.25, 0.5, 1.0, 1.5, 2.0],
+                                          [0.5, 1.0, 1.35, 1.8, 2.25, 2.5]))
+      if (planned_accel >= 0.001) else 0.5
     )
 
-    accel_jerk_max = self.car_config.jerk_limits[2] if long_control_state == LongCtrlState.pid else 1.0
-    min_upper_jerk = 0.5 if (velocity > 3.0) else 0.725
+    desired_jerk_upper = min(upper_jerk, upper_speed_factor)
+    desired_jerk_lower = min(lower_jerk, lower_speed_factor)
 
-    desired_jerk_upper = min(max(min_upper_jerk, self.state.jerk), accel_jerk_max)
-    desired_jerk_lower = min(lower_jerk, speed_factor)
-
-    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
+    self.jerk_upper = desired_jerk_upper
     self.jerk_lower = ramp_update(self.jerk_lower, desired_jerk_lower)
