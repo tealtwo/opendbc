@@ -71,8 +71,14 @@ class LongitudinalTuningController:
       self.stopping_count = 0
       return
 
-    # 1 second after entering stopping state or when the last state was off
-    if self.stopping_count > 1 / (DT_CTRL * 2) or self.long_control_state_last == LongCtrlState.off:
+    # when the last state was off
+    if self.long_control_state_last == LongCtrlState.off:
+      self.stopping = True
+      self.stopping_count = 0
+      return
+
+    # 1 second after entering stopping state from non-off states
+    if self.stopping_count > 1 / (DT_CTRL * 2):
       self.stopping = True
 
     self.stopping_count += 1
