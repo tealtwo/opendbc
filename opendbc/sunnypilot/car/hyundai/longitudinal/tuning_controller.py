@@ -82,7 +82,7 @@ class LongitudinalTuningController:
     self.stopping_count += 1
 
   def calculate_a_value(self, CC: structs.CarControl) -> tuple[float, float]:
-    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
+    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING or self.CP.radarUnavailable:
       self.desired_accel = CC.actuators.accel
       self.actual_accel = CC.actuators.accel
       return self.desired_accel, self.actual_accel
