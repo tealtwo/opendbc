@@ -52,6 +52,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     mock_CS.out = Mock(aEgo=0.8, vEgo=3.0)
 
     self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
+    print(f"[FlagOn] jerk_upper={self.controller.jerk_upper:.3f}, jerk_lower={self.controller.jerk_lower:.3f}")
     self.assertGreater(self.controller.jerk_upper, 0.0)
     self.assertGreater(self.controller.jerk_lower, 0.0)
 
@@ -62,15 +63,18 @@ class TestLongitudinalTuningController(unittest.TestCase):
     mock_CC = Mock()
     mock_CC.actuators = Mock(accel=1.0)
     mock_CC.longActive = True
+    print("[a_value] starting accel_last:", self.controller.state.accel_last)
     # first pass: limit to jerk_upper * DT_CTRL * 2 = 0.1
     self.controller.jerk_upper = 0.1 / (DT_CTRL * 2)
     self.controller.calculate_a_value(mock_CC)
+    print(f"[a_value] pass1 actual_accel={self.controller.actual_accel:.5f}")
     self.assertAlmostEqual(self.controller.actual_accel, 0.1, places=5)
 
     # second pass: limit increment by new jerk_upper
     mock_CC.actuators.accel = 0.7
     self.controller.jerk_upper = 0.2 / (DT_CTRL * 2)
     self.controller.calculate_a_value(mock_CC)
+    print(f"[a_value] pass2 actual_accel={self.controller.actual_accel:.5f}")
     self.assertAlmostEqual(self.controller.actual_accel, 0.3, places=5)
 
   def test_make_jerk_realistic_profile(self):
@@ -95,11 +99,12 @@ class TestLongitudinalTuningController(unittest.TestCase):
     mock_CC.longActive = True
     self.controller.stopping = False
 
-    for v, a in zip(vels, accels):
+    for v, a in zip(vels, accels, strict=True):
       mock_CS.out.vEgo = float(v)
       mock_CS.out.aEgo = float(a)
       mock_CC.actuators.accel = float(a)
       self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
+      print(f"[realistic] v={v:.2f}, a={a:.2f}, jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
       self.assertGreater(self.controller.jerk_upper, 0.0)
 
 if __name__ == "__main__":
