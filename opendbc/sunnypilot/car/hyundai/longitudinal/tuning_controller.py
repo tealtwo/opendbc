@@ -60,34 +60,25 @@ class LongitudinalTuningController:
     self.jerk_upper = 0.5
     self.jerk_lower = 0.5
     self.stopping = False
-    self.stopping_count = 0
-    self.long_control_state_last = LongCtrlState.off
 
-  def get_stopping_state(self, long_control_state: LongCtrlState) -> None:
+  def get_stopping_state(self, long_control_state: LongCtrlState, long_state_last: LongCtrlState) -> None:
     stopping = long_control_state == LongCtrlState.stopping
-    self.long_control_state_last = long_control_state
 
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
       self.stopping = stopping
-      self.stopping_count = 0
       return
 
     if not stopping:
       self.stopping = False
-      self.stopping_count = 0
       return
 
     # when the last state was off
-    if self.long_control_state_last == LongCtrlState.off:
+    if long_state_last == LongCtrlState.off:
       self.stopping = True
-      self.stopping_count = 0
       return
 
-    # 1 second after entering stopping state from non-off states
-    if self.stopping_count > 1 / (DT_CTRL * 2):
+    if self.desired_accel < -0.5 and self.actual_accel < -0.5:
       self.stopping = True
-
-    self.stopping_count += 1
 
   def calculate_a_value(self, CC: structs.CarControl) -> None:
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING or self.CP.radarUnavailable:
