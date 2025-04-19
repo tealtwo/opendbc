@@ -19,8 +19,8 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 JERK_STEP = 0.1
 JERK_THRESHOLD = 0.1
 
-UPPER_JERK_V =  [  0.5,  0.6, 1.0, 1.5, 2.0, 2.5]
-UPPER_JERK_BP = [0.001, 0.25, 0.5, 1.0, 1.5, 2.0]
+UPPER_JERK_V  = [  0.5,  0.6, 1.0,  1.5, 2.0,  2.5]
+UPPER_JERK_BP = [0.005, 0.05, 0.1, 0.25, 0.5, 0.75]
 
 LOWER_JERK_V =  [   1.0,    1.2,   1.35,    2.0,   2.5,   3.3]
 LOWER_JERK_BP = [-0.005, -0.015, -0.025, -0.030, -0.25, -0.75]
@@ -131,7 +131,10 @@ class LongitudinalTuningController:
 
     accel_error = planned_accel - self.state.accel_last
 
-    upper_jerk = float(np.interp(planned_accel, UPPER_JERK_BP, UPPER_JERK_V)) if planned_accel > 0.005 else 0.5
+    if planned_accel > 0.005 and accel_error > 0.005:
+      upper_jerk = float(np.interp(accel_error, UPPER_JERK_BP, UPPER_JERK_V))
+    else:
+      upper_jerk = 0.5
 
     if self.CP.radarUnavailable:
       lower_jerk = 5.0
