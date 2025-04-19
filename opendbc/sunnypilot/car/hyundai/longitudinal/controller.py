@@ -29,10 +29,12 @@ class LongitudinalController:
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
     self.tuning = LongitudinalTuningController(CP, CP_SP)
     self.long_state = LongitudinalState()
+    self.long_control_state_last = LongCtrlState.off
 
   def get_stopping_state(self, long_control_state: LongCtrlState) -> None:
-    self.tuning.get_stopping_state(long_control_state)
+    self.tuning.get_stopping_state(long_control_state, self.long_control_state_last)
     self.long_state.stopping = self.tuning.stopping
+    self.long_control_state_last = long_control_state
 
   def calculate_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
     """Calculate jerk based on tuning."""
