@@ -79,9 +79,8 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
   def test_make_jerk_realistic_profile(self):
     """Test make_jerk with realistic velocity and acceleration profile"""
-    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING
     np.random.seed(42)
-    num_points = 20
+    num_points = 30
     segments = [
       np.random.uniform(0.3, 0.8, num_points//4),
       np.random.uniform(0.8, 1.6, num_points//4),
@@ -91,7 +90,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     ]
     accels = np.concatenate(segments)[:num_points]
     vels = np.zeros_like(accels)
-    vels[0] = 7.0
+    vels[0] = 15.0
     for i in range(1, len(accels)):
       vels[i] = max(0.0, min(30.0, vels[i-1] + accels[i-1] * (DT_CTRL*2)))
     mock_CC, mock_CS = Mock(), Mock()
@@ -99,12 +98,29 @@ class TestLongitudinalTuningController(unittest.TestCase):
     mock_CC.longActive = True
     self.controller.stopping = False
 
+    # Test with LONG_TUNING only
+    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING
     for v, a in zip(vels, accels, strict=True):
       mock_CS.out.vEgo = float(v)
       mock_CS.out.aEgo = float(a)
       mock_CC.actuators.accel = float(a)
       self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
-      print(f"[realistic] v={v:.2f}, a={a:.2f}, jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
+      print(f"[realistic][LONG_TUNING] v={v:.2f}, a={a:.2f}, jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
+      self.assertGreater(self.controller.jerk_upper, 0.0)
+
+    # Reset controller before next test
+    self.controller.state = LongitudinalTuningState()
+    self.controller.jerk_upper = 0.5
+    self.controller.jerk_lower = 0.5
+
+    # Test with LONG_TUNING and LONG_TUNING_BRAKING
+    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING | HyundaiFlagsSP.LONG_TUNING_BRAKING
+    for v, a in zip(vels, accels, strict=True):
+      mock_CS.out.vEgo = float(v)
+      mock_CS.out.aEgo = float(a)
+      mock_CC.actuators.accel = float(a)
+      self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
+      print(f"[realistic][LONG_TUNING_BRAKING] v={v:.2f}, a={a:.2f}, jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
       self.assertGreater(self.controller.jerk_upper, 0.0)
 
 if __name__ == "__main__":
