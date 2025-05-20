@@ -1185,9 +1185,9 @@ BO_ 1464 WFS_1: 2 XXX
  SG_ Frei_WFS_1_1 : 1|7@1+ (1,0) [0|0] "" XXX
  SG_ WFS_Textbits : 8|8@1+ (1,0) [0|0] "" XXX
 
-BO_ 1470 LDW_1: 8 XXX
- SG_ Right_Lane_Status : 0|2@1+ (1,0) [0|3] "" XXX
- SG_ Left_Lane_Status : 2|2@1+ (1,0) [0|3] "" XXX
+BO_ 1470 LDW_Status: 8 XXX
+ SG_ LDW_Lernmodus_rechts : 0|2@1+ (1,0) [0|3] "" XXX
+ SG_ LDW_Lernmodus_links : 2|2@1+ (1,0) [0|3] "" XXX
  SG_ LDW_Lernmodus : 9|3@1+ (1,0) [0|3] "" XXX
  SG_ LDW_Textbits : 12|4@1+ (1,0) [0|15] "" XXX
  SG_ LDW_Gong : 16|2@1+ (1,0) [0|3] "" XXX
