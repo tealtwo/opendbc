@@ -126,7 +126,7 @@ class CarController(CarControllerBase):
         self.accel_last = accel
         if self.CCS == pqcan:
           can_sends.append(self.CCS.create_epb_control(self.packer_pt, CANBUS.br, self.EPB_brake, self.EPB_enable))
-        can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.longActive, accel, acc_control, stopping, starting, CS.esp_hold_confirmation))
+        can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.longActive, accel, acc_control, stopping, starting, CS.esp_hold_confirmation, self.long_deviation, self.long_jerklimit))
 
       #if self.aeb_available:
       #  if self.frame % self.CCP.AEB_CONTROL_STEP == 0:
