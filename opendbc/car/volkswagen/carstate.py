@@ -24,7 +24,7 @@ class CarState(CarStateBase):
   def update_button_enable(self, buttonEvents: list[structs.CarState.ButtonEvent]):
     if not self.CP.pcmCruise:
       for b in buttonEvents:
-        # Enable OP long on falling edge of enable buttons
+        # Enable OP long on falling edge of enable buttons.
         if b.type in (ButtonType.setCruise, ButtonType.resumeCruise) and not b.pressed:
           return True
     return False
