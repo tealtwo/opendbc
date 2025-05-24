@@ -13,7 +13,7 @@
 #define MSG_MOTOR_5             0x480   // RX from ECU, for ACC main switch state
 #define MSG_ACC_GRA_ANZEIGE     0x56A   // TX by OP, ACC HUD
 #define MSG_LDW_1               0x5BE   // TX by OP, Lane line recognition and text alerts
-#define MSG_EPB_1               0x5C0   // TX by OP, EPB/ECD control
+#define MSG_EPB_1               0x5C0   // TX by OP, EPB/ECD control.
 
 static uint32_t volkswagen_pq_get_checksum(const CANPacket_t *to_push) {
   int addr = GET_ADDR(to_push);
