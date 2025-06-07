@@ -109,6 +109,7 @@ class CarControllerParams:
 
 class CANBUS:
   pt = 0
+  br = 1
   cam = 2
 
 
@@ -216,11 +217,11 @@ class CAR(Platforms):
 
   VOLKSWAGEN_ARTEON_MK1 = VolkswagenMQBPlatformConfig(
     [
-      VWCarDocs("Volkswagen Arteon 2018-23", video="https://youtu.be/FAomFKPFlDA"),
-      VWCarDocs("Volkswagen Arteon R 2020-23", video="https://youtu.be/FAomFKPFlDA"),
-      VWCarDocs("Volkswagen Arteon eHybrid 2020-23", video="https://youtu.be/FAomFKPFlDA"),
-      VWCarDocs("Volkswagen Arteon Shooting Brake 2020-23", video="https://youtu.be/FAomFKPFlDA"),
-      VWCarDocs("Volkswagen CC 2018-22", video="https://youtu.be/FAomFKPFlDA"),
+      VWCarDocs("Volkswagen Arteon 2018-23", video_link="https://youtu.be/FAomFKPFlDA"),
+      VWCarDocs("Volkswagen Arteon R 2020-23", video_link="https://youtu.be/FAomFKPFlDA"),
+      VWCarDocs("Volkswagen Arteon eHybrid 2020-23", video_link="https://youtu.be/FAomFKPFlDA"),
+      VWCarDocs("Volkswagen Arteon Shooting Brake 2020-23", video_link="https://youtu.be/FAomFKPFlDA"),
+      VWCarDocs("Volkswagen CC 2018-22", video_link="https://youtu.be/FAomFKPFlDA"),
     ],
     VolkswagenCarSpecs(mass=1733, wheelbase=2.84),
     chassis_codes={"AN", "3H"},
@@ -249,11 +250,11 @@ class CAR(Platforms):
   )
   VOLKSWAGEN_CRAFTER_MK2 = VolkswagenMQBPlatformConfig(
     [
-      VWCarDocs("Volkswagen Crafter 2017-24", video="https://youtu.be/4100gLeabmo"),
-      VWCarDocs("Volkswagen e-Crafter 2018-24", video="https://youtu.be/4100gLeabmo"),
-      VWCarDocs("Volkswagen Grand California 2019-24", video="https://youtu.be/4100gLeabmo"),
-      VWCarDocs("MAN TGE 2017-24", video="https://youtu.be/4100gLeabmo"),
-      VWCarDocs("MAN eTGE 2020-24", video="https://youtu.be/4100gLeabmo"),
+      VWCarDocs("Volkswagen Crafter 2017-24", video_link="https://youtu.be/4100gLeabmo"),
+      VWCarDocs("Volkswagen e-Crafter 2018-24", video_link="https://youtu.be/4100gLeabmo"),
+      VWCarDocs("Volkswagen Grand California 2019-24", video_link="https://youtu.be/4100gLeabmo"),
+      VWCarDocs("MAN TGE 2017-24", video_link="https://youtu.be/4100gLeabmo"),
+      VWCarDocs("MAN eTGE 2020-24", video_link="https://youtu.be/4100gLeabmo"),
     ],
     VolkswagenCarSpecs(mass=2100, wheelbase=3.64, minSteerSpeed=50 * CV.KPH_TO_MS),
     chassis_codes={"SY", "SZ", "UY", "UZ"},
@@ -276,7 +277,7 @@ class CAR(Platforms):
   )
   VOLKSWAGEN_JETTA_MK6 = VolkswagenPQPlatformConfig(
     [VWCarDocs("Volkswagen Jetta 2015-18")],
-    VolkswagenCarSpecs(mass=1518, wheelbase=2.65, minSteerSpeed=50 * CV.KPH_TO_MS, minEnableSpeed=20 * CV.KPH_TO_MS),
+    VolkswagenCarSpecs(mass=1518, wheelbase=2.62),
     chassis_codes={"5K", "AJ"},
     wmis={WMI.VOLKSWAGEN_MEXICO_CAR},
   )
@@ -301,7 +302,7 @@ class CAR(Platforms):
   )
   VOLKSWAGEN_PASSAT_NMS = VolkswagenPQPlatformConfig(
     [VWCarDocs("Volkswagen Passat NMS 2017-22")],
-    VolkswagenCarSpecs(mass=1503, wheelbase=2.80, minSteerSpeed=50 * CV.KPH_TO_MS, minEnableSpeed=20 * CV.KPH_TO_MS),
+    VolkswagenCarSpecs(mass=1503, wheelbase=2.80),
     chassis_codes={"A3"},
     wmis={WMI.VOLKSWAGEN_USA_CAR},
   )

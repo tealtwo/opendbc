@@ -10,7 +10,7 @@ class CarInterface(CarInterfaceBase):
   CarController = CarController
 
   @staticmethod
-  def _get_params(ret: structs.CarParams, candidate: CAR, fingerprint, car_fw, alpha_long, is_release, docs) -> structs.CarParams:
+  def _get_params(ret: structs.CarParams, candidate: CAR, fingerprint, car_fw, alpha_long, docs) -> structs.CarParams:
     ret.brand = "volkswagen"
     ret.radarUnavailable = True
 
@@ -35,7 +35,7 @@ class CarInterface(CarInterfaceBase):
       # It is documented in a four-part blog series:
       #   https://blog.willemmelching.nl/carhacking/2022/01/02/vw-part1/
       # Panda ALLOW_DEBUG firmware required.
-      ret.dashcamOnly = True
+      ret.dashcamOnly = False
 
     else:
       # Set global MQB parameters
@@ -61,7 +61,13 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerLimitTimer = 0.4
     if ret.flags & VolkswagenFlags.PQ:
-      ret.steerActuatorDelay = 0.2
+      ret.steerActuatorDelay = 0.11
+      ret.longitudinalTuning.kf = 1.2
+      ret.longitudinalTuning.kpBP = [0.]
+      ret.longitudinalTuning.kpV = [.4]
+      ret.longitudinalTuning.kiBP = [0.]
+      ret.longitudinalTuning.kiV = [2.]
+      ret.longitudinalActuatorDelay = 0.6
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     else:
       ret.steerActuatorDelay = 0.1

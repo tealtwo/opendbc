@@ -19,11 +19,12 @@ class CarState(CarStateBase):
     self.esp_hold_confirmation = False
     self.upscale_lead_car_signal = False
     self.eps_stock_values = False
+    self.aEgoBremse = 0
 
   def update_button_enable(self, buttonEvents: list[structs.CarState.ButtonEvent]):
     if not self.CP.pcmCruise:
       for b in buttonEvents:
-        # Enable OP long on falling edge of enable buttons
+        # Enable OP long on falling edge of enable buttons.
         if b.type in (ButtonType.setCruise, ButtonType.resumeCruise) and not b.pressed:
           return True
     return False
@@ -42,7 +43,7 @@ class CarState(CarStateBase):
 
     return button_events
 
-  def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
+  def update(self, can_parsers) -> structs.CarState:
     pt_cp = can_parsers[Bus.pt]
     cam_cp = can_parsers[Bus.cam]
     ext_cp = pt_cp if self.CP.networkLocation == NetworkLocation.fwdCamera else cam_cp
@@ -51,7 +52,6 @@ class CarState(CarStateBase):
       return self.update_pq(pt_cp, cam_cp, ext_cp)
 
     ret = structs.CarState()
-    ret_sp = structs.CarStateSP()
 
     if self.CP.transmissionType == TransmissionType.direct:
       ret.gearShifter = self.parse_gear_shifter(self.CCP.shifter_values.get(pt_cp.vl["Motor_EV_01"]["MO_Waehlpos"], None))
@@ -143,14 +143,11 @@ class CarState(CarStateBase):
 
     ret.buttonEvents = self.create_button_events(pt_cp, self.CCP.BUTTONS)
 
-    ret.lowSpeedAlert = self.update_low_speed_alert(ret.vEgo)
-
     self.frame += 1
-    return ret, ret_sp
+    return ret
 
-  def update_pq(self, pt_cp, cam_cp, ext_cp) -> tuple[structs.CarState, structs.CarStateSP]:
+  def update_pq(self, pt_cp, cam_cp, ext_cp) -> structs.CarState:
     ret = structs.CarState()
-    ret_sp = structs.CarStateSP()
     # Update vehicle speed and acceleration from ABS wheel speeds.
     ret.wheelSpeeds = self.get_wheel_speeds(
       pt_cp.vl["Bremse_3"]["Radgeschw__VL_4_1"],
@@ -163,6 +160,8 @@ class CarState(CarStateBase):
     ret.vEgoRaw = pt_cp.vl["Bremse_1"]["Geschwindigkeit_neu__Bremse_1_"] * CV.KPH_TO_MS
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw == 0
+
+    self.aEgoBremse = pt_cp.vl["Bremse_8"]["BR8_Laengsbeschl"]
 
     # Update EPS position and state info. For signed values, VW sends the sign in a separate signal.
     ret.steeringAngleDeg = pt_cp.vl["Lenkhilfe_3"]["LH3_BLW"] * (1, -1)[int(pt_cp.vl["Lenkhilfe_3"]["LH3_BLWSign"])]
@@ -224,7 +223,7 @@ class CarState(CarStateBase):
     # Update ACC radar status.
     self.acc_type = ext_cp.vl["ACC_System"]["ACS_Typ_ACC"]
     ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"])
-    ret.cruiseState.enabled = pt_cp.vl["Motor_2"]["GRA_Status"] in (1, 2)
+    ret.cruiseState.enabled = pt_cp.vl["Motor_2"]["GRA_Status"] in (1, 2) or bool(pt_cp.vl["Bremse_8"]["BR8_Verz_EPB_akt"])
     if self.CP.pcmCruise:
       ret.accFaulted = ext_cp.vl["ACC_GRA_Anzeige"]["ACA_StaACC"] in (6, 7)
     else:
@@ -236,6 +235,8 @@ class CarState(CarStateBase):
     if ret.cruiseState.speed > 70:  # 255 kph in m/s == no current setpoint
       ret.cruiseState.speed = 0
 
+    self.motor2_stock = pt_cp.vl["Motor_2"]
+
     # Update button states for turn signals and ACC controls, capture all ACC button state/config for passthrough
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(300, pt_cp.vl["Gate_Komf_1"]["GK1_Blinker_li"],
                                                                             pt_cp.vl["Gate_Komf_1"]["GK1_Blinker_re"])
@@ -245,18 +246,8 @@ class CarState(CarStateBase):
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = bool(pt_cp.vl["Bremse_1"]["ESP_Passiv_getastet"])
 
-    ret.lowSpeedAlert = self.update_low_speed_alert(ret.vEgo)
-
     self.frame += 1
-    return ret, ret_sp
-
-  def update_low_speed_alert(self, v_ego: float) -> bool:
-    # Low speed steer alert hysteresis logic
-    if (self.CP.minSteerSpeed - 1e-3) > CarControllerParams.DEFAULT_MIN_STEER_SPEED and v_ego < (self.CP.minSteerSpeed + 1.):
-      self.low_speed_alert = True
-    elif v_ego > (self.CP.minSteerSpeed + 2.):
-      self.low_speed_alert = False
-    return self.low_speed_alert
+    return ret
 
   def update_hca_state(self, hca_status, drive_mode=True):
     # Treat FAULT as temporary for worst likely EPS recovery time, for cars without factory Lane Assist
@@ -333,6 +324,7 @@ class CarState(CarStateBase):
       ("Motor_3", 100),     # From J623 Engine control module
       ("Airbag_1", 50),     # From J234 Airbag control module
       ("Bremse_5", 50),     # From J104 ABS/ESP controller
+      ("Bremse_8", 50),     # From J104 ABS/ESP controller
       ("GRA_Neu", 50),      # From J??? steering wheel control buttons
       ("Kombi_1", 50),      # From J285 Instrument cluster
       ("Motor_2", 50),      # From J623 Engine control module
