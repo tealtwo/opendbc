@@ -178,22 +178,12 @@ class CarController(CarControllerBase):
         self.AWV_apply_brake_message = 0
         self.AWV_enable_counter = 0  # Reset cycle counter when AWV not active
 
-      # EPB Counter (keeps ACC status 0 for 9 frames of EPB)
-      if self.EPB_enable:
-        self.EPB_counter = min(self.EPB_counter + 1, 10)
-        if self.EPB_counter <= 9:
-          acc_control = 0
-      else:
-        self.EPB_counter = 0
-
       self.accel_last = accel
       if self.CCS == pqcan:
         can_sends.append(
           self.CCS.create_awv_control(self.packer_pt, CANBUS.pt, self.AWV_brake, self.AWV_enable, self.AWV_halten,
                                       stopping, self.AWV_parameter, self.AWV_apply_brake_message))
-        can_sends.append(self.CCS.create_epb_control(self.packer_pt, CANBUS.br, self.EPB_brake, self.EPB_enable))
-      can_sends.extend(
-        self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, accel, acc_control, stopping,
+      can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, accel, acc_control, stopping,
                                           starting, CS.esp_hold_confirmation, self.long_deviation, self.long_jerklimit))
 
       #if self.aeb_available:
