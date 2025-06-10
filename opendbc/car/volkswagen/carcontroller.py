@@ -36,6 +36,16 @@ class CarController(CarControllerBase):
     self.EPB_brake_last = 0
     self.EPB_enable = 0
     self.EPB_counter = 0
+    self.AWV_brake = 0
+    self.AWV_enable = 0
+    self.AWV_enable_counter = 0
+    self.AWV_halten = 0
+    self.AWV_halten_counter = 0
+    self.AWV_parameter = 0
+    self.AWV_parameter_counter = 0
+    self.AWV_parameter_active = False
+    self.AWV_halten_delay_frames = 0
+    self.AWV_apply_brake_message = 0
     self.accel_diff = 0
     self.long_deviation = 0
     self.long_jerklimit = 0
@@ -92,49 +102,99 @@ class CarController(CarControllerBase):
     # **** Acceleration Controls ******************************************** #
 
     if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
-        acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive, CC.cruiseControl.override)
-        accel = float(np.clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.longActive else 0)
-        stopping = actuators.longControlState == LongCtrlState.stopping
-        starting = actuators.longControlState == LongCtrlState.pid and (CS.esp_hold_confirmation or CS.out.vEgo < self.CP.vEgoStopping)
-        self.accel_diff = (0.0019 * (accel - self.accel_last)) + (1 - 0.0019) * self.accel_diff
-        self.long_jerklimit = (0.01 * (clip(abs(accel), 0.7, 2))) + (1 - 0.01) * self.long_jerklimit
-        self.long_deviation = clip(CS.out.vEgo / 40, 0, 0.13) * interp(abs(accel - self.accel_diff), [0, .2, 1.], [0.0, 0.0, 0.0])
-        # Temporary Solution While I figure out cruiseState.Override to set ADR to Passiv if Accelerator is pressed
-        accelerator_override = CS.out.gasPressed
-        if accelerator_override:
-          acc_control = 0
+      acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive,
+                                               CC.cruiseControl.override)
+      stopping = actuators.longControlState == LongCtrlState.stopping
+      starting = actuators.longControlState == LongCtrlState.pid and (
+          CS.esp_hold_confirmation or CS.out.vEgo < self.CP.vEgoStopping)
+      accel = clip(actuators.accel, self.CCP.ACCEL_MIN, 0)
+
+      self.accel_diff = (0.0019 * (accel - self.accel_last)) + (1 - 0.0019) * self.accel_diff
+      self.long_jerklimit = (0.01 * (clip(abs(accel), 0.7, 2))) + (1 - 0.01) * self.long_jerklimit
+      self.long_deviation = clip(CS.out.vEgo / 40, 0, 0.13) * interp(abs(accel - self.accel_diff), [0, .2, 1.],
+                                                                     [0.0, 0.0, 0.0])
+      # self.AWV_halten_delay_frames = 5
+
+      if self.CCS == pqcan and CC.longActive and actuators.accel < 0 and CS.out.vEgoRaw < 18 * CV.KPH_TO_MS:
+
+        # Check and Apply AWV Halten to hold
+        # if CS.out.vEgoRaw <= 5 * CV.KPH_TO_MS and stopping:
+        #  self.AWV_halten = 1
+        # if self.AWV_halten:
+        #  self.AWV_halten_counter += 1
+        # else:
+        #  self.AWV_halten_counter = 0
+        # Disengage both ANB Signals When Holding at 0 KPH and send AWV2 Apply Brake to MFD (no halten)
+        # if self.AWV_halten and CS.out.vEgoRaw == 0 * CV.KPH_TO_MS:
+
+        if CS.out.vEgoRaw < 1 * CV.KPH_TO_MS:
+          self.AWV_enable = 0
+          self.AWV_brake = 0
+          self.AWV_parameter = 0
+          self.AWV_parameter_counter = 0
+          self.AWV_apply_brake_message = 1
+          self.AWV_enable_counter = 0
         else:
-          if CC.longActive:
-            acc_control = 1
-          elif CS.out.cruiseState.available:
-            acc_control = 2
-        if self.CCS == pqcan and CC.longActive and actuators.accel <= 0 and CS.out.vEgoRaw <= 5:
-          if not self.EPB_enable:  # first frame of EPB entry
-            self.EPB_counter = 0
-            self.EPB_brake = 0
-            self.EPB_brake_last = accel - (CS.aEgoBremse / 2)
-            self.EPB_enable = 1
+          # Set AWV Parameter 10 frames BEFORE AWV_brake and AWV_enable, while dropping AWV Parameter 5 frames after AWV Halten sends
+          if not self.AWV_parameter_active:
+            self.AWV_parameter_active = True
+            self.AWV_parameter_counter = 0
+            self.AWV_parameter = 2  # Setting AWV_1_Parameter
+          if self.AWV_parameter_active:
+            self.AWV_parameter_counter += 1
+          if self.AWV_parameter_counter >= 10:
+            # Apply Brake Using ANB Verz Anf
+            brake_request = clip(actuators.accel, self.CCP.ACCEL_MIN, 0)
+            self.AWV_brake = brake_request
+            # Set ANB Freigabe w/ 99 Frame Cycle & 2 Frame Drop
+            if brake_request != 0:
+              self.AWV_enable_counter += 1
+              self.AWV_enable_counter = self.AWV_enable_counter % 102
+              if self.AWV_enable_counter < 100:
+                self.AWV_enable = 1
+              else:
+                self.AWV_enable = 0
           else:
-            self.EPB_brake = limit_jerk(accel, self.EPB_brake_last, 0.7, 0.02)
-            self.EPB_brake_last = self.EPB_brake
-        else:
-          acc_control = 0 if acc_control != 6 and self.EPB_enable else acc_control  # Pulse ACC status to 0 for one frame
-          self.EPB_enable = 0
-          self.EPB_brake = 0
+            self.AWV_enable = 0
+            self.AWV_brake = 0
+            self.AWV_apply_brake_message = 0
+            self.AWV_enable_counter = 0
+        # if self.AWV_halten_counter >= self.AWV_halten_delay_frames and self.AWV_parameter_counter >= self.AWV_parameter_delay_frames:
+        #  self.AWV_parameter = 0
+        # self.AWV_parameter_active = False
 
-        # Increment EPB Counter
-        if self.EPB_enable:
+        # Disengage ECM Cruise State When Applying AWV Brake
+        if CS.BR5_ZT_Rueckk_Umsetz or self.AWV_brake:
           acc_control = 0
-          self.EPB_counter = min(self.EPB_counter + 1, 10)
-          if self.EPB_counter <= 9:
-            acc_control = 0
-        else:
-          self.EPB_counter = 0
+      # Disengage AWV when not in use.
+      else:
+        self.AWV_enable = 0
+        self.AWV_brake = 0
+        self.AWV_halten = 0
+        self.AWV_parameter = 0
+        self.AWV_parameter_active = False
+        self.AWV_parameter_counter = 0
+        self.AWV_halten_counter = 0
+        self.AWV_apply_brake_message = 0
+        self.AWV_enable_counter = 0  # Reset cycle counter when AWV not active
 
-        self.accel_last = accel
-        if self.CCS == pqcan:
-          can_sends.append(self.CCS.create_epb_control(self.packer_pt, CANBUS.br, self.EPB_brake, self.EPB_enable))
-        can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, accel, acc_control, stopping, starting, CS.esp_hold_confirmation, self.long_deviation, self.long_jerklimit))
+      # EPB Counter (keeps ACC status 0 for 9 frames of EPB)
+      if self.EPB_enable:
+        self.EPB_counter = min(self.EPB_counter + 1, 10)
+        if self.EPB_counter <= 9:
+          acc_control = 0
+      else:
+        self.EPB_counter = 0
+
+      self.accel_last = accel
+      if self.CCS == pqcan:
+        can_sends.append(
+          self.CCS.create_awv_control(self.packer_pt, CANBUS.pt, self.AWV_brake, self.AWV_enable, self.AWV_halten,
+                                      stopping, self.AWV_parameter, self.AWV_apply_brake_message))
+        can_sends.append(self.CCS.create_epb_control(self.packer_pt, CANBUS.br, self.EPB_brake, self.EPB_enable))
+      can_sends.extend(
+        self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, accel, acc_control, stopping,
+                                          starting, CS.esp_hold_confirmation, self.long_deviation, self.long_jerklimit))
 
       #if self.aeb_available:
       #  if self.frame % self.CCP.AEB_CONTROL_STEP == 0:
