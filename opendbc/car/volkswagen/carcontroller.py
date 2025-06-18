@@ -94,6 +94,7 @@ class CarController(CarControllerBase):
       self.CSLH3_SignLast = CS.LH_3_Sign
 
       if self.CP.flags & VolkswagenFlags.STOCK_HCA_PRESENT:
+        apply_steer = 0
         # Pacify VW Emergency Assist driver inactivity detection by changing its view of driver steering input torque
         # to the greatest of actual driver input or 2x openpilot's output (1x openpilot output is not enough to
         # consistently reset inactivity detection on straight level roads). See commaai/openpilot#23274 for background.
