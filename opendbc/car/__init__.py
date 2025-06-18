@@ -1,5 +1,6 @@
 # functions common among cars
 import numpy as np
+from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import IntFlag, ReprEnum, StrEnum, EnumType, auto
 from dataclasses import replace
@@ -16,6 +17,8 @@ STD_CARGO_KG = 136.
 ACCELERATION_DUE_TO_GRAVITY = 9.81  # m/s^2
 
 ButtonType = structs.CarState.ButtonEvent.Type
+AngleRateLimit = namedtuple('AngleRateLimit', ['speed_bp', 'angle_v'])
+
 
 
 @dataclass
