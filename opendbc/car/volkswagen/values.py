@@ -220,11 +220,11 @@ class CAR(Platforms):
 
   VOLKSWAGEN_ARTEON_MK1 = VolkswagenMQBPlatformConfig(
     [
-      VWCarDocs("Volkswagen Arteon 2018-23", video_link="https://youtu.be/FAomFKPFlDA"),
-      VWCarDocs("Volkswagen Arteon R 2020-23", video_link="https://youtu.be/FAomFKPFlDA"),
-      VWCarDocs("Volkswagen Arteon eHybrid 2020-23", video_link="https://youtu.be/FAomFKPFlDA"),
-      VWCarDocs("Volkswagen Arteon Shooting Brake 2020-23", video_link="https://youtu.be/FAomFKPFlDA"),
-      VWCarDocs("Volkswagen CC 2018-22", video_link="https://youtu.be/FAomFKPFlDA"),
+      VWCarDocs("Volkswagen Arteon 2018-23"),
+      VWCarDocs("Volkswagen Arteon R 2020-23"),
+      VWCarDocs("Volkswagen Arteon eHybrid 2020-23"),
+      VWCarDocs("Volkswagen Arteon Shooting Brake 2020-23"),
+      VWCarDocs("Volkswagen CC 2018-22"),
     ],
     VolkswagenCarSpecs(mass=1733, wheelbase=2.84),
     chassis_codes={"AN", "3H"},
@@ -253,11 +253,11 @@ class CAR(Platforms):
   )
   VOLKSWAGEN_CRAFTER_MK2 = VolkswagenMQBPlatformConfig(
     [
-      VWCarDocs("Volkswagen Crafter 2017-24", video_link="https://youtu.be/4100gLeabmo"),
-      VWCarDocs("Volkswagen e-Crafter 2018-24", video_link="https://youtu.be/4100gLeabmo"),
-      VWCarDocs("Volkswagen Grand California 2019-24", video_link="https://youtu.be/4100gLeabmo"),
-      VWCarDocs("MAN TGE 2017-24", video_link="https://youtu.be/4100gLeabmo"),
-      VWCarDocs("MAN eTGE 2020-24", video_link="https://youtu.be/4100gLeabmo"),
+      VWCarDocs("Volkswagen Crafter 2017-24"),
+      VWCarDocs("Volkswagen e-Crafter 2018-24"),
+      VWCarDocs("Volkswagen Grand California 2019-24"),
+      VWCarDocs("MAN TGE 2017-24"),
+      VWCarDocs("MAN eTGE 2020-24"),
     ],
     VolkswagenCarSpecs(mass=2100, wheelbase=3.64, minSteerSpeed=50 * CV.KPH_TO_MS),
     chassis_codes={"SY", "SZ", "UY", "UZ"},
