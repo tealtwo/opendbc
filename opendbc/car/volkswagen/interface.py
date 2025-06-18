@@ -2,6 +2,7 @@ from opendbc.car import get_safety_config, structs
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.volkswagen.carcontroller import CarController
 from opendbc.car.volkswagen.carstate import CarState
+from math import exp
 from opendbc.car.volkswagen.values import CAR, NetworkLocation, TransmissionType, VolkswagenFlags, VolkswagenSafetyFlags
 
 
@@ -61,14 +62,20 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerLimitTimer = 0.4
     if ret.flags & VolkswagenFlags.PQ:
-      ret.steerActuatorDelay = 0.11
+      ret.steerActuatorDelay = 0.2
       ret.longitudinalTuning.kf = 1.2
       ret.longitudinalTuning.kpBP = [0.]
-      ret.longitudinalTuning.kpV = [.4]
+      ret.longitudinalTuning.kpV = [.45]
       ret.longitudinalTuning.kiBP = [0.]
-      ret.longitudinalTuning.kiV = [2.]
+      ret.longitudinalTuning.kiV = [.69]
       ret.longitudinalActuatorDelay = 0.6
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      ret.steerControlType = CAR.CarParams.SteerControlType.angle
+      ret.lateralTuning.init('pid')
+      ret.lateralTuning.pid.kpBP = [0., 27.]
+      ret.lateralTuning.pid.kiBP = [0., 27.]
+      ret.lateralTuning.pid.kpV = [0., 0.]
+      ret.lateralTuning.pid.kiV = [0., 0.]
+      ret.lateralTuning.pid.kf = 0.
     else:
       ret.steerActuatorDelay = 0.1
       ret.lateralTuning.pid.kpBP = [0.]

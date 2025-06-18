@@ -3,6 +3,38 @@
 #include "opendbc/safety/safety_declarations.h"
 #include "opendbc/safety/modes/volkswagen_common.h"
 
+// lateral limits
+const SteeringLimits VOLKSWAGEN_PQ_STEERING_LIMITS = {
+  .max_steer = 300,                // 3.0 Nm (EPS side max of 3.0Nm with fault if violated)
+  .max_rt_delta = 113,             // 6 max rate up * 50Hz send rate * 250000 RT interval / 1000000 = 75 ; 125 * 1.5 for safety pad = 113
+  .max_rt_interval = 250000,       // 250ms between real time checks
+  .max_rate_up = 6,                // 3.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
+  .max_rate_down = 10,             // 5.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
+  .driver_torque_factor = 3,
+  .driver_torque_allowance = 80,
+  .type = TorqueDriverLimited,
+};
+
+const SteeringLimits VW_PQ_PLA_STEERING_LIMITS = {  // angle limits for angle control of EPS
+  .angle_deg_to_can = 22.85714286,    // CAN scaling factor of 0.04375. 1 / 0.04375 = 22.85714286
+  .angle_rate_up_lookup = {           // look into making more strict?
+    {0., 5., 25.},
+    {10., 1.6, .3}
+  },
+  .angle_rate_down_lookup = {
+    {0., 5., 25.},
+    {10., 7.0, 0.8}
+  },
+};
+
+// longitudinal limits
+// acceleration in m/s2 * 1000 to avoid floating point math
+const LongitudinalLimits VOLKSWAGEN_PQ_LONG_LIMITS = {
+  .max_accel = 2000,
+  .min_accel = -5000,
+  .inactive_accel = 3010,  // VW sends one increment above the max range when inactive
+};
+
 #define MSG_LENKHILFE_3         0x0D0   // RX from EPS, for steering angle and driver steering torque
 #define MSG_HCA_1               0x0D2   // TX by OP, Heading Control Assist steering torque
 #define MSG_BREMSE_1            0x1A0   // RX from ABS, for ego speed
@@ -14,7 +46,6 @@
 #define MSG_ACC_GRA_ANZEIGE     0x56A   // TX by OP, ACC HUD
 #define MSG_LDW_1               0x5BE   // TX by OP, Lane line recognition and text alerts
 #define MSG_EPB_1               0x5C0   // TX by OP, EPB/ECD control.
-#define MSG_AWV                 0x366   // TX by OP, AWV braking
 #define MSG_BREMSE_8            0x1AC   // TX by OP, spoofing radar
 #define MSG_BREMSE_11           0x5B7   // TX by OP, spoofing radar
 
@@ -57,15 +88,13 @@ static uint32_t volkswagen_pq_compute_checksum(const CANPacket_t *to_push) {
 static safety_config volkswagen_pq_init(uint16_t param) {
   // Transmit of GRA_Neu is allowed on bus 0 and 2 to keep compatibility with gateway and camera integration
   static const CanMsg VOLKSWAGEN_PQ_STOCK_TX_MSGS[] = {{MSG_HCA_1, 0, 5, .check_relay = true}, {MSG_LDW_1, 0, 8, .check_relay = true},
-                                                {MSG_GRA_NEU, 0, 4, .check_relay = false}, {MSG_GRA_NEU, 2, 4, .check_relay = false},
-                                                {MSG_AWV, 0, 8, .check_relay = true}, {MSG_EPB_1, 1, 8, .check_relay = true},
-                                                {MSG_EPB_1, 2, 8, .check_relay = true}, {MSG_BREMSE_8, 2, 8, .check_relay = true},
-                                                {MSG_BREMSE_11, 2, 8, .check_relay = true}};
+                                                {MSG_GRA_NEU, 0, 4, .check_relay = false}, {MSG_GRA_NEU, 2, 4, .check_relay = false}, {MSG_EPB_1, 1, 8, .check_relay = true},
+                                                {MSG_EPB_1, 2, 8, .check_relay = true}, {MSG_BREMSE_8, 2, 8, .check_relay = true}, {MSG_BREMSE_11, 2, 8, .check_relay = true}};
 
   static const CanMsg VOLKSWAGEN_PQ_LONG_TX_MSGS[] =  {{MSG_HCA_1, 0, 5, .check_relay = true}, {MSG_LDW_1, 0, 8, .check_relay = true},
                                                 {MSG_ACC_SYSTEM, 0, 8, .check_relay = true}, {MSG_ACC_GRA_ANZEIGE, 0, 8, .check_relay = true},
                                                 {MSG_MOTOR_2, 2, 8, .check_relay = true}, {MSG_EPB_1, 1, 8, .check_relay = true}, {MSG_EPB_1, 2, 8, .check_relay = true},
-                                              {MSG_BREMSE_8, 2, 8, .check_relay = true}, {MSG_BREMSE_11, 2, 8, .check_relay = true}, {MSG_AWV, 0, 8, .check_relay = true}};
+                                              {MSG_BREMSE_8, 2, 8, .check_relay = true}, {MSG_BREMSE_11, 2, 8, .check_relay = true}};
 
   static RxCheck volkswagen_pq_rx_checks[] = {
     {.msg = {{MSG_LENKHILFE_3, 0, 6, .max_counter = 15U, .ignore_quality_flag = true, .frequency = 100U}, { 0 }, { 0 }}},
@@ -161,17 +190,6 @@ static void volkswagen_pq_rx_hook(const CANPacket_t *to_push) {
 }
 
 static bool volkswagen_pq_tx_hook(const CANPacket_t *to_send) {
-  // lateral limits
-  const TorqueSteeringLimits VOLKSWAGEN_PQ_STEERING_LIMITS = {
-    .max_torque = 300,               // 3.0 Nm (EPS side max of 3.0Nm with fault if violated)
-    .max_rt_delta = 113,             // 6 max rate up * 50Hz send rate * 250000 RT interval / 1000000 = 75 ; 125 * 1.5 for safety pad = 113
-    .max_rate_up = 6,                // 3.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
-    .max_rate_down = 10,             // 5.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
-    .driver_torque_multiplier = 3,
-    .driver_torque_allowance = 80,
-    .type = TorqueDriverLimited,
-  };
-
   // longitudinal limits
   // acceleration in m/s2 * 1000 to avoid floating point math
   const LongitudinalLimits VOLKSWAGEN_PQ_LONG_LIMITS = {
@@ -187,18 +205,30 @@ static bool volkswagen_pq_tx_hook(const CANPacket_t *to_send) {
   // Signal: HCA_1.LM_Offset (absolute torque)
   // Signal: HCA_1.LM_Offsign (direction)
   if (addr == MSG_HCA_1) {
-    int desired_torque = GET_BYTE(to_send, 2) | ((GET_BYTE(to_send, 3) & 0x7FU) << 8);
-    desired_torque = desired_torque / 32;  // DBC scale from PQ network to centi-Nm
-    int sign = (GET_BYTE(to_send, 3) & 0x80U) >> 7;
-    if (sign == 1) {
-      desired_torque *= -1;
-    }
-
     uint32_t hca_status = ((GET_BYTE(to_send, 1) >> 4) & 0xFU);
-    bool steer_req = ((hca_status == 5U) || (hca_status == 7U));
+    bool angle_control = (hca_status == 10U || hca_status == 11U || hca_status == 13U || hca_status == 15U);
+    if (!angle_control) {
+      int desired_torque = GET_BYTE(to_send, 2) | ((GET_BYTE(to_send, 3) & 0x7FU) << 8);
+      desired_torque = desired_torque / 32;  // DBC scale from PQ network to centi-Nm
+      int sign = (GET_BYTE(to_send, 3) & 0x80U) >> 7;
+      if (sign == 1) {
+        desired_torque *= -1;
+      }
 
-    if (steer_torque_cmd_checks(desired_torque, steer_req, VOLKSWAGEN_PQ_STEERING_LIMITS)) {
-      tx = false;
+      bool steer_req = ((hca_status == 5U) || (hca_status == 7U));
+
+      if ((steer_torque_cmd_checks(desired_torque, steer_req, VOLKSWAGEN_PQ_STEERING_LIMITS) && !angle_control)) {
+        tx = false;
+      }
+    } else {
+      int desired_angle = GET_BYTE(to_send, 2) | ((GET_BYTE(to_send, 3) & 0x7FU) << 8);
+      int sign = (GET_BYTE(to_send, 3) & 0x80U) >> 7;
+      if (sign == 1) {
+        desired_angle *= -1;
+      }
+      if (steer_angle_cmd_checks(desired_angle, angle_control, VW_PQ_PLA_STEERING_LIMITS)) {
+        tx = false;
+      }
     }
   }
 

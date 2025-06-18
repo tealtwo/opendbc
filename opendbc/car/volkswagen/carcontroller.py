@@ -1,6 +1,6 @@
 import numpy as np
 from opendbc.can.packer import CANPacker
-from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, structs
+from opendbc.car import Bus, DT_CTRL, apply_std_steer_angle_limits, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.common.numpy_fast import clip, interp
 from opendbc.car.interfaces import CarControllerBase
@@ -24,7 +24,7 @@ class CarController(CarControllerBase):
     self.ext_bus = CANBUS.pt if CP.networkLocation == structs.CarParams.NetworkLocation.fwdCamera else CANBUS.cam
     self.aeb_available = not CP.flags & VolkswagenFlags.PQ
 
-    self.apply_torque_last = 0
+    self.apply_angle_last = 0
     self.gra_acc_counter_last = None
     self.eps_timer_soft_disable_alert = False
     self.hca_frame_timer_running = 0
@@ -36,6 +36,12 @@ class CarController(CarControllerBase):
     self.EPB_brake_last = 0
     self.EPB_enable = 0
     self.EPB_counter = 0
+    self.PLA_status = 0
+    self.PLA_entryCounter = 0
+    self.PLA_driverExit = False
+    self.PLA_driverExit_last = False
+    self.CSsteeringAngleDegLast = 0
+    self.CSLH3_SignLast = 0
     self.AWV_brake = 0
     self.AWV_enable = 0
     self.AWV_enable_counter = 0
@@ -57,140 +63,96 @@ class CarController(CarControllerBase):
 
     # **** Steering Controls ************************************************ #
 
+    if CS.LH2_Abbr == 2 and CS.out.cruiseState.available:
+      self.PLA_driverExit = True
+    else:
+      self.PLA_driverExit = False
+
     if self.frame % self.CCP.STEER_STEP == 0:
-      # Logic to avoid HCA state 4 "refused":
-      #   * Don't steer unless HCA is in state 3 "ready" or 5 "active"
-      #   * Don't steer at standstill
-      #   * Don't send > 3.00 Newton-meters torque
-      #   * Don't send the same torque for > 6 seconds
-      #   * Don't send uninterrupted steering for > 360 seconds
-      # MQB racks reset the uninterrupted steering timer after a single frame
-      # of HCA disabled; this is done whenever output happens to be zero.
-
-      if CC.latActive:
-        new_torque = int(round(actuators.torque * self.CCP.STEER_MAX))
-        apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.CCP)
-        self.hca_frame_timer_running += self.CCP.STEER_STEP
-        if self.apply_torque_last == apply_torque:
-          self.hca_frame_same_torque += self.CCP.STEER_STEP
-          if self.hca_frame_same_torque > self.CCP.STEER_TIME_STUCK_TORQUE / DT_CTRL:
-            apply_torque -= (1, -1)[apply_torque < 0]
-            self.hca_frame_same_torque = 0
-        else:
-          self.hca_frame_same_torque = 0
-        hca_enabled = abs(apply_torque) > 0
+      # PLA_status definitions:
+      #  10 = reset EPS driver torque override flag
+      #  15 = standby
+      #  13 = active
+      #  11 = activatable, entry request signal. 11 frames required
+      if CC.latActive and not self.PLA_driverExit:
+        self.PLA_status = 13 if self.PLA_entryCounter >= 11 else 11
+        self.PLA_entryCounter += 1 if self.PLA_entryCounter <= 32 else self.PLA_entryCounter
+        # retry entry until engagement.
+        if CS.LH2_steeringState != 64 and self.PLA_entryCounter >= 30:
+          self.PLA_entryCounter = 0
       else:
-        hca_enabled = False
-        apply_torque = 0
+        self.PLA_status = 10 if self.PLA_driverExit_last and not self.PLA_driverExit else 15  # pulse reset on falling edge
+        self.PLA_entryCounter = 0
+        self.PLA_driverExit_last = self.PLA_driverExit
 
-      if not hca_enabled:
-        self.hca_frame_timer_running = 0
+      apply_angle = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo, CarControllerParams) \
+        if CC.latActive and self.PLA_status == 13 else self.CSsteeringAngleDegLast
 
-      self.eps_timer_soft_disable_alert = self.hca_frame_timer_running > self.CCP.STEER_TIME_ALERT / DT_CTRL
-      self.apply_torque_last = apply_torque
-      can_sends.append(self.CCS.create_steering_control(self.packer_pt, CANBUS.pt, apply_torque, hca_enabled))
+      self.apply_angle_last = apply_angle
+      self.CSsteeringAngleDegLast = CS.out.steeringAngleDeg
+      can_sends.append(self.CCS.create_steering_control(self.packer_pt, CANBUS.pt, apply_angle, self.PLA_status, self.CSLH3_SignLast))
+      self.CSLH3_SignLast = CS.LH_3_Sign
 
       if self.CP.flags & VolkswagenFlags.STOCK_HCA_PRESENT:
         # Pacify VW Emergency Assist driver inactivity detection by changing its view of driver steering input torque
         # to the greatest of actual driver input or 2x openpilot's output (1x openpilot output is not enough to
         # consistently reset inactivity detection on straight level roads). See commaai/openpilot#23274 for background.
-        ea_simulated_torque = float(np.clip(apply_torque * 2, -self.CCP.STEER_MAX, self.CCP.STEER_MAX))
+        ea_simulated_torque = clip(apply_steer * 2, -self.CCP.STEER_MAX, self.CCP.STEER_MAX)
         if abs(CS.out.steeringTorque) > abs(ea_simulated_torque):
           ea_simulated_torque = CS.out.steeringTorque
         can_sends.append(self.CCS.create_eps_update(self.packer_pt, CANBUS.cam, CS.eps_stock_values, ea_simulated_torque))
 
-    # **** Acceleration Controls ******************************************** #
-
-    if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
-      acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive,
-                                               CC.cruiseControl.override)
-      stopping = actuators.longControlState == LongCtrlState.stopping
-      starting = actuators.longControlState == LongCtrlState.pid and (
-          CS.esp_hold_confirmation or CS.out.vEgo < self.CP.vEgoStopping)
-      accel = clip(actuators.accel, self.CCP.ACCEL_MIN, 0)
-
-      self.accel_diff = (0.0019 * (accel - self.accel_last)) + (1 - 0.0019) * self.accel_diff
-      self.long_jerklimit = (0.01 * (clip(abs(accel), 0.7, 2))) + (1 - 0.01) * self.long_jerklimit
-      self.long_deviation = clip(CS.out.vEgo / 40, 0, 0.13) * interp(abs(accel - self.accel_diff), [0, .2, 1.],
-                                                                     [0.0, 0.0, 0.0])
-      # self.AWV_halten_delay_frames = 5
-
-      if self.CCS == pqcan and CC.longActive and actuators.accel < 0 and CS.out.vEgoRaw < 18 * CV.KPH_TO_MS:
-
-        # Check and Apply AWV Halten to hold
-        # if CS.out.vEgoRaw <= 5 * CV.KPH_TO_MS and stopping:
-        #  self.AWV_halten = 1
-        # if self.AWV_halten:
-        #  self.AWV_halten_counter += 1
-        # else:
-        #  self.AWV_halten_counter = 0
-        # Disengage both ANB Signals When Holding at 0 KPH and send AWV2 Apply Brake to MFD (no halten)
-        # if self.AWV_halten and CS.out.vEgoRaw == 0 * CV.KPH_TO_MS:
-
-        if CS.out.vEgoRaw < 1 * CV.KPH_TO_MS:
-          self.AWV_enable = 0
-          self.AWV_brake = 0
-          self.AWV_parameter = 0
-          self.AWV_parameter_counter = 0
-          self.AWV_apply_brake_message = 1
-          self.AWV_enable_counter = 0
-        else:
-          # Set AWV Parameter 10 frames BEFORE AWV_brake and AWV_enable, while dropping AWV Parameter 5 frames after AWV Halten sends
-          if not self.AWV_parameter_active:
-            self.AWV_parameter_active = True
-            self.AWV_parameter_counter = 0
-            self.AWV_parameter = 2  # Setting AWV_1_Parameter
-          if self.AWV_parameter_active:
-            self.AWV_parameter_counter += 1
-          if self.AWV_parameter_counter >= 10:
-            # Apply Brake Using ANB Verz Anf
-            brake_request = clip(actuators.accel, self.CCP.ACCEL_MIN, 0)
-            self.AWV_brake = brake_request
-            # Set ANB Freigabe w/ 99 Frame Cycle & 2 Frame Drop
-            if brake_request != 0:
-              self.AWV_enable_counter += 1
-              self.AWV_enable_counter = self.AWV_enable_counter % 102
-              if self.AWV_enable_counter < 100:
-                self.AWV_enable = 1
-              else:
-                self.AWV_enable = 0
+        # **** Acceleration Controls ******************************************** #
+        if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
+          acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive, CC.cruiseControl.override)
+          accel = float(np.clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.longActive else 0)
+          stopping = actuators.longControlState == LongCtrlState.stopping
+          starting = actuators.longControlState == LongCtrlState.pid and (CS.esp_hold_confirmation or CS.out.vEgo < self.CP.vEgoStopping)
+          self.accel_diff = (0.0019 * (accel - self.accel_last)) + (1 - 0.0019) * self.accel_diff
+          self.long_jerklimit = (0.01 * (clip(abs(accel), 0.7, 2))) + (1 - 0.01) * self.long_jerklimit
+          self.long_deviation = clip(CS.out.vEgo / 40, 0, 0.13) * interp(abs(accel - self.accel_diff), [0, .2, 1.], [0.0, 0.0, 0.0])
+          # Temporary Solution While I figure out cruiseState.Override to set ADR to Passiv if Gas is pressed
+          accelerator_override = CS.out.gasPressed
+          if accelerator_override:
+            acc_control = 0
           else:
-            self.AWV_enable = 0
-            self.AWV_brake = 0
-            self.AWV_apply_brake_message = 0
-            self.AWV_enable_counter = 0
-        # if self.AWV_halten_counter >= self.AWV_halten_delay_frames and self.AWV_parameter_counter >= self.AWV_parameter_delay_frames:
-        #  self.AWV_parameter = 0
-        # self.AWV_parameter_active = False
+            if CC.longActive:
+              acc_control = 1
+            elif CS.out.cruiseState.available:
+              acc_control = 2
+          if self.CCS == pqcan and CC.longActive and actuators.accel <= 0 and CS.out.vEgoRaw <= 5:
+            if not self.EPB_enable:  # first frame of EPB entry
+              self.EPB_counter = 0
+              self.EPB_brake = 0
+              self.EPB_brake_last = accel - (CS.aEgoBremse / 2)
+              self.EPB_enable = 1
+            else:
+              self.EPB_brake = limit_jerk(accel, self.EPB_brake_last, 0.7, 0.02)
+              self.EPB_brake_last = self.EPB_brake
+          else:
+            acc_control = 0 if acc_control != 6 and self.EPB_enable else acc_control  # Pulse ACC status to 0 for one frame
+            self.EPB_enable = 0
+            self.EPB_brake = 0
 
-        # Disengage ECM Cruise State When Applying AWV Brake
-        if CS.BR5_ZT_Rueckk_Umsetz or self.AWV_brake:
-          acc_control = 0
-      # Disengage AWV when not in use.
-      else:
-        self.AWV_enable = 0
-        self.AWV_brake = 0
-        self.AWV_halten = 0
-        self.AWV_parameter = 0
-        self.AWV_parameter_active = False
-        self.AWV_parameter_counter = 0
-        self.AWV_halten_counter = 0
-        self.AWV_apply_brake_message = 0
-        self.AWV_enable_counter = 0  # Reset cycle counter when AWV not active
+          # Increment EPB Counter
+          if self.EPB_enable:
+            acc_control = 0
+            self.EPB_counter = min(self.EPB_counter + 1, 10)
+            if self.EPB_counter <= 9:
+              acc_control = 0
+          else:
+            self.EPB_counter = 0
 
-      self.accel_last = accel
-      if self.CCS == pqcan:
-        can_sends.append(
-          self.CCS.create_awv_control(self.packer_pt, CANBUS.pt, self.AWV_brake, self.AWV_enable, self.AWV_halten,
-                                      stopping, self.AWV_parameter, self.AWV_apply_brake_message))
-      can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, accel, acc_control, stopping,
-                                          starting, CS.esp_hold_confirmation, self.long_deviation, self.long_jerklimit))
+          self.accel_last = accel
+          if self.CCS == pqcan:
+            can_sends.append(self.CCS.create_epb_control(self.packer_pt, CANBUS.br, self.EPB_brake, self.EPB_enable))
+          can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, accel, acc_control, stopping,starting, CS.esp_hold_confirmation, self.long_deviation,self.long_jerklimit))
 
-      #if self.aeb_available:
-      #  if self.frame % self.CCP.AEB_CONTROL_STEP == 0:
-      #    can_sends.append(self.CCS.create_aeb_control(self.packer_pt, False, False, 0.0))
-      #  if self.frame % self.CCP.AEB_HUD_STEP == 0:
-      #    can_sends.append(self.CCS.create_aeb_hud(self.packer_pt, False, False))
+        # if self.aeb_available:
+        #  if self.frame % self.CCP.AEB_CONTROL_STEP == 0:
+        #    can_sends.append(self.CCS.create_aeb_control(self.packer_pt, False, False, 0.0))
+        #  if self.frame % self.CCP.AEB_HUD_STEP == 0:
+        #    can_sends.append(self.CCS.create_aeb_hud(self.packer_pt, False, False))
 
     # **** HUD Controls ***************************************************** #
 

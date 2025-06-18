@@ -20,7 +20,7 @@ class CarState(CarStateBase):
     self.upscale_lead_car_signal = False
     self.eps_stock_values = False
     self.aEgoBremse = 0
-    self.BR5_ZT_Rueckk_Umsetz = 0
+    self.LH_3_Sign = False
 
   def update_button_enable(self, buttonEvents: list[structs.CarState.ButtonEvent]):
     if not self.CP.pcmCruise:
@@ -225,13 +225,11 @@ class CarState(CarStateBase):
     # Update ACC radar status.
     self.acc_type = ext_cp.vl["ACC_System"]["ACS_Typ_ACC"]
     ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"])
-    ret.cruiseState.enabled = pt_cp.vl["Motor_2"]["GRA_Status"] in (1, 2) or bool(
-      pt_cp.vl["Bremse_8"]["BR8_Verz_EPB_akt"]) or bool(br_cp.vl["AWV"]["ANB_Teilbremsung_Freigabe"]) or bool(
-      br_cp.vl["AWV"]["AWV_Halten"])
+    ret.cruiseState.enabled = pt_cp.vl["Motor_2"]["GRA_Status"] in (1, 2) or bool(pt_cp.vl["Bremse_8"]["BR8_Verz_EPB_akt"])
     if self.CP.pcmCruise:
       ret.accFaulted = ext_cp.vl["ACC_GRA_Anzeige"]["ACA_StaACC"] in (6, 7)
     else:
-      ret.accFaulted = pt_cp.vl["Motor_2"]["GRA_Status"] == 3 or pt_cp.vl["Bremse_5"]["BR5_AWV2_Fehler"] == 1
+      ret.accFaulted = pt_cp.vl["Motor_2"]["GRA_Status"] == 3
 
     # Update ACC setpoint. When the setpoint reads as 255, the driver has not
     # yet established an ACC setpoint, so treat it as zero.
@@ -240,8 +238,8 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = 0
 
     self.motor2_stock = pt_cp.vl["Motor_2"]
-    self.BR5_ZT_Rueckk_Umsetz = pt_cp.vl["Bremse_5"]["BR5_ZT_Rueckk_Umsetz"]
-
+    self.LH2_steeringState = pt_cp.vl["Lenkhilfe_2"]["LH2_aktLenkeingriff"]
+    self.LH2_Abbr = pt_cp.vl["Lenkhilfe_2"]["LH2_PLA_Abbr"]
     # Update button states for turn signals and ACC controls, capture all ACC button state/config for passthrough
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(300, pt_cp.vl["Gate_Komf_1"]["GK1_Blinker_li"],
                                                                             pt_cp.vl["Gate_Komf_1"]["GK1_Blinker_re"])
@@ -351,7 +349,6 @@ class CarState(CarStateBase):
           # sig_address, frequency
           ("Motor_Bremse", 50),  # From J623 Engine control module
           ("Bremse_8", 50),
-          ("AWV", 25),  # AWV Signal
         ]
 
     if CP.transmissionType == TransmissionType.automatic:
