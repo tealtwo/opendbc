@@ -3,37 +3,6 @@
 #include "opendbc/safety/safety_declarations.h"
 #include "opendbc/safety/modes/volkswagen_common.h"
 
-// lateral limits
-const TorqueSteeringLimits VOLKSWAGEN_PQ_STEERING_LIMITS = {
-  .max_torque = 300,                // 3.0 Nm (EPS side max of 3.0Nm with fault if violated)
-  .max_rt_delta = 113,             // 6 max rate up * 50Hz send rate * 250000 RT interval / 1000000 = 75 ; 125 * 1.5 for safety pad = 113
-  .max_rate_up = 6,                // 3.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
-  .max_rate_down = 10,             // 5.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
-  .driver_torque_multiplier = 3,
-  .driver_torque_allowance = 80,
-  .type = TorqueDriverLimited,
-};
-
-const AngleSteeringLimits VW_PQ_PLA_STEERING_LIMITS = {  // angle limits for angle control of EPS
-  .angle_deg_to_can = 22.85714286,    // CAN scaling factor of 0.04375. 1 / 0.04375 = 22.85714286
-  .angle_rate_up_lookup = {           // look into making more strict?
-    {0., 5., 25.},
-    {10., 1.6, .3}
-  },
-  .angle_rate_down_lookup = {
-    {0., 5., 25.},
-    {10., 7.0, 0.8}
-  },
-};
-
-// longitudinal limits
-// acceleration in m/s2 * 1000 to avoid floating point math
-const LongitudinalLimits VOLKSWAGEN_PQ_LONG_LIMITS = {
-  .max_accel = 2000,
-  .min_accel = -5000,
-  .inactive_accel = 3010,  // VW sends one increment above the max range when inactive
-};
-
 #define MSG_LENKHILFE_3         0x0D0   // RX from EPS, for steering angle and driver steering torque
 #define MSG_HCA_1               0x0D2   // TX by OP, Heading Control Assist steering torque
 #define MSG_BREMSE_1            0x1A0   // RX from ABS, for ego speed

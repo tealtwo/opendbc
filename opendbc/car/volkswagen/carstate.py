@@ -19,8 +19,8 @@ class CarState(CarStateBase):
     self.esp_hold_confirmation = False
     self.upscale_lead_car_signal = False
     self.eps_stock_values = False
-    self.aEgoBremse = 0
     self.LH_3_Sign = False
+    self.aEgoBremse = 0
 
   def update_button_enable(self, buttonEvents: list[structs.CarState.ButtonEvent]):
     if not self.CP.pcmCruise:
@@ -47,11 +47,10 @@ class CarState(CarStateBase):
   def update(self, can_parsers) -> structs.CarState:
     pt_cp = can_parsers[Bus.pt]
     cam_cp = can_parsers[Bus.cam]
-    br_cp = can_parsers[Bus.br]
     ext_cp = pt_cp if self.CP.networkLocation == NetworkLocation.fwdCamera else cam_cp
 
     if self.CP.flags & VolkswagenFlags.PQ:
-      return self.update_pq(pt_cp, cam_cp, ext_cp, br_cp)
+      return self.update_pq(pt_cp, cam_cp, ext_cp)
 
     ret = structs.CarState()
 
@@ -148,7 +147,7 @@ class CarState(CarStateBase):
     self.frame += 1
     return ret
 
-  def update_pq(self, pt_cp, br_cp, cam_cp, ext_cp) -> structs.CarState:
+  def update_pq(self, pt_cp, cam_cp, ext_cp) -> structs.CarState:
     ret = structs.CarState()
     # Update vehicle speed and acceleration from ABS wheel speeds.
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -172,7 +171,8 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > self.CCP.STEER_DRIVER_ALLOWANCE
     ret.yawRate = pt_cp.vl["Bremse_5"]["BR5_Giergeschw"] * (1, -1)[int(pt_cp.vl["Bremse_5"]["BR5_Vorzeichen"])] * CV.DEG_TO_RAD
     hca_status = self.CCP.hca_status_values.get(pt_cp.vl["Lenkhilfe_2"]["LH2_Sta_HCA"])
-    ret.steerFaultTemporary, ret.steerFaultPermanent = self.update_hca_state(hca_status)
+    ret.steerFaultTemporary = False # True if pt_cp.vl["Lenkhilfe_2"]["LH2_PLA_Abbr"] == 2 else False
+    self.LH_3_Sign = pt_cp.vl["Lenkhilfe_3"]["LH3_BLWSign"]
 
     # Update gas, brakes, and gearshift.
     ret.gas = pt_cp.vl["Motor_3"]["Fahrpedal_Rohsignal"] / 100.0
@@ -240,6 +240,7 @@ class CarState(CarStateBase):
     self.motor2_stock = pt_cp.vl["Motor_2"]
     self.LH2_steeringState = pt_cp.vl["Lenkhilfe_2"]["LH2_aktLenkeingriff"]
     self.LH2_Abbr = pt_cp.vl["Lenkhilfe_2"]["LH2_PLA_Abbr"]
+
     # Update button states for turn signals and ACC controls, capture all ACC button state/config for passthrough
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(300, pt_cp.vl["Gate_Komf_1"]["GK1_Blinker_li"],
                                                                             pt_cp.vl["Gate_Komf_1"]["GK1_Blinker_re"])
@@ -317,10 +318,6 @@ class CarState(CarStateBase):
     }
 
   @staticmethod
-  def get_body_can_parser(CP):
-    return CarState.get_br_can_parser_pq(CP)
-
-  @staticmethod
   def get_can_parsers_pq(CP):
     pt_messages = [
       # sig_address, frequency
@@ -339,17 +336,6 @@ class CarState(CarStateBase):
       ("Lenkhilfe_2", 20),  # From J500 Steering Assist with integrated sensors
       ("Gate_Komf_1", 10),  # From J533 CAN gateway
     ]
-
-    @staticmethod
-    def get_br_can_parser_pq(CP):
-      messages = []
-
-      if CP.flags & VolkswagenFlags.PQ:
-        messages += [
-          # sig_address, frequency
-          ("Motor_Bremse", 50),  # From J623 Engine control module
-          ("Bremse_8", 50),
-        ]
 
     if CP.transmissionType == TransmissionType.automatic:
       pt_messages += [("Getriebe_1", 100)]  # From J743 Auto transmission control module

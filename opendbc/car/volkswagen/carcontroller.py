@@ -42,16 +42,6 @@ class CarController(CarControllerBase):
     self.PLA_driverExit_last = False
     self.CSsteeringAngleDegLast = 0
     self.CSLH3_SignLast = 0
-    self.AWV_brake = 0
-    self.AWV_enable = 0
-    self.AWV_enable_counter = 0
-    self.AWV_halten = 0
-    self.AWV_halten_counter = 0
-    self.AWV_parameter = 0
-    self.AWV_parameter_counter = 0
-    self.AWV_parameter_active = False
-    self.AWV_halten_delay_frames = 0
-    self.AWV_apply_brake_message = 0
     self.accel_diff = 0
     self.long_deviation = 0
     self.long_jerklimit = 0
@@ -85,7 +75,9 @@ class CarController(CarControllerBase):
         self.PLA_entryCounter = 0
         self.PLA_driverExit_last = self.PLA_driverExit
 
-      apply_angle = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo, CarControllerParams) \
+      lat_active = CC.latActive
+
+      apply_angle = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo, CS.out.steeringAngleDeg, lat_active, self.CCP.ANGLE_LIMITS) \
         if CC.latActive and self.PLA_status == 13 else self.CSsteeringAngleDegLast
 
       self.apply_angle_last = apply_angle
@@ -94,66 +86,65 @@ class CarController(CarControllerBase):
       self.CSLH3_SignLast = CS.LH_3_Sign
 
       if self.CP.flags & VolkswagenFlags.STOCK_HCA_PRESENT:
-        apply_steer = 0
+        apply_torque = 0
         # Pacify VW Emergency Assist driver inactivity detection by changing its view of driver steering input torque
         # to the greatest of actual driver input or 2x openpilot's output (1x openpilot output is not enough to
         # consistently reset inactivity detection on straight level roads). See commaai/openpilot#23274 for background.
-        ea_simulated_torque = clip(apply_steer * 2, -self.CCP.STEER_MAX, self.CCP.STEER_MAX)
+        ea_simulated_torque = float(np.clip(apply_torque * 2, -self.CCP.STEER_MAX, self.CCP.STEER_MAX))
         if abs(CS.out.steeringTorque) > abs(ea_simulated_torque):
           ea_simulated_torque = CS.out.steeringTorque
         can_sends.append(self.CCS.create_eps_update(self.packer_pt, CANBUS.cam, CS.eps_stock_values, ea_simulated_torque))
 
-        # **** Acceleration Controls ******************************************** #
-        if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
-          acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive, CC.cruiseControl.override)
-          accel = float(np.clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.longActive else 0)
-          stopping = actuators.longControlState == LongCtrlState.stopping
-          starting = actuators.longControlState == LongCtrlState.pid and (CS.esp_hold_confirmation or CS.out.vEgo < self.CP.vEgoStopping)
-          self.accel_diff = (0.0019 * (accel - self.accel_last)) + (1 - 0.0019) * self.accel_diff
-          self.long_jerklimit = (0.01 * (clip(abs(accel), 0.7, 2))) + (1 - 0.01) * self.long_jerklimit
-          self.long_deviation = clip(CS.out.vEgo / 40, 0, 0.13) * interp(abs(accel - self.accel_diff), [0, .2, 1.], [0.0, 0.0, 0.0])
-          # Temporary Solution While I figure out cruiseState.Override to set ADR to Passiv if Gas is pressed
-          accelerator_override = CS.out.gasPressed
-          if accelerator_override:
-            acc_control = 0
-          else:
-            if CC.longActive:
-              acc_control = 1
-            elif CS.out.cruiseState.available:
-              acc_control = 2
-          if self.CCS == pqcan and CC.longActive and actuators.accel <= 0 and CS.out.vEgoRaw <= 5:
-            if not self.EPB_enable:  # first frame of EPB entry
-              self.EPB_counter = 0
-              self.EPB_brake = 0
-              self.EPB_brake_last = accel - (CS.aEgoBremse / 2)
-              self.EPB_enable = 1
-            else:
-              self.EPB_brake = limit_jerk(accel, self.EPB_brake_last, 0.7, 0.02)
-              self.EPB_brake_last = self.EPB_brake
-          else:
-            acc_control = 0 if acc_control != 6 and self.EPB_enable else acc_control  # Pulse ACC status to 0 for one frame
-            self.EPB_enable = 0
-            self.EPB_brake = 0
+    # **** Acceleration Controls ******************************************** #
 
-          # Increment EPB Counter
-          if self.EPB_enable:
-            acc_control = 0
-            self.EPB_counter = min(self.EPB_counter + 1, 10)
-            if self.EPB_counter <= 9:
-              acc_control = 0
-          else:
+    if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
+        acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive, CC.cruiseControl.override)
+        accel = float(np.clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.longActive else 0)
+        stopping = actuators.longControlState == LongCtrlState.stopping
+        starting = actuators.longControlState == LongCtrlState.pid and (CS.esp_hold_confirmation or CS.out.vEgo < self.CP.vEgoStopping)
+        self.accel_diff = (0.0019 * (accel - self.accel_last)) + (1 - 0.0019) * self.accel_diff
+        self.long_jerklimit = (0.01 * (clip(abs(accel), 0.7, 2))) + (1 - 0.01) * self.long_jerklimit
+        self.long_deviation = clip(CS.out.vEgo / 40, 0, 0.13) * interp(abs(accel - self.accel_diff), [0, .2, 1.], [0.0, 0.0, 0.0])
+        # Temporary Solution While I figure out cruiseState.Override to set ADR to Passiv if Accelerator is pressed
+        accelerator_override = CS.out.gasPressed
+        if accelerator_override:
+          acc_control = 0
+        else:
+          if CC.longActive:
+            acc_control = 1
+        if self.CCS == pqcan and CC.longActive and actuators.accel <= 0 and CS.out.vEgoRaw <= 5:
+          if not self.EPB_enable:  # first frame of EPB entry
             self.EPB_counter = 0
+            self.EPB_brake = 0
+            self.EPB_brake_last = accel - (CS.aEgoBremse / 2)
+            self.EPB_enable = 1
+          else:
+            self.EPB_brake = limit_jerk(accel, self.EPB_brake_last, 0.7, 0.02)
+            self.EPB_brake_last = self.EPB_brake
+        else:
+          acc_control = 0 if acc_control != 6 and self.EPB_enable else acc_control  # Pulse ACC status to 0 for one frame
+          self.EPB_enable = 0
+          self.EPB_brake = 0
 
-          self.accel_last = accel
-          if self.CCS == pqcan:
-            can_sends.append(self.CCS.create_epb_control(self.packer_pt, CANBUS.br, self.EPB_brake, self.EPB_enable))
-          can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, accel, acc_control, stopping,starting, CS.esp_hold_confirmation, self.long_deviation,self.long_jerklimit))
+        # Increment EPB Counter
+        if self.EPB_enable:
+          acc_control = 0
+          self.EPB_counter = min(self.EPB_counter + 1, 10)
+          if self.EPB_counter <= 9:
+            acc_control = 0
+        else:
+          self.EPB_counter = 0
 
-        # if self.aeb_available:
-        #  if self.frame % self.CCP.AEB_CONTROL_STEP == 0:
-        #    can_sends.append(self.CCS.create_aeb_control(self.packer_pt, False, False, 0.0))
-        #  if self.frame % self.CCP.AEB_HUD_STEP == 0:
-        #    can_sends.append(self.CCS.create_aeb_hud(self.packer_pt, False, False))
+        self.accel_last = accel
+        if self.CCS == pqcan:
+          can_sends.append(self.CCS.create_epb_control(self.packer_pt, CANBUS.br, self.EPB_brake, self.EPB_enable))
+        can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, accel, acc_control, stopping, starting, CS.esp_hold_confirmation, self.long_deviation, self.long_jerklimit))
+
+      #if self.aeb_available:
+      #  if self.frame % self.CCP.AEB_CONTROL_STEP == 0:
+      #    can_sends.append(self.CCS.create_aeb_control(self.packer_pt, False, False, 0.0))
+      #  if self.frame % self.CCP.AEB_HUD_STEP == 0:
+      #    can_sends.append(self.CCS.create_aeb_hud(self.packer_pt, False, False))
 
     # **** HUD Controls ***************************************************** #
 
@@ -161,8 +152,11 @@ class CarController(CarControllerBase):
       hud_alert = 0
       if hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw):
         hud_alert = self.CCP.LDW_MESSAGES["laneAssistTakeOver"]
-      can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, CANBUS.pt, CS.ldw_stock_values, CC.latActive,
-                                                       CS.out.steeringPressed, hud_alert, hud_control))
+      if CC.latActive and CS.LH2_steeringState != 64 and self.frame % 2:
+        pulse = 1
+      else:
+        pulse = 0
+      can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, CANBUS.pt, CS.ldw_stock_values, (CC.latActive and CS.LH2_steeringState == 64), CS.out.steeringPressed, hud_alert, hud_control, pulse))
 
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       lead_distance = 0
@@ -188,8 +182,7 @@ class CarController(CarControllerBase):
       self.motor2_last = CS.motor2_stock
       self.motor2_frame += 1
     new_actuators = actuators.as_builder()
-    new_actuators.torque = self.apply_torque_last / self.CCP.STEER_MAX
-    new_actuators.torqueOutputCan = self.apply_torque_last
+    new_actuators.steeringAngleDeg = self.apply_angle_last
 
     self.gra_acc_counter_last = CS.gra_stock_values["COUNTER"]
     self.frame += 1

@@ -2,7 +2,7 @@ from collections import defaultdict, namedtuple
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag, StrEnum
 
-from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, structs, uds, AngleRateLimit
+from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, structs, uds, AngleSteeringLimits
 from opendbc.can.can_define import CANDefine
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
@@ -39,11 +39,13 @@ class CarControllerParams:
 
   ACCEL_MAX = 2.0                          # 2.0 m/s max acceleration
   ACCEL_MIN = -3.5                         # 3.5 m/s max deceleration
-  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[10., 1.6, .3])
-  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[10., 7.0, 0.8])
+  ANGLE_LIMITS: AngleSteeringLimits = AngleSteeringLimits(
+    float('inf'),
+    ([0., 5., 15.], [10., 1.6, .3]),
+    ([0., 5., 15.], [10., 7.0, 0.8])
+  )
 
-
-def __init__(self, CP):
+  def __init__(self, CP):
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
 
     if CP.flags & VolkswagenFlags.PQ:

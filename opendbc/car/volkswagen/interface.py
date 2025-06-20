@@ -2,7 +2,6 @@ from opendbc.car import get_safety_config, structs
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.volkswagen.carcontroller import CarController
 from opendbc.car.volkswagen.carstate import CarState
-from math import exp
 from opendbc.car.volkswagen.values import CAR, NetworkLocation, TransmissionType, VolkswagenFlags, VolkswagenSafetyFlags
 
 
@@ -69,7 +68,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiBP = [0.]
       ret.longitudinalTuning.kiV = [.69]
       ret.longitudinalActuatorDelay = 0.6
-      ret.steerControlType = CAR.CarParams.SteerControlType.angle
+      # ret.steerControlType = CAR.CarParams.SteerControlType.angle
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kpBP = [0., 27.]
       ret.lateralTuning.pid.kiBP = [0., 27.]
