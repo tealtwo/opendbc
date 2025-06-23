@@ -45,7 +45,7 @@ class CarControllerParams:
     ([0., 5., 15.], [10., 7.0, 0.8])
   )
 
-  def __init__(self, CP):
+def __init__(self, CP):
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
 
     if CP.flags & VolkswagenFlags.PQ:
