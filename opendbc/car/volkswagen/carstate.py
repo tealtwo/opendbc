@@ -145,7 +145,8 @@ class CarState(CarStateBase):
     ret.buttonEvents = self.create_button_events(pt_cp, self.CCP.BUTTONS)
 
     self.frame += 1
-    return ret
+    ret_sp = structs.CarStateSP()
+    return ret, ret_sp
 
   def update_pq(self, pt_cp, cam_cp, ext_cp) -> structs.CarState:
     ret = structs.CarState()
@@ -251,7 +252,8 @@ class CarState(CarStateBase):
     ret.espDisabled = bool(pt_cp.vl["Bremse_1"]["ESP_Passiv_getastet"])
 
     self.frame += 1
-    return ret
+    ret_sp = structs.CarStateSP()
+    return ret, ret_sp
 
   def update_hca_state(self, hca_status, drive_mode=True):
     # Treat FAULT as temporary for worst likely EPS recovery time, for cars without factory Lane Assist
