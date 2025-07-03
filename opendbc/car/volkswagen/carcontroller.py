@@ -1,6 +1,6 @@
 import numpy as np
 from opendbc.can.packer import CANPacker
-from opendbc.car import Bus, DT_CTRL, apply_std_steer_angle_limits, structs
+from opendbc.car import Bus, DT_CTRL, apply_std_steer_angle_limits, structs, apply_driver_steer_torque_limits
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.common.numpy_fast import clip, interp
 from opendbc.car.interfaces import CarControllerBase
@@ -25,6 +25,7 @@ class CarController(CarControllerBase):
     self.aeb_available = not CP.flags & VolkswagenFlags.PQ
 
     self.apply_angle_last = 0
+    self.apply_torque_last = 0
     self.gra_acc_counter_last = None
     self.eps_timer_soft_disable_alert = False
     self.hca_frame_timer_running = 0
@@ -50,6 +51,7 @@ class CarController(CarControllerBase):
     actuators = CC.actuators
     hud_control = CC.hudControl
     can_sends = []
+    pqLateralControl = getattr(CC_SP, 'pqLatControlToggle', False)
 
     # **** Steering Controls ************************************************ #
 
@@ -58,7 +60,42 @@ class CarController(CarControllerBase):
     else:
       self.PLA_driverExit = False
 
-    if self.frame % self.CCP.STEER_STEP == 0:
+    # HCA (7) Lateral Control Logic
+    if self.frame % self.CCP.STEER_STEP == 0 and pqLateralControl:
+      if CC.latActive:
+        new_torque = int(round(actuators.torque * self.CCP.STEER_MAX))
+        apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.CCP)
+        self.hca_frame_timer_running += self.CCP.STEER_STEP
+        if self.apply_torque_last == apply_torque:
+          self.hca_frame_same_torque += self.CCP.STEER_STEP
+          if self.hca_frame_same_torque > self.CCP.STEER_TIME_STUCK_TORQUE / DT_CTRL:
+            apply_torque -= (1, -1)[apply_torque < 0]
+            self.hca_frame_same_torque = 0
+        else:
+          self.hca_frame_same_torque = 0
+        hca_enabled = abs(apply_torque) > 0
+      else:
+        hca_enabled = False
+        apply_torque = 0
+
+      if not hca_enabled:
+        self.hca_frame_timer_running = 0
+
+      self.eps_timer_soft_disable_alert = self.hca_frame_timer_running > self.CCP.STEER_TIME_ALERT / DT_CTRL
+      self.apply_torque_last = apply_torque
+      can_sends.append(self.CCS.create_hca_steering_control(self.packer_pt, CANBUS.pt, apply_torque, hca_enabled))
+
+      if self.CP.flags & VolkswagenFlags.STOCK_HCA_PRESENT:
+        # Pacify VW Emergency Assist driver inactivity detection by changing its view of driver steering input torque
+        # to the greatest of actual driver input or 2x openpilot's output (1x openpilot output is not enough to
+        # consistently reset inactivity detection on straight level roads). See commaai/openpilot#23274 for background.
+        ea_simulated_torque = float(np.clip(apply_torque * 2, -self.CCP.STEER_MAX, self.CCP.STEER_MAX))
+        if abs(CS.out.steeringTorque) > abs(ea_simulated_torque):
+          ea_simulated_torque = CS.out.steeringTorque
+        can_sends.append(self.CCS.create_eps_update(self.packer_pt, CANBUS.cam, CS.eps_stock_values, ea_simulated_torque))
+
+    # PLA Lateral Control Logic
+    if self.frame % self.CCP.STEER_STEP == 0 and not pqLateralControl:
       # PLA_status definitions:
       #  10 = reset EPS driver torque override flag
       #  15 = standby
@@ -85,16 +122,6 @@ class CarController(CarControllerBase):
       can_sends.append(self.CCS.create_steering_control(self.packer_pt, CANBUS.pt, apply_angle, self.PLA_status, self.CSLH3_SignLast))
       self.CSLH3_SignLast = CS.LH_3_Sign
 
-      if self.CP.flags & VolkswagenFlags.STOCK_HCA_PRESENT:
-        apply_torque = 0
-        # Pacify VW Emergency Assist driver inactivity detection by changing its view of driver steering input torque
-        # to the greatest of actual driver input or 2x openpilot's output (1x openpilot output is not enough to
-        # consistently reset inactivity detection on straight level roads). See commaai/openpilot#23274 for background.
-        ea_simulated_torque = float(np.clip(apply_torque * 2, -self.CCP.STEER_MAX, self.CCP.STEER_MAX))
-        if abs(CS.out.steeringTorque) > abs(ea_simulated_torque):
-          ea_simulated_torque = CS.out.steeringTorque
-        can_sends.append(self.CCS.create_eps_update(self.packer_pt, CANBUS.cam, CS.eps_stock_values, ea_simulated_torque))
-
     # **** Acceleration Controls ******************************************** #
 
     if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
@@ -105,7 +132,7 @@ class CarController(CarControllerBase):
         self.accel_diff = (0.0019 * (accel - self.accel_last)) + (1 - 0.0019) * self.accel_diff
         self.long_jerklimit = (0.01 * (clip(abs(accel), 0.7, 2))) + (1 - 0.01) * self.long_jerklimit
         self.long_deviation = clip(CS.out.vEgo / 40, 0, 0.13) * interp(abs(accel - self.accel_diff), [0, .2, 1.], [0.0, 0.0, 0.0])
-        # Temporary Solution While I figure out cruiseState.Override to set ADR to Passiv if Accelerator is pressed
+        # FIXME: Temporary Solution While I figure out cruiseState.Override to set ADR to Passiv if Accelerator is pressed
         accelerator_override = CS.out.gasPressed
         if accelerator_override:
           acc_control = 0

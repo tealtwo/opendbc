@@ -8,6 +8,14 @@ def create_steering_control(packer, bus, apply_angle, PLA_status, LH_3_Sign):
 
   return packer.make_can_msg("HCA_1", bus, values)
 
+def create_hca_steering_control(packer, bus, apply_torque, lkas_enabled):
+  values = {
+    "LM_Offset": abs(apply_torque),
+    "LM_OffSign": 1 if apply_torque < 0 else 0,
+    "HCA_Status": 7 if (lkas_enabled and apply_torque != 0) else 3,
+    "Vib_Freq": 16,
+  }
+  return packer.make_can_msg("HCA_1", bus, values)
 
 def create_lka_hud_control(packer, bus, ldw_stock_values, lat_active, steering_pressed, hud_alert, hud_control, pulse=0):
   values = {}
