@@ -51,7 +51,7 @@ class CarController(CarControllerBase):
     actuators = CC.actuators
     hud_control = CC.hudControl
     can_sends = []
-    pqLateralControl = getattr(CC_SP, 'pqLatControlToggle', True)
+    pqLateralControl = getattr(CC_SP, 'pqLatControlToggle', False)
 
     # **** Steering Controls ************************************************ #
 
