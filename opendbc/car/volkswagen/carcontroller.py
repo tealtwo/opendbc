@@ -61,7 +61,7 @@ class CarController(CarControllerBase):
       self.PLA_driverExit = False
 
     # HCA (7) Lateral Control Logic
-    if self.frame % self.CCP.STEER_STEP == 0 and pqLateralControl:
+    if self.frame % self.CCP.STEER_STEP == 0 and not pqLateralControl:
       if CC.latActive:
         new_torque = int(round(actuators.torque * self.CCP.STEER_MAX))
         apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.CCP)
@@ -95,7 +95,7 @@ class CarController(CarControllerBase):
         can_sends.append(self.CCS.create_eps_update(self.packer_pt, CANBUS.cam, CS.eps_stock_values, ea_simulated_torque))
 
     # PLA Lateral Control Logic
-    if self.frame % self.CCP.STEER_STEP == 0 and not pqLateralControl:
+    if self.frame % self.CCP.STEER_STEP == 0 and pqLateralControl:
       # PLA_status definitions:
       #  10 = reset EPS driver torque override flag
       #  15 = standby
