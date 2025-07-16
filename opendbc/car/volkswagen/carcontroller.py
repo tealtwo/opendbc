@@ -6,6 +6,11 @@ from opendbc.car.common.numpy_fast import clip, interp
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.volkswagen import mqbcan, pqcan
 from opendbc.car.volkswagen.values import CANBUS, CarControllerParams, VolkswagenFlags
+import sys
+import os
+sunnypilot_path = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+sys.path.insert(0, sunnypilot_path)
+from openpilot.common.params import Params
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -18,6 +23,7 @@ def limit_jerk(accel, prev_accel, max_jerk, dt):
 class CarController(CarControllerBase):
   def __init__(self, dbc_names, CP, CP_SP):
     super().__init__(dbc_names, CP, CP_SP)
+    self._params = Params()
     self.CCP = CarControllerParams(CP)
     self.CCS = pqcan if CP.flags & VolkswagenFlags.PQ else mqbcan
     self.packer_pt = CANPacker(dbc_names[Bus.pt])
@@ -51,7 +57,7 @@ class CarController(CarControllerBase):
     actuators = CC.actuators
     hud_control = CC.hudControl
     can_sends = []
-    pqLateralControl = getattr(CC_SP, 'pqLatControlToggle', False)
+    hcaLateralControl = self._params.get_bool("pqLatControlToggle")
 
     # **** Steering Controls ************************************************ #
 
@@ -61,7 +67,7 @@ class CarController(CarControllerBase):
       self.PLA_driverExit = False
 
     # HCA (7) Lateral Control Logic
-    if self.frame % self.CCP.STEER_STEP == 0 and pqLateralControl:
+    if self.frame % self.CCP.STEER_STEP == 0 and hcaLateralControl:
       if CC.latActive:
         new_torque = int(round(actuators.torque * self.CCP.STEER_MAX))
         apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.CCP)
@@ -95,7 +101,7 @@ class CarController(CarControllerBase):
         can_sends.append(self.CCS.create_eps_update(self.packer_pt, CANBUS.cam, CS.eps_stock_values, ea_simulated_torque))
 
     # PLA Lateral Control Logic
-    if self.frame % self.CCP.STEER_STEP == 0 and not pqLateralControl:
+    if self.frame % self.CCP.STEER_STEP == 0 and not hcaLateralControl:
       # PLA_status definitions:
       #  10 = reset EPS driver torque override flag
       #  15 = standby
