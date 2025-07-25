@@ -1174,6 +1174,17 @@ BO_ 980 PLA_1: 8 XXX
  SG_ PL1_Bremsmoment : 40|13@1+ (4,0) [0|32760] "Unit_NewtoMeter" Vector__XXX
  SG_ PL1_void : 53|11@1+ (1,0) [0|2047] "" XXX
 
+BO_ 767 DEBUG_MESSAGE_1: 8 PLA_MODULE
+ SG_ PLA_Checksum : 7|8@0+ (1,0) [0|255] "" Vector__XXX
+ SG_ PLA_Counter : 15|8@0+ (1,0) [0|15] "" Vector__XXX
+ SG_ PLA_Status : 19|4@0+ (1,0) [0|15] "" Vector__XXX
+ SG_ PLA_Angle : 30|15@0+ (0.04375,0) [0|1430.25] "deg" Vector__XXX
+ SG_ PLA_AngleSign : 31|1@0+ (1,0) [0|1] "" Vector__XXX
+ SG_ M1_Counter : 47|8@0+ (1,0) [0|255] "" Vector__XXX
+ SG_ PLA_Limit : 34|1@0+ (1,0) [0|1] "" Vector__XXX
+ SG_ PLA_Exit : 33|1@0+ (1,0) [0|1] "" Vector__XXX
+ SG_ Filter_Active : 32|1@0+ (1,0) [0|1] "" Vector__XXX
+
 BO_ 210 HCA_1: 5 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|15] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
