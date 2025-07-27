@@ -44,7 +44,7 @@ def apply_volkswagen_steer_angle_limits(apply_angle: float, apply_angle_last: fl
   if not lat_active:
     new_apply_angle = steering_angle
   # OP Fault Prevention
-  return float(np.clip(new_apply_angle, -limits.STEER_ANGLE_MAX. limits.STEER_ANGLE_MAX))
+  return float(np.clip(new_apply_angle, -limits.STEER_ANGLE_MAX, limits.STEER_ANGLE_MAX))
 
 def get_safety_model():
   # Using NMS Passat VM
