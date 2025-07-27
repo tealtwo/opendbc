@@ -41,8 +41,8 @@ class CarControllerParams:
   ACCEL_MIN = -3.5                         # 3.5 m/s max deceleration
   ANGLE_LIMITS: AngleSteeringLimits = AngleSteeringLimits(
     float('inf'),
-    ([0., 5., 15.], [10., 1.6, .3]),
-    ([0., 5., 15.], [10., 7.0, 0.8])
+    ([], []),
+    ([], [])
   )
 
   def __init__(self, CP):

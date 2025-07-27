@@ -1,16 +1,55 @@
 import numpy as np
 from opendbc.can.packer import CANPacker
-from opendbc.car import Bus, DT_CTRL, apply_std_steer_angle_limits, structs, apply_driver_steer_torque_limits
+from opendbc.car import ACCELERATION_DUE_TO_GRAVITY, AngleSteeringLimits, Bus, DT_CTRL, structs, apply_driver_steer_torque_limits, rate_limit
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.common.numpy_fast import clip, interp
-from opendbc.car.interfaces import CarControllerBase
+from opendbc.car.interfaces import CarControllerBase, ISO_LATERAL_ACCEL
 from opendbc.car.volkswagen import mqbcan, pqcan
 from opendbc.car.volkswagen.values import CANBUS, CarControllerParams, VolkswagenFlags
+from opendbc.car.vehicle_model import VehicleModel
+import math
 import sys
 import os
 sunnypilot_path = os.path.join(os.path.dirname(__file__), '..', '..', '..')
 sys.path.insert(0, sunnypilot_path)
 from openpilot.common.params import Params
+
+# Angle Rate Limit
+ANGLE_RATE_LIMIT = 5
+# Extra Tolerances For Road Variance
+AVERAGE_ROAD_ROLL = 0.06
+LATERAL_ACCEL_LIMIT = ISO_LATERAL_ACCEL + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)  # ~3.6 m/s^2
+LATERAL_JERK_LIMIT = 3.0 + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)  # ~3.6 m/s^3
+
+def get_max_angle_delta(v_ego_raw: float, VM: VehicleModel):
+  max_curvature_rate_sec = LATERAL_JERK_LIMIT / (v_ego_raw ** 2) # (1/m)/s
+  max_angle_rate_sec = math.degrees(VM.get_steer_from_curvature(max_curvature_rate_sec, v_ego_raw, 0)) # deg/s
+  return max_angle_rate_sec * (DT_CTRL * CarControllerParams.STEER_STEP)
+
+def get_angle_limit(v_ego_raw: float, VM: VehicleModel):
+  max_curvature = LATERAL_JERK_LIMIT / (v_ego_raw ** 2) # 1/m
+  return math.degrees(VM.get_steer_from_curvature(max_curvature, v_ego_raw, 0)) # deg
+
+def apply_volkswagen_steer_angle_limits(apply_angle: float, apply_angle_last: float, v_ego_raw: float, steering_angle: float, lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel) -> float:
+  v_ego_raw = max(v_ego_raw, 1)
+  # Jerk Limit
+  max_angle_delta = get_max_angle_delta(v_ego_raw, VM)
+  # OP Fault Prevention
+  max_angle_delta = min(max_angle_delta, ANGLE_RATE_LIMIT)
+  new_apply_angle = rate_limit(apply_angle, apply_angle_last, -max_angle_delta, max_angle_delta)
+  # Lateral Acceleration Limit
+  max_angle = get_angle_limit(v_ego_raw, VM)
+  new_apply_angle = np.clip(new_apply_angle, -max_angle, max_angle)
+  # Set Angle = CurrentAngle when Lat not active
+  if not lat_active:
+    new_apply_angle = steering_angle
+  # OP Fault Prevention
+  return float(np.clip(new_apply_angle, -limits.STEER_ANGLE_MAX. limits.STEER_ANGLE_MAX))
+
+def get_safety_model():
+  # Using NMS Passat VM
+  from opendbc.car.volkswagen.interface import CarInterface
+  return CarInterface.get_non_essential_params("VOLKSWAGEN_PASSAT_NMS")
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -29,6 +68,7 @@ class CarController(CarControllerBase):
     self.packer_pt = CANPacker(dbc_names[Bus.pt])
     self.ext_bus = CANBUS.pt if CP.networkLocation == structs.CarParams.NetworkLocation.fwdCamera else CANBUS.cam
     self.aeb_available = not CP.flags & VolkswagenFlags.PQ
+    self.VM = VehicleModel(get_safety_model())
 
     self.apply_angle_last = 0
     self.apply_torque_last = 0
@@ -118,10 +158,8 @@ class CarController(CarControllerBase):
         self.PLA_entryCounter = 0
         self.PLA_driverExit_last = self.PLA_driverExit
 
-      lat_active = CC.latActive
-
-      apply_angle = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo, CS.out.steeringAngleDeg, lat_active, self.CCP.ANGLE_LIMITS) \
-        if CC.latActive and self.PLA_status == 13 else self.CSsteeringAngleDegLast
+      apply_angle = apply_volkswagen_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw, CS.out.steeringAngleDeg, CC.latActive, self.CCP.ANGLE_LIMITS, self.VM) \
+        if self.PLA_status == 13 else self.CSsteeringAngleDegLast
 
       self.apply_angle_last = apply_angle
       self.CSsteeringAngleDegLast = CS.out.steeringAngleDeg
