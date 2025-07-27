@@ -172,7 +172,7 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > self.CCP.STEER_DRIVER_ALLOWANCE
     ret.yawRate = pt_cp.vl["Bremse_5"]["BR5_Giergeschw"] * (1, -1)[int(pt_cp.vl["Bremse_5"]["BR5_Vorzeichen"])] * CV.DEG_TO_RAD
     hca_status = self.CCP.hca_status_values.get(pt_cp.vl["Lenkhilfe_2"]["LH2_Sta_HCA"])
-    ret.steerFaultTemporary = False # True if pt_cp.vl["Lenkhilfe_2"]["LH2_PLA_Abbr"] == 2 else False
+    ret.steerFaultTemporary = True if pt_cp.vl["Lenkhilfe_2"]["LH2_PLA_Abbr"] == 2 else False
     # ret.steerFaultTemporary, ret.steerFaultPermanent = self.update_hca_state(hca_status)
     self.LH_3_Sign = pt_cp.vl["Lenkhilfe_3"]["LH3_BLWSign"]
 
