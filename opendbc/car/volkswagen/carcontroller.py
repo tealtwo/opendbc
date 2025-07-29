@@ -230,14 +230,24 @@ class CarController(CarControllerBase):
       can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, CANBUS.pt, CS.ldw_stock_values, (CC.latActive and CS.LH2_steeringState == 64), CS.out.steeringPressed, hud_alert, hud_control, pulse))
 
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
-      lead_distance = 0
-      if hud_control.leadVisible and self.frame * DT_CTRL > 1.0:  # Don't display lead until we know the scaling factor
-        lead_distance = 512 if CS.upscale_lead_car_signal else 8
+      lead_time_gap = 8
+      if hasattr(CC_SP, 'leadOne') and CC_SP.leadOne.status:
+        lead_distance_mps = CC_SP.leadOne.dRel  # Distance in meters
+        lead_v_rel = CC_SP.leadOne.vRel  # Relative velocity in m/s
+        speed = CS.out.vEgoRaw
+        lead_speed = speed + lead_v_rel
+        if speed > 1.0 and lead_speed > 0.1:  # Avoid division by zero (only calculate above 1kph) and check if lead vehicle is moving
+          time_gap = lead_distance_mps / speed
+        else:  # Lead vehicle is stopped or very slow
+          time_gap = lead_distance_mps / speed
+        lead_time_gap = int(np.clip((time_gap - 0.5) / 3.0 * 14 + 1, 1, 15))
+
+      # if hud_control.leadVisible and self.frame * DT_CTRL > 1.0:  # Don't display lead until we know the scaling factor
+      #  lead_distance = 512 if CS.upscale_lead_car_signal else 8
       acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive, CC.cruiseControl.override)
       # follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
       set_speed = hud_control.setSpeed * CV.MS_TO_KPH
-      can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, set_speed,
-                                                       lead_distance, hud_control.leadDistanceBars))
+      can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, set_speed, lead_time_gap, hud_control.leadDistanceBars))
 
     # **** Stock ACC Button Controls **************************************** #
 
