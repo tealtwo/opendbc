@@ -197,31 +197,31 @@ static bool volkswagen_pq_tx_hook(const CANPacket_t *to_send) {
   return tx;
 }
 
-static int volkswagen_pq_fwd_hook(int bus_num, int addr) {
-  int bus_fwd = -1;
+static bool volkswagen_pq_fwd_hook(int bus_num, int addr) {
+  bool bus_fwd = true;  // Default to blocking
 
   switch (bus_num) {
     case 0:
       if (!volkswagen_longitudinal && ((addr == MSG_MOTOR_2) || (addr == MSG_BREMSE_8) || (addr == MSG_BREMSE_11) || (addr == MSG_EPB_1) || (addr == MSG_GRA_NEU))) {
         // openpilot takes over signals OEM-radar listens to for OEM+ SNG(ECD on CC H46 ABS)
-        bus_fwd = -1;
+        bus_fwd = true;
       } else {
-        // Forward all traffic from the Extended CAN onward
-        bus_fwd = 2;
+        // Forward all traffic from the Extended CAN onward (to bus 2)
+        bus_fwd = false;
       }
       break;
     case 2:
       if ((addr == MSG_HCA_1) || (addr == MSG_LDW_1) || (addr == MSG_ACC_SYSTEM) || (addr == MSG_ACC_GRA_ANZEIGE)) {
         // openpilot takes over LKAS steering control, HUD msg, and ACC signals
-        bus_fwd = -1;
+        bus_fwd = true;
       } else {
-        // Forward all remaining traffic from Extended CAN devices to J533 gateway
-        bus_fwd = 0;
+        // Forward all remaining traffic from Extended CAN devices to J533 gateway (to bus 0)
+        bus_fwd = false;
       }
       break;
     default:
-      // No other buses should be in use; fallback to do-not-forward
-      bus_fwd = -1;
+      // No other buses should be in use; fallback to block
+      bus_fwd = true;
       break;
   }
 
