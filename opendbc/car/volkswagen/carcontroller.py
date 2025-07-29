@@ -312,28 +312,9 @@ class CarController(CarControllerBase):
 
     # **** Stock ACC Button Controls **************************************** #
 
-    if self.CP.openpilotLongitudinalControl:
-      if CS.gra_stock_values["COUNTER"] != self.gra_acc_counter_last:
-        can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, self.ext_bus, CS.gra_stock_values, self.CP.openpilotLongitudinalControl, cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
-      if not (CC.cruiseControl.cancel or CC.cruiseControl.resume) and CS.out.cruiseState.enabled:
-        # if not self.CP.pcmCruiseSpeed:
-          self.cruise_button = self.get_cruise_buttons(CS, CC.vCruise)
-          if self.cruise_button is not None:
-            if self.acc_type == -1:
-              if self.button_count >= 2 and self.v_set_dis_prev != self.v_set_dis:
-                self.acc_type = 1 if abs(self.v_set_dis - self.v_set_dis_prev) >= 10 and self.last_cruise_button in (1, 2) else 0 if abs(self.v_set_dis - self.v_set_dis_prev) < 10 and self.last_cruise_button not in (1, 2) else 1
-              if self.send_count >= 10 and self.v_set_dis_prev == self.v_set_dis:
-                self.cruise_button = 3 if self.cruise_button == 1 else 4
-            if self.acc_type == 0:
-              self.cruise_button = 1 if self.cruise_button == 1 else 2  # Acceleration, Deceleration
-            elif self.acc_type == 1:
-              self.cruise_button = 3 if self.cruise_button == 1 else 4  # Resume, Set
-            if self.frame % self.CCP.BTN_STEP == 0:
-              can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, CS.gra_stock_values, self.CP.openpilotLongitudinalControl, frame=(self.frame // self.CCP.BTN_STEP), buttons=self.cruise_button, custom_stock_long=True))
-              self.send_count += 1
-          else:
-            self.send_count = 0
-          self.last_cruise_button = self.cruise_button
+    gra_send_ready = self.CP.pcmCruise and CS.gra_stock_values["COUNTER"] != self.gra_acc_counter_last
+    if gra_send_ready and (CC.cruiseControl.cancel or CC.cruiseControl.resume):
+      can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, self.ext_bus, CS.gra_stock_values, cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
 
     if VolkswagenFlags.PQ and self.ext_bus == CANBUS.cam and self.CP.openpilotLongitudinalControl:
       if self.motor2_frame % 2 or CS.motor2_stock != getattr(self, 'motor2_last', CS.motor2_stock):
