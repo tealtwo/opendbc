@@ -46,11 +46,12 @@ class CarState(CarStateBase):
 
   def update(self, can_parsers) -> structs.CarState:
     pt_cp = can_parsers[Bus.pt]
+    br_cp = can_parsers[Bus.br]
     cam_cp = can_parsers[Bus.cam]
     ext_cp = pt_cp if self.CP.networkLocation == NetworkLocation.fwdCamera else cam_cp
 
     if self.CP.flags & VolkswagenFlags.PQ:
-      return self.update_pq(pt_cp, cam_cp, ext_cp)
+      return self.update_pq(pt_cp, br_cp, cam_cp, ext_cp)
 
     ret = structs.CarState()
 
@@ -148,7 +149,7 @@ class CarState(CarStateBase):
     ret_sp = structs.CarStateSP()
     return ret, ret_sp
 
-  def update_pq(self, pt_cp, cam_cp, ext_cp) -> structs.CarState:
+  def update_pq(self, pt_cp, br_cp, cam_cp, ext_cp) -> structs.CarState:
     ret = structs.CarState()
     # Update vehicle speed and acceleration from ABS wheel speeds.
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -351,6 +352,10 @@ class CarState(CarStateBase):
       if CP.enableBsm:
         pt_messages += PqExtraSignals.bsm_radar_messages
 
+    br_messages = [
+      ("Motor_Bremse", 50) # From J623 Engine Control Module
+    ]
+
     cam_messages = []
     if CP.networkLocation == NetworkLocation.fwdCamera:
       cam_messages += [
@@ -366,6 +371,7 @@ class CarState(CarStateBase):
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, CANBUS.pt),
+      Bus.br: CANParser(DBC[CP.carFingerprint][Bus.pt], br_messages, CANBUS.br),
       Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, CANBUS.cam),
     }
 
