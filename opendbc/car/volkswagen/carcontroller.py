@@ -277,8 +277,8 @@ class CarController(CarControllerBase):
           self.EPB_enable_history = [False] * len(self.EPB_enable_history)  # disable filter when ECM enters cruise state
       if CS.bremse8_stock["COUNTER"] != self.bremse8_counter_last:
         can_sends.append(self.CCS.filter_bremse8(self.packer_pt, CANBUS.cam, CS.bremse8_stock, self.EPB_enable_history[0]))
-      # if CS.bremse11_stock["COUNTER"] != self.bremse11_counter_last:
-      #  can_sends.append(self.CCS.filter_bremse11(self.packer_pt, CANBUS.cam, CS.bremse11_stock, self.stopped))
+      if CS.bremse11_stock["COUNTER"] != self.bremse11_counter_last:
+        can_sends.append(self.CCS.filter_bremse11(self.packer_pt, CANBUS.cam, CS.bremse11_stock, self.stopped))
       if CS.gra_stock_values["COUNTER"] != self.gra_acc_counter_last:
         can_sends.append(self.CCS.filter_GRA_Neu(self.packer_pt, CANBUS.cam, CS.gra_stock_values, resume=self.stopped and (self.frame % 100 < 50)))
 
@@ -286,7 +286,7 @@ class CarController(CarControllerBase):
       self.acc_sys_counter_last = CS.acc_sys_stock["COUNTER"]
       self.acc_anz_counter_last = CS.acc_anz_stock["COUNTER"]
       self.bremse8_counter_last = CS.bremse8_stock["COUNTER"]
-      # self.bremse11_counter_last = CS.bremse11_stock["COUNTER"]
+      self.bremse11_counter_last = CS.bremse11_stock["COUNTER"]
 
     # **** HUD Controls ***************************************************** #
 

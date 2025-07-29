@@ -163,12 +163,12 @@ def filter_bremse8(packer, bus, bremse8_car, active):
     })
   return packer.make_can_msg("Bremse_8", bus, values)
 
-# def filter_bremse11(packer, bus, bremse11_car, stopped):
-#  values = bremse11_car
-#  values.update({
-#    "B11_HydHalten": 1 if stopped else 0,
-#  })
-#  return packer.make_can_msg("Bremse_11", bus, values)
+def filter_bremse11(packer, bus, bremse11_car, stopped):
+  values = bremse11_car
+  values.update({
+    "B11_HydHalten": 1 if stopped else 0,
+  })
+  return packer.make_can_msg("Bremse_11", bus, values)
 
 def filter_epb1(packer, bus, stopped):
   values = {
