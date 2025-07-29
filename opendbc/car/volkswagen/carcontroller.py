@@ -314,7 +314,7 @@ class CarController(CarControllerBase):
 
     gra_send_ready = self.CP.pcmCruise and CS.gra_stock_values["COUNTER"] != self.gra_acc_counter_last
     if gra_send_ready and (CC.cruiseControl.cancel or CC.cruiseControl.resume):
-      can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, self.ext_bus, CS.gra_stock_values, cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
+      can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, self.ext_bus, CS.gra_stock_values, self.CP.openpilotLongitudinalControl, cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
 
     if VolkswagenFlags.PQ and self.ext_bus == CANBUS.cam and self.CP.openpilotLongitudinalControl:
       if self.motor2_frame % 2 or CS.motor2_stock != getattr(self, 'motor2_last', CS.motor2_stock):
