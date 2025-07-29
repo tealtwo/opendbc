@@ -175,7 +175,7 @@ static bool volkswagen_pq_tx_hook(const CANPacket_t *to_send) {
 
   // Safety check for acceleration commands
   // To avoid floating point math, scale upward and compare to pre-scaled safety m/s2 boundaries
-  if (addr == MSG_ACC_SYSTEM) {
+  if ((addr == MSG_ACC_SYSTEM) && volkswagen_longitudinal) {
     // Signal: ACC_System.ACS_Sollbeschl (acceleration in m/s2, scale 0.005, offset -7.22)
     int desired_accel = ((((GET_BYTE(to_send, 4) & 0x7U) << 8) | GET_BYTE(to_send, 3)) * 5U) - 7220U;
 
