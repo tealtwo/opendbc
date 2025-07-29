@@ -316,7 +316,7 @@ class CarController(CarControllerBase):
       if CS.gra_stock_values["COUNTER"] != self.gra_acc_counter_last:
         can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, self.ext_bus, CS.gra_stock_values, self.CP.openpilotLongitudinalControl, cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
       if not (CC.cruiseControl.cancel or CC.cruiseControl.resume) and CS.out.cruiseState.enabled:
-        if not self.CP.pcmCruiseSpeed:
+        # if not self.CP.pcmCruiseSpeed:
           self.cruise_button = self.get_cruise_buttons(CS, CC.vCruise)
           if self.cruise_button is not None:
             if self.acc_type == -1:
