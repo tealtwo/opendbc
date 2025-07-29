@@ -40,7 +40,7 @@ def create_lka_hud_control(packer, bus, ldw_stock_values, lat_active, steering_p
   return packer.make_can_msg("LDW_Status", bus, values)
 
 
-def create_acc_buttons_control(packer, bus, gra_stock_values, longitudinalControl, frame=0, buttons=0, cancel=False, resume=False, custom_stock_long=False):
+def create_acc_buttons_control(packer, bus, gra_stock_values, longitudinalControl, cancel=False, resume=False):
   values = {s: gra_stock_values[s] for s in [
     "GRA_Hauptschalt",      # ACC button, on/off
     "GRA_Typ_Hauptschalt",  # ACC button, momentary vs latching
