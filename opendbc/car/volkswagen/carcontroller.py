@@ -51,6 +51,45 @@ def get_safety_model():
   from opendbc.car.volkswagen.interface import CarInterface
   return CarInterface.get_non_essential_params("VOLKSWAGEN_PASSAT_NMS")
 
+def ECD_Handler(CS, self, ACS_Sta_ADR, ACS_Sollbeschl, vEgo, stopping):
+  if (ACS_Sta_ADR == 1 and ACS_Sollbeschl < 0) and \
+    ((CS.MOB_Standby and vEgo <= (18 * CV.KPH_TO_MS)) or self.EPB_enable):
+      if not self.EPB_enable:  # First frame of EPB entry
+          self.EPB_counter = 0
+          self.EPB_brake = 0
+          self.EPB_enable = 1
+          self.EPB_enable_history = [True] * len(self.EPB_enable_history)
+          self.EPB_brake_last = ACS_Sollbeschl
+      else:
+          self.EPB_brake = limit_jerk(-4, self.EPB_brake_last, 0.7, 0.02) if stopping else ACS_Sollbeschl
+          self.EPB_brake_last = self.EPB_brake
+      self.EPB_counter += 1
+  else:
+      if self.EPB_enable and self.EPB_counter < 10:  # Keep EPB_enable active for 10 frames
+          self.EPB_counter += 1
+      else:
+          self.EPB_brake = 0
+          self.EPB_enable = 0
+
+  if CS.out.gasPressed or CS.out.brakePressed or CS.gra_stock_values["GRA_Abbrechen"]:
+    if self.EPB_enable:
+      self.ACC_anz_blind = 1
+    self.EPB_brake = 0
+    self.EPB_enable = 0
+    self.EPB_enable_history = [False] * len(self.EPB_enable_history)
+
+  if self.ACC_anz_blind and self.ACC_anz_blind_counter < 150:
+    self.ACC_anz_blind_counter += 1
+  else:
+    self.ACC_anz_blind = 0
+    self.ACC_anz_blind_counter = 0
+
+  # Update EPB historical states and calculate EPB_active
+  self.EPB_active = int((self.EPB_enable_history[(len(self.EPB_enable_history) - 2)] and not self.EPB_enable) or self.EPB_enable)
+  self.EPB_enable_history = self.EPB_enable_history[1:] + [self.EPB_enable]
+
+  return self.EPB_enable, self.EPB_brake, self.EPB_active
+
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
@@ -79,10 +118,19 @@ class CarController(CarControllerBase):
     self.last_button_frame = 0
     self.accel_last = 0
     self.motor2_frame = 0
+    self.gra_acc_counter_last = None
+    self.bremse8_counter_last = None
+    self.bremse11_counter_last = None
+    self.acc_sys_counter_last = None
+    self.acc_anz_counter_last = None
+    self.ACC_anz_blind = 0
+    self.ACC_anz_blind_counter = 0
     self.EPB_brake = 0
     self.EPB_brake_last = 0
     self.EPB_enable = 0
     self.EPB_counter = 0
+    self.EPB_enable_history = [False] * 25 # 0.5s history
+    self.EPB_active = 0
     self.PLA_status = 0
     self.PLA_entryCounter = 0
     self.PLA_driverExit = False
@@ -211,11 +259,34 @@ class CarController(CarControllerBase):
           can_sends.append(self.CCS.create_epb_control(self.packer_pt, CANBUS.br, self.EPB_brake, self.EPB_enable))
         can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, accel, acc_control, stopping, starting, CS.esp_hold_confirmation, self.long_deviation, self.long_jerklimit))
 
-      #if self.aeb_available:
-      #  if self.frame % self.CCP.AEB_CONTROL_STEP == 0:
-      #    can_sends.append(self.CCS.create_aeb_control(self.packer_pt, False, False, 0.0))
-      #  if self.frame % self.CCP.AEB_HUD_STEP == 0:
-      #    can_sends.append(self.CCS.create_aeb_hud(self.packer_pt, False, False))
+    # Below here is for OEM+ modification of OEM ACC which allows Follow-to-Stop and SnG using the stock radar via ECD #
+    if VolkswagenFlags.PQ and not self.CP.openpilotLongitudinalControl:
+      self.stopping = CS.acc_sys_stock["ACS_Anhaltewunsch"] and (CS.out.vEgoRaw <= 2 or self.stopping)
+      self.stopped = self.EPB_enable and (CS.out.vEgoRaw == 0 or (self.stopping and self.stopped))
+
+      if CS.acc_sys_stock["COUNTER"] != self.acc_sys_counter_last:
+        ECD_Handler(CS, self, CS.acc_sys_stock["ACS_Sta_ADR"], CS.acc_sys_stock["ACS_Sollbeschl"], CS.out.vEgoRaw, self.stopping)
+        can_sends.append(self.CCS.filter_ACC_System(self.packer_pt, CANBUS.pt, CS.acc_sys_stock, self.EPB_active))
+        can_sends.append(self.CCS.create_epb_control(self.packer_pt, CANBUS.br, self.EPB_brake, self.EPB_enable))
+        can_sends.append(self.CCS.filter_epb1(self.packer_pt, CANBUS.cam, self.stopped))  # in custom module, filter the gateway fwd EPB msg
+      if CS.acc_anz_stock["COUNTER"] != self.acc_anz_counter_last:
+        can_sends.append(self.CCS.filter_ACC_Anzeige(self.packer_pt, CANBUS.pt, CS.acc_anz_stock, self.ACC_anz_blind))
+      if self.frame % 2 or CS.motor2_stock != getattr(self, 'motor2_last', CS.motor2_stock):  # 50hz / 20ms
+        can_sends.append(self.CCS.filter_motor2(self.packer_pt, CANBUS.cam, CS.motor2_stock, self.EPB_enable_history[0]))
+        if CS.motor2_stock["GRA_Status"] in (1, 2) and self.motor2_last["GRA_Status"] == 0:
+          self.EPB_enable_history = [False] * len(self.EPB_enable_history)  # disable filter when ECM enters cruise state
+      if CS.bremse8_stock["COUNTER"] != self.bremse8_counter_last:
+        can_sends.append(self.CCS.filter_bremse8(self.packer_pt, CANBUS.cam, CS.bremse8_stock, self.EPB_enable_history[0]))
+      # if CS.bremse11_stock["COUNTER"] != self.bremse11_counter_last:
+      #  can_sends.append(self.CCS.filter_bremse11(self.packer_pt, CANBUS.cam, CS.bremse11_stock, self.stopped))
+      if CS.gra_stock_values["COUNTER"] != self.gra_acc_counter_last:
+        can_sends.append(self.CCS.filter_GRA_Neu(self.packer_pt, CANBUS.cam, CS.gra_stock_values, resume=self.stopped and (self.frame % 100 < 50)))
+
+      self.motor2_last = CS.motor2_stock
+      self.acc_sys_counter_last = CS.acc_sys_stock["COUNTER"]
+      self.acc_anz_counter_last = CS.acc_anz_stock["COUNTER"]
+      self.bremse8_counter_last = CS.bremse8_stock["COUNTER"]
+      # self.bremse11_counter_last = CS.bremse11_stock["COUNTER"]
 
     # **** HUD Controls ***************************************************** #
 
@@ -241,10 +312,28 @@ class CarController(CarControllerBase):
 
     # **** Stock ACC Button Controls **************************************** #
 
-    gra_send_ready = self.CP.pcmCruise and CS.gra_stock_values["COUNTER"] != self.gra_acc_counter_last
-    if gra_send_ready and (CC.cruiseControl.cancel or CC.cruiseControl.resume):
-      can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, self.ext_bus, CS.gra_stock_values,
-                                                           cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
+    if self.CP.openpilotLongitudinalControl:
+      if CS.gra_stock_values["COUNTER"] != self.gra_acc_counter_last:
+        can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, self.ext_bus, CS.gra_stock_values, self.CP.openpilotLongitudinalControl, cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
+      if not (CC.cruiseControl.cancel or CC.cruiseControl.resume) and CS.out.cruiseState.enabled:
+        if not self.CP.pcmCruiseSpeed:
+          self.cruise_button = self.get_cruise_buttons(CS, CC.vCruise)
+          if self.cruise_button is not None:
+            if self.acc_type == -1:
+              if self.button_count >= 2 and self.v_set_dis_prev != self.v_set_dis:
+                self.acc_type = 1 if abs(self.v_set_dis - self.v_set_dis_prev) >= 10 and self.last_cruise_button in (1, 2) else 0 if abs(self.v_set_dis - self.v_set_dis_prev) < 10 and self.last_cruise_button not in (1, 2) else 1
+              if self.send_count >= 10 and self.v_set_dis_prev == self.v_set_dis:
+                self.cruise_button = 3 if self.cruise_button == 1 else 4
+            if self.acc_type == 0:
+              self.cruise_button = 1 if self.cruise_button == 1 else 2  # Acceleration, Deceleration
+            elif self.acc_type == 1:
+              self.cruise_button = 3 if self.cruise_button == 1 else 4  # Resume, Set
+            if self.frame % self.CCP.BTN_STEP == 0:
+              can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, CS.gra_stock_values, self.CP.openpilotLongitudinalControl, frame=(self.frame // self.CCP.BTN_STEP), buttons=self.cruise_button, custom_stock_long=True))
+              self.send_count += 1
+          else:
+            self.send_count = 0
+          self.last_cruise_button = self.cruise_button
 
     if VolkswagenFlags.PQ and self.ext_bus == CANBUS.cam and self.CP.openpilotLongitudinalControl:
       if self.motor2_frame % 2 or CS.motor2_stock != getattr(self, 'motor2_last', CS.motor2_stock):

@@ -144,3 +144,66 @@ def create_motor2_control(packer, bus, motor2_stock):
     "GRA_Status": 0,
   })
   return packer.make_can_msg("Motor_2", bus, values)
+
+def filter_motor2(packer, bus, motor2_car, active):
+  values = motor2_car
+  if active:
+    values.update({
+      "GRA_Status": 1,
+    })
+  return packer.make_can_msg("Motor_2", bus, values)
+
+def filter_bremse8(packer, bus, bremse8_car, active):
+  values = bremse8_car
+  if active:
+    values.update({
+      "BR8_Sta_ACC_Anf": 1,
+      "BR8_Verz_EPB_akt": 0,
+      "BR8_StaBrSyst": 1,
+    })
+  return packer.make_can_msg("Bremse_8", bus, values)
+
+# def filter_bremse11(packer, bus, bremse11_car, stopped):
+#  values = bremse11_car
+#  values.update({
+#    "B11_HydHalten": 1 if stopped else 0,
+#  })
+#  return packer.make_can_msg("Bremse_11", bus, values)
+
+def filter_epb1(packer, bus, stopped):
+  values = {
+    "EP1_Verzoegerung": 0,
+    "EP1_Freigabe_Ver": 0,
+    "EP1_Bremslicht": 0,
+    "EP1_HydrHalten": 1 if stopped else 0,
+    "EP1_AutoHold_aktiv": 1,
+  }
+  return packer.make_can_msg("EPB_1", bus, values)
+
+def filter_ACC_System(packer, bus, acc_car, epb_freigabe):  # bus 2 --> 0
+  values = acc_car
+  if epb_freigabe:
+    values.update({
+      "ACS_Sta_ADR": 0,
+      "ACS_StSt_Info": 0,
+      "ACS_FreigSollB": 0,
+      "ACS_Sollbeschl": 3.01,
+    })
+  return packer.make_can_msg("ACC_System", bus, values)
+
+def filter_ACC_Anzeige(packer, bus, anz_car, blind):
+  values = anz_car
+  if blind:
+    values.update({
+      "ACA_Fahrerhinw": 0,
+      "ACA_Akustik2": 0,
+    })
+  return packer.make_can_msg("ACC_GRA_Anzeige", bus, values)
+
+def filter_GRA_Neu(packer, bus, gra_car, resume):
+  values = gra_car
+  if resume:
+    values.update({
+      "GRA_Recall": 1,
+    })
+  return packer.make_can_msg("GRA_Neu", bus, values)

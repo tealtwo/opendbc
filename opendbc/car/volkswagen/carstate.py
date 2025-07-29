@@ -241,8 +241,13 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = 0
 
     self.motor2_stock = pt_cp.vl["Motor_2"]
+    self.acc_sys_stock = ext_cp.vl["ACC_System"]
+    self.acc_anz_stock = ext_cp.vl["ACC_GRA_Anzeige"]
+    self.bremse8_stock = pt_cp.vl["Bremse_8"]
+    self.bremse11_stock = pt_cp.vl["Bremse_11"]
     self.LH2_steeringState = pt_cp.vl["Lenkhilfe_2"]["LH2_aktLenkeingriff"]
     self.LH2_Abbr = pt_cp.vl["Lenkhilfe_2"]["LH2_PLA_Abbr"]
+    self.MOB_Standby = br_cp.vl["Motor_Bremse"]["MOB_Standby]"]
 
     # Update button states for turn signals and ACC controls, capture all ACC button state/config for passthrough
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(300, pt_cp.vl["Gate_Komf_1"]["GK1_Blinker_li"],
@@ -333,6 +338,7 @@ class CarState(CarStateBase):
       ("Airbag_1", 50),     # From J234 Airbag control module
       ("Bremse_5", 50),     # From J104 ABS/ESP controller
       ("Bremse_8", 50),     # From J104 ABS/ESP controller
+      ("Bremse_11", 50),    # From J104 ABS/ESP controller
       ("GRA_Neu", 50),      # From J??? steering wheel control buttons
       ("Kombi_1", 50),      # From J285 Instrument cluster
       ("Motor_2", 50),      # From J623 Engine control module
