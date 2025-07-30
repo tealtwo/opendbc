@@ -54,7 +54,7 @@ def get_safety_model():
 def ECD_Handler(CS, self, ACS_Sta_ADR, ACS_Sollbeschl, vEgo, stopping):
   if (ACS_Sta_ADR == 1 and ACS_Sollbeschl < 0) and \
     ((CS.MOB_Standby and vEgo <= (18 * CV.KPH_TO_MS)) or self.EPB_enable):
-      if not self.EPB_enable:  # First frame of EPB entry
+      if not self.EPB_enable:  # First frame of EPB entrye
           self.EPB_counter = 0
           self.EPB_brake = 0
           self.EPB_enable = 1
@@ -217,7 +217,7 @@ class CarController(CarControllerBase):
     # **** Acceleration Controls ******************************************** #
 
     if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
-        acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive, CC.cruiseControl.override)
+        acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CC.longActive, CC.cruiseControl.override)
         accel = float(np.clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.longActive else 0)
         stopping = actuators.longControlState == LongCtrlState.stopping
         starting = actuators.longControlState == LongCtrlState.pid and (CS.esp_hold_confirmation or CS.out.vEgo < self.CP.vEgoStopping)
@@ -225,12 +225,12 @@ class CarController(CarControllerBase):
         self.long_jerklimit = (0.01 * (clip(abs(accel), 0.7, 2))) + (1 - 0.01) * self.long_jerklimit
         self.long_deviation = clip(CS.out.vEgo / 40, 0, 0.13) * interp(abs(accel - self.accel_diff), [0, .2, 1.], [0.0, 0.0, 0.0])
         # FIXME: Temporary Solution While I figure out cruiseState.Override to set ADR to Passiv if Accelerator is pressed
-        accelerator_override = CS.out.gasPressed
-        if accelerator_override:
-          acc_control = 0
-        else:
-          if CC.longActive:
-            acc_control = 1
+        # accelerator_override = CS.out.gasPressed // Removed to test proper cruiseOverride logic below and in pqcan, will be removed in next commit
+        # if accelerator_override:
+        #   acc_control = 0
+        # else:
+        #   if CC.longActive:
+        #     acc_control = 1
         if self.CCS == pqcan and CC.longActive and actuators.accel <= 0 and CS.out.vEgoRaw <= 5:
           if not self.EPB_enable:  # first frame of EPB entry
             self.EPB_counter = 0
@@ -303,12 +303,11 @@ class CarController(CarControllerBase):
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       lead_distance = 0
       if hud_control.leadVisible and self.frame * DT_CTRL > 1.0:  # Don't display lead until we know the scaling factor
-        lead_distance = 512 if CS.upscale_lead_car_signal else 8
-      acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive, CC.cruiseControl.override)
+        lead_distance = 512 if CS.upscale_lead_car_signal else 7
+      acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive, CS.out.gasPressed)
       # follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
       set_speed = hud_control.setSpeed * CV.MS_TO_KPH
-      can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, set_speed,
-                                                       lead_distance, hud_control.leadDistanceBars))
+      can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, set_speed, lead_distance, hud_control.leadDistanceBars))
 
     # **** Stock ACC Button Controls **************************************** #
 

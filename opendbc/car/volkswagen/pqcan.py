@@ -48,24 +48,24 @@ def create_acc_buttons_control(packer, bus, gra_stock_values, longitudinalContro
     "GRA_Sender",           # ACC button, CAN message originator
   ]}
 
-  accel_cruise = 1 if buttons == 1 else 0
-  decel_cruise = 1 if buttons == 2 else 0
-  resume_cruise = 1 if buttons == 3 else 0
-  set_cruise = 1 if buttons == 4 else 0
+  # accel_cruise = 1 if buttons == 1 else 0
+  # decel_cruise = 1 if buttons == 2 else 0
+  # resume_cruise = 1 if buttons == 3 else 0
+  # set_cruise = 1 if buttons == 4 else 0
 
   values.update({
-    "COUNTER": (frame + 1) % 0x10 if custom_stock_long else (gra_stock_values["COUNTER"] + 1) % 16,
-    "GRA_Abbrechen": cancel if not longitudinalControl else 0,
-    "GRA_Recall": resume or resume_cruise if not longitudinalControl else 0,
-    "GRA_Neu_Setzen": set_cruise if not longitudinalControl else 0,
-    "GRA_Down_kurz": decel_cruise if not longitudinalControl else 0,
-    "GRA_Up_kurz": accel_cruise if not longitudinalControl else 0,
+    "COUNTER": (gra_stock_values["COUNTER"] + 1) % 16,
+    "GRA_Abbrechen": cancel, # if not longitudinalControl else 0,
+    "GRA_Recall": resume, # or resume_cruise if not longitudinalControl else 0,
+    # "GRA_Neu_Setzen": set_cruise if not longitudinalControl else 0,
+    # "GRA_Down_kurz": decel_cruise if not longitudinalControl else 0,
+    # "GRA_Up_kurz": accel_cruise if not longitudinalControl else 0,
   })
 
   return packer.make_can_msg("GRA_Neu", bus, values)
 
 
-def acc_control_value(main_switch_on, acc_faulted, long_active, cruiseOverride):
+def acc_control_value(main_switch_on, long_active, cruiseOverride):
   if long_active or cruiseOverride:
     acc_control = 1
   elif main_switch_on:
@@ -76,11 +76,12 @@ def acc_control_value(main_switch_on, acc_faulted, long_active, cruiseOverride):
   return acc_control
 
 
-def acc_hud_status_value(main_switch_on, acc_faulted, acc_control, cruiseOverride):
+def acc_hud_status_value(main_switch_on, acc_faulted, acc_control, gasPressed):
+  # gasPressed = cruiseOverride
   if acc_faulted:
     hud_status = 6
   elif acc_control == 1:
-    hud_status = 4 if cruiseOverride else 3
+    hud_status = 4 if gasPressed else 3
   elif main_switch_on:
     hud_status = 2
   else:
