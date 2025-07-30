@@ -57,7 +57,7 @@ def create_acc_buttons_control(packer, bus, gra_stock_values, longitudinalContro
   return packer.make_can_msg("GRA_Neu", bus, values)
 
 
-def acc_control_value(main_switch_on, long_active):
+def acc_control_value(main_switch_on, long_active, cruiseOverride):
   if long_active:
     acc_control = 1
   elif main_switch_on:
