@@ -48,25 +48,17 @@ def create_acc_buttons_control(packer, bus, gra_stock_values, longitudinalContro
     "GRA_Sender",           # ACC button, CAN message originator
   ]}
 
-  # accel_cruise = 1 if buttons == 1 else 0
-  # decel_cruise = 1 if buttons == 2 else 0
-  # resume_cruise = 1 if buttons == 3 else 0
-  # set_cruise = 1 if buttons == 4 else 0
-
   values.update({
     "COUNTER": (gra_stock_values["COUNTER"] + 1) % 16,
-    "GRA_Abbrechen": cancel, # if not longitudinalControl else 0,
-    "GRA_Recall": resume, # or resume_cruise if not longitudinalControl else 0,
-    # "GRA_Neu_Setzen": set_cruise if not longitudinalControl else 0,
-    # "GRA_Down_kurz": decel_cruise if not longitudinalControl else 0,
-    # "GRA_Up_kurz": accel_cruise if not longitudinalControl else 0,
+    "GRA_Abbrechen": cancel,
+    "GRA_Recall": resume,
   })
 
   return packer.make_can_msg("GRA_Neu", bus, values)
 
 
-def acc_control_value(main_switch_on, long_active, cruiseOverride):
-  if long_active or cruiseOverride:
+def acc_control_value(main_switch_on, long_active):
+  if long_active:
     acc_control = 1
   elif main_switch_on:
     acc_control = 2
