@@ -68,20 +68,20 @@ def acc_control_value(main_switch_on, long_active, cruiseOverride):
   return acc_control
 
 
-def acc_hud_status_value(main_switch_on, acc_faulted, acc_control, gasPressed, longActive):
+# def acc_hud_status_value(main_switch_on, acc_faulted, acc_control, gasPressed, longActive):
   # gasPressed = cruiseOverride
-  if acc_faulted:
-    hud_status = 6
-  elif acc_control == 1:
-    hud_status = 3
-  elif gasPressed and longActive:
-    hud_status = 4
-  elif main_switch_on:
-    hud_status = 2
-  else:
-    hud_status = 0
+#  if acc_faulted:
+#    hud_status = 6
+#  elif acc_control == 1:
+#    hud_status = 3
+#  elif gasPressed and longActive:
+#    hud_status = 4
+#  elif main_switch_on:
+#    hud_status = 2
+#  else:
+#    hud_status = 0
 
-  return hud_status
+#  return hud_status
 
 
 def create_acc_accel_control(packer, bus, acc_type, accel, acc_control, stopping, starting, esp_hold, comfortBand, jerkLimit):
