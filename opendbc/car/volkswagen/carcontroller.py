@@ -308,9 +308,9 @@ class CarController(CarControllerBase):
       # follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
       set_speed = hud_control.setSpeed * CV.MS_TO_KPH
       accelerator_override = CS.out.gasPressed
-      if accelerator_override or CC.cruiseControl.override and CC.longActive:
+      if CC.cruiseControl.override and CC.longActive:
         acc_hud_status = 4
-      elif not accelerator_override and CC.longActive or CC.longActive:
+      elif not CC.cruiseControl.override and CC.longActive:
         acc_hud_status = 3
       elif CS.out.accFaulted:
         acc_hud_status = 6
