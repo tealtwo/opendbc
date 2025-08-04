@@ -158,7 +158,7 @@ class CarController(CarControllerBase):
     if self.frame % self.CCP.STEER_STEP == 0 and hcaLateralControl:
       if CC.latActive:
         new_torque = int(round(actuators.torque * self.CCP.STEER_MAX))
-        apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.CCP)
+        apply_torque = new_torque # apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.CCP)
         self.hca_frame_timer_running += self.CCP.STEER_STEP
         if self.apply_torque_last == apply_torque:
           self.hca_frame_same_torque += self.CCP.STEER_STEP
