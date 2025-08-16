@@ -69,7 +69,7 @@ def acc_control_value(main_switch_on, long_active, cruiseOverride):
 
 
 def acc_hud_status_value(main_switch_on, acc_faulted, gasPressed, longActive, longOverride):
-  if gasPressed or longOverride and longActive:
+  if gasPressed and longOverride and longActive:
     hud_status = 4
   elif not longOverride and longActive:
     hud_status = 3
