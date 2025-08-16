@@ -224,13 +224,6 @@ class CarController(CarControllerBase):
         self.accel_diff = (0.0019 * (accel - self.accel_last)) + (1 - 0.0019) * self.accel_diff
         self.long_jerklimit = (0.01 * (clip(abs(accel), 0.7, 2))) + (1 - 0.01) * self.long_jerklimit
         self.long_deviation = clip(CS.out.vEgo / 40, 0, 0.13) * interp(abs(accel - self.accel_diff), [0, .2, 1.], [0.0, 0.0, 0.0])
-        # FIXME: Temporary Solution While I figure out cruiseState.Override to set ADR to Passiv if Accelerator is pressed
-        # accelerator_override = CS.out.gasPressed // Removed to test proper cruiseOverride logic below and in pqcan, will be removed in next commit
-        # if accelerator_override:
-        #   acc_control = 0
-        # else:
-        #   if CC.longActive:
-        #     acc_control = 1
         if self.CCS == pqcan and CC.longActive and actuators.accel <= 0 and CS.out.vEgoRaw <= 5:
           if not self.EPB_enable:  # first frame of EPB entry
             self.EPB_counter = 0
@@ -304,20 +297,9 @@ class CarController(CarControllerBase):
       lead_distance = 0
       if hud_control.leadVisible and self.frame * DT_CTRL > 1.0:  # Don't display lead until we know the scaling factor
         lead_distance = 512 if CS.upscale_lead_car_signal else 7
-      # acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive, CS.out.gasPressed, CC.longActive)
+      acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CS.out.gasPressed, CC.longActive, CC.cruiseState.override)
       # follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
       set_speed = hud_control.setSpeed * CV.MS_TO_KPH
-      accelerator_override = CS.out.gasPressed
-      if accelerator_override or CC.cruiseControl.override and CC.longActive:
-        acc_hud_status = 4
-      elif not CC.cruiseControl.override and CC.longActive:
-        acc_hud_status = 3
-      elif CS.out.accFaulted:
-        acc_hud_status = 6
-      elif CS.out.cruiseState.available and not CC.longActive:
-        acc_hud_status = 2
-      else:
-        acc_hud_status = 0
       can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, set_speed, lead_distance, hud_control.leadDistanceBars))
 
     # **** Stock ACC Button Controls **************************************** #
