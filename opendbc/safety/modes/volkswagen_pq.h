@@ -162,18 +162,6 @@ static void volkswagen_pq_rx_hook(const CANPacket_t *to_push) {
 }
 
 static bool volkswagen_pq_tx_hook(const CANPacket_t *to_send) {
-  // Lateral Angle Limits, 400 deg total, 10deg/frame max rotation
-  const AngleSteeringLimits VWAngleLimits = {
-    .max_angle = 4000,  // 400 deg
-    .angle_deg_to_can = 10,
-    .frequency = 50U,
-  };
-  // Based off Volkswagen Passat NMS to match openpilot
-  const AngleSteeringParams VWSteeringParams = {
-    .slip_factor = -0.000580374383851451,  // calc_slip_factor(VM)
-    .steer_ratio = 15.6,
-    .wheelbase = 2.80,
-  };
   // longitudinal limits
   // acceleration in m/s2 * 1000 to avoid floating point math
   const LongitudinalLimits VOLKSWAGEN_PQ_LONG_LIMITS = {
@@ -184,38 +172,7 @@ static bool volkswagen_pq_tx_hook(const CANPacket_t *to_send) {
 
   int addr = GET_ADDR(to_send);
   bool tx = true;
-  // Safety check for HCA_1 Heading Control Assist torque or angle
-  // Signal: HCA_1.LW_OffSet (requested torque)
-  // Signal: HCA_1.LM_OffSet (requested angle)
-  // Signal: HCA_1.LM_OffSign (direction)
-  if (addr == MSG_HCA_1) {
-    int desired_torque = GET_BYTE(to_send, 2) | ((GET_BYTE(to_send, 3) & 0x7FU) << 8);
-    desired_torque = desired_torque / 32;  // DBC scale from PQ network to centi-Nm (LW_OffSet)
-    int sign = (GET_BYTE(to_send, 3) & 0x80U) >> 7;
-    if (sign == 1) {
-      desired_torque *= -1;
-    }
-  }
-    uint32_t hca_status = ((GET_BYTE(to_send, 1) >> 4) & 0xFU);
-    bool steer_req = ((hca_status == 5U) || (hca_status == 7U));
-  if (addr == MSG_HCA_1) {
-    int desired_angle = GET_BYTE(to_send, 2) | ((GET_BYTE(to_send, 3) & 0x7FU) << 8); // Raw EPS Angle Output + OP Lateral Command (LM_OffSet)
-    int angle_sign = (GET_BYTE(to_send, 3) & 0x80U) >> 7;
-    if (angle_sign == 1) {
-      desired_angle *= -1;
-    }
-  }
-    uint32_t hca_status = ((GET_BYTE(to_send, 1) >> 4) & 0xFU);
-    bool angle_control_active = ((hca_status == 13U))
-    // LW_OffSet Safety Check
-    if (steer_torque_cmd_checks(desired_torque, steer_req, VOLKSWAGEN_PQ_STEERING_LIMITS)) {
-      tx = false;
-    }
-    // LM_OffSet Safety Check
-    if (steer_angle_cmd_checks_vm(desired_angle, angle_control_active, VWAngleLimits, VWSteeringParams)) {
-     tx = false;
-    }
-  }
+
   // Safety check for acceleration commands
   // To avoid floating point math, scale upward and compare to pre-scaled safety m/s2 boundaries
   if ((addr == MSG_ACC_SYSTEM) && volkswagen_longitudinal) {
@@ -226,6 +183,7 @@ static bool volkswagen_pq_tx_hook(const CANPacket_t *to_send) {
       tx = false;
     }
   }
+
   // FORCE CANCEL: ensuring that only the cancel button press is sent when controls are off.
   // This avoids unintended engagements while still allowing resume spam
   if ((addr == MSG_GRA_NEU) && !controls_allowed) {
