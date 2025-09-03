@@ -17,7 +17,6 @@ def create_hca_steering_control(packer, bus, apply_torque, HCA_Status):
   }
   return packer.make_can_msg("HCA_1", bus, values)
 
-
 def create_lka_hud_control(packer, bus, ldw_stock_values, lat_active, steering_pressed, hud_alert, hud_control):
   values = {}
   if len(ldw_stock_values):
