@@ -91,7 +91,7 @@ def acc_hud_status_value(main_switch_on, acc_faulted, gasPressed, longActive, lo
   return hud_status
 
 
-def create_acc_accel_control(packer, bus, acc_type, acc_enabled, accel, acc_control, stopping, starting, esp_hold, comfortBand, jerkLimit):
+def create_acc_accel_control(packer, bus, acc_type, accel, acc_control, stopping, starting, esp_hold, comfortBand, jerkLimit):
   commands = []
   acc_enabled = 1 if acc_control == 1 else 0
 
