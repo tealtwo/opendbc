@@ -41,7 +41,7 @@ class CarController(CarControllerBase):
       #   * Don't send the same torque for > 6 seconds
       #   * Don't send uninterrupted steering for > 360 seconds
       # MQB racks reset the uninterrupted steering timer after a single frame
-      # of HCA disabled; this is done whenever output happens to be zero.
+      # of HCA disabled; this is done whenever output happens to be zero
 
       if CC.latActive:
         new_torque = int(round(actuators.torque * self.CCP.STEER_MAX))
