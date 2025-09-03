@@ -109,6 +109,7 @@ class CarController(CarControllerBase):
     self.accel_diff = 0
     self.long_deviation = 0
     self.long_jerklimit = 0
+    self.HCA_Status = 3
 
   def update(self, CC, CC_SP, CS, now_nanos):
     actuators = CC.actuators
@@ -117,6 +118,7 @@ class CarController(CarControllerBase):
     hcaLateralControl = self._params.get_bool("pqLatControlToggle")
     eEPBopLongToggle = self._params.get_bool("eEPBopLongToggle")
     eEPBoeLongToggle = self._params.get_bool("eEPBoeLongToggle")
+    pqhca5or7Toggle = self._params.get_bool("pqhca5or7Toggle")
 
     # **** Steering Controls ************************************************ #
     if CS.LH2_Abbr in (2, 7) and CS.out.cruiseState.available:
@@ -152,10 +154,17 @@ class CarController(CarControllerBase):
 
       if not hca_enabled:
         self.hca_frame_timer_running = 0
+      if hca_enabled:
+        if pqhca5or7Toggle:
+          self.HCA_Status = 7
+        else:
+          self.HCA_Status = 5
+      else:
+        self.HCA_Status = self.HCA_Status
 
       self.eps_timer_soft_disable_alert = self.hca_frame_timer_running > self.CCP.STEER_TIME_ALERT / DT_CTRL
       self.apply_torque_last = apply_torque
-      can_sends.append(self.CCS.create_hca_steering_control(self.packer_pt, self.CAN.pt, apply_torque, hca_enabled))
+      can_sends.append(self.CCS.create_hca_steering_control(self.packer_pt, self.CAN.pt, apply_torque, self.HCA_Status))
 
       if self.CP.flags & VolkswagenFlags.STOCK_HCA_PRESENT:
         # Pacify VW Emergency Assist driver inactivity detection by changing its view of driver steering input torque
