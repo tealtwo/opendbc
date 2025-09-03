@@ -1,7 +1,7 @@
 from opendbc.car.crc import CRC8H2F
 
 
-def create_steering_control(packer, bus, apply_torque, lkas_enabled):
+def create_hca_steering_control(packer, bus, apply_torque, lkas_enabled):
   values = {
     "HCA_01_Status_HCA": 5 if lkas_enabled else 3,
     "HCA_01_LM_Offset": abs(apply_torque),
@@ -88,7 +88,7 @@ def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
   return acc_control_value(main_switch_on, acc_faulted, long_active)
 
 
-def create_acc_accel_control(packer, bus, acc_type, acc_enabled, accel, acc_control, stopping, starting, esp_hold):
+def create_acc_accel_control(packer, bus, acc_type, acc_enabled, accel, acc_control, stopping, starting, esp_hold, comfortBand, jerkLimit):
   commands = []
 
   acc_06_values = {

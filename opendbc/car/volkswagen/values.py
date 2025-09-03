@@ -2,7 +2,9 @@ from collections import defaultdict, namedtuple
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag, StrEnum
 
-from opendbc.car import Bus, CanBusBase, CarSpecs, DbcDict, PlatformConfig, Platforms, structs, uds
+from opendbc.car import ACCELERATION_DUE_TO_GRAVITY, Bus, CanBusBase, CarSpecs, DbcDict, PlatformConfig, Platforms, structs, uds
+from opendbc.car.lateral import AngleSteeringLimits, ISO_LATERAL_ACCEL
+from opendbc.car.structs import CarParams, CarState
 from opendbc.can import CANDefine
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
@@ -27,27 +29,44 @@ class CanBus(CanBusBase):
 
   @property
   def pt(self) -> int:
-    # ADAS / Extended CAN, gateway side of the relay
+    # ADAS / ECAN - Gateway Side
     return self.offset
 
   @property
   def aux(self) -> int:
-    # NetworkLocation.fwdCamera: radar-camera object fusion CAN
-    # NetworkLocation.gateway: powertrain CAN
+    # NetworkLocation.fwdCamera: Radar Fusion CAN (Camera -> Radar)
+    # NetworkLocation.gateway: ACAN (PTCAN) - Gateway Side
     return self.offset + 1
 
   @property
   def cam(self) -> int:
-    # ADAS / Extended CAN, camera side of the relay
+    # ADAS / ECAN - Camera | ADAS / ECAN - Radar
     return self.offset + 2
 
   @property
   def ext(self) -> int:
-    # ADAS / Extended CAN, side of the relay with the ACC radar
+    # ADAS / ECAN - Radar
     return self._ext
 
+# Extra Tolerances For Road Variance
+AVERAGE_ROAD_ROLL = 0.06
 
 class CarControllerParams:
+  ANGLE_LIMITS: AngleSteeringLimits = AngleSteeringLimits(
+    # Max Steering Angle Allowed
+    495,  # deg
+    # Volkswagen uses a vehicle model
+    ([], []),
+    ([], []),
+
+    # Vehicle Model Angle Limits
+    # Add extra tolerance for average banked road since safety doesn't have the roll calculation
+    MAX_LATERAL_ACCEL=ISO_LATERAL_ACCEL + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL),  # ~3.6 m/s^2
+    MAX_LATERAL_JERK=3.0 + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL),  # ~3.6 m/s^3
+
+    # Limit Angle Rate to both prevent a openpilot fault and for low speed comfort (~12 mph rate down to 0 mph)
+    MAX_ANGLE_RATE=5,  # deg/20ms frame
+  )
   STEER_STEP = 2                           # HCA_01/HCA_1 message frequency 50Hz
   ACC_CONTROL_STEP = 2                     # ACC_06/ACC_07/ACC_System frequency 50Hz
   AEB_CONTROL_STEP = 2                     # ACC_10 frequency 50Hz
@@ -327,7 +346,7 @@ class CAR(Platforms):
   )
   VOLKSWAGEN_PASSAT_NMS = VolkswagenPQPlatformConfig(
     [VWCarDocs("Volkswagen Passat NMS 2017-22")],
-    VolkswagenCarSpecs(mass=1503, wheelbase=2.80, minSteerSpeed=50 * CV.KPH_TO_MS, minEnableSpeed=20 * CV.KPH_TO_MS),
+    VolkswagenCarSpecs(mass=1503, wheelbase=2.80),
     chassis_codes={"A3"},
     wmis={WMI.VOLKSWAGEN_USA_CAR},
   )

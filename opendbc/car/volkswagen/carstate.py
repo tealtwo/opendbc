@@ -1,9 +1,15 @@
+import numpy as np
 from opendbc.can import CANParser
 from opendbc.car import Bus, structs
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.volkswagen.values import DBC, CanBus, NetworkLocation, TransmissionType, GearShifter, \
                                                       CarControllerParams, VolkswagenFlags
+import sys
+import os
+sunnypilot_path = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+sys.path.insert(0, sunnypilot_path)
+from openpilot.common.params import Params
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
@@ -11,6 +17,7 @@ ButtonType = structs.CarState.ButtonEvent.Type
 class CarState(CarStateBase):
   def __init__(self, CP, CP_SP):
     super().__init__(CP, CP_SP)
+    self._params = Params()
     self.frame = 0
     self.eps_init_complete = False
     self.CCP = CarControllerParams(CP)
@@ -18,6 +25,9 @@ class CarState(CarStateBase):
     self.esp_hold_confirmation = False
     self.upscale_lead_car_signal = False
     self.eps_stock_values = False
+    self.last_cruiseActive = False
+    self.LH_3_Sign = False
+    self.aEgoBremse = 0
 
   def update_button_enable(self, buttonEvents: list[structs.CarState.ButtonEvent]):
     if not self.CP.pcmCruise:
@@ -44,10 +54,11 @@ class CarState(CarStateBase):
   def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
     pt_cp = can_parsers[Bus.pt]
     cam_cp = can_parsers[Bus.cam]
+    br_cp = can_parsers[Bus.aux]
     ext_cp = pt_cp if self.CP.networkLocation == NetworkLocation.fwdCamera else cam_cp
 
     if self.CP.flags & VolkswagenFlags.PQ:
-      return self.update_pq(pt_cp, cam_cp, ext_cp)
+      return self.update_pq(pt_cp, br_cp, cam_cp, ext_cp)
 
     ret = structs.CarState()
     ret_sp = structs.CarStateSP()
@@ -143,7 +154,8 @@ class CarState(CarStateBase):
     self.frame += 1
     return ret, ret_sp
 
-  def update_pq(self, pt_cp, cam_cp, ext_cp) -> tuple[structs.CarState, structs.CarStateSP]:
+  def update_pq(self, pt_cp, br_cp, cam_cp, ext_cp) -> tuple[structs.CarState, structs.CarStateSP]:
+    hcaLateralControl = self._params.get_bool("pqLatControlToggle")
     ret = structs.CarState()
     ret_sp = structs.CarStateSP()
 
@@ -152,13 +164,20 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw == 0
 
+    self.aEgoBremse = pt_cp.vl["Bremse_8"]["BR8_Laengsbeschl"]
+
     # Update EPS position and state info. For signed values, VW sends the sign in a separate signal.
     ret.steeringAngleDeg = pt_cp.vl["Lenkhilfe_3"]["LH3_BLW"] * (1, -1)[int(pt_cp.vl["Lenkhilfe_3"]["LH3_BLWSign"])]
     ret.steeringRateDeg = pt_cp.vl["Lenkwinkel_1"]["Lenkradwinkel_Geschwindigkeit"] * (1, -1)[int(pt_cp.vl["Lenkwinkel_1"]["Lenkradwinkel_Geschwindigkeit_S"])]
     ret.steeringTorque = pt_cp.vl["Lenkhilfe_3"]["LH3_LM"] * (1, -1)[int(pt_cp.vl["Lenkhilfe_3"]["LH3_LMSign"])]
     ret.steeringPressed = abs(ret.steeringTorque) > self.CCP.STEER_DRIVER_ALLOWANCE
     hca_status = self.CCP.hca_status_values.get(pt_cp.vl["Lenkhilfe_2"]["LH2_Sta_HCA"])
-    ret.steerFaultTemporary, ret.steerFaultPermanent = self.update_hca_state(hca_status)
+    # Dynamic Handling Based On Active Steering Control Mode (PLA/HCA)
+    if hcaLateralControl:
+      ret.steerFaultTemporary, ret.steerFaultPermanent = self.update_hca_state(hca_status)
+    else:
+      ret.steerFaultTemporary = True if pt_cp.vl["Lenkhilfe_2"]["LH2_PLA_Abbr"] == 2 else False
+    self.LH_3_Sign = pt_cp.vl["Lenkhilfe_3"]["LH3_BLWSign"]
 
     # Update gas, brakes, and gearshift.
     ret.gasPressed = pt_cp.vl["Motor_3"]["Fahrpedal_Rohsignal"] > 0
@@ -207,19 +226,37 @@ class CarState(CarStateBase):
     ret.stockAeb = False
 
     # Update ACC radar status.
+    # This parses both ECM & Radar cruiseState, as well as ECD for deceleration under > 18km/h
     self.acc_type = ext_cp.vl["ACC_System"]["ACS_Typ_ACC"]
     ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"])
-    ret.cruiseState.enabled = pt_cp.vl["Motor_2"]["GRA_Status"] in (1, 2)
+    MO2_StaGRA = pt_cp.vl["Motor_2"]["GRA_Status"] in (1, 2)
+    BR8_VerzEPB = bool(pt_cp.vl["Bremse_8"]["BR8_Verz_EPB_akt"])
+    ACS_StaADR = ext_cp.vl["ACC_System"]["ACS_Sta_ADR"] in (1, 2)
+    cruiseActive = MO2_StaGRA or ACS_StaADR or BR8_VerzEPB
+    if cruiseActive:
+      self.last_cruiseActive = True
+    elif not MO2_StaGRA or ACS_StaADR or BR8_VerzEPB:
+      self.last_cruiseActive = False
+    ret.cruiseState.enabled = self.last_cruiseActive
     if self.CP.pcmCruise:
       ret.accFaulted = ext_cp.vl["ACC_GRA_Anzeige"]["ACA_StaACC"] in (6, 7)
     else:
-      ret.accFaulted = pt_cp.vl["Motor_2"]["GRA_Status"] == 3
+      ret.accFaulted = pt_cp.vl["Motor_2"]["GRA_Status"] == 3 or ext_cp.vl["ACC_System"]["ACS_Sta_ADR"] == 3
 
     # Update ACC setpoint. When the setpoint reads as 255, the driver has not
     # yet established an ACC setpoint, so treat it as zero.
     ret.cruiseState.speed = ext_cp.vl["ACC_GRA_Anzeige"]["ACA_V_Wunsch"] * CV.KPH_TO_MS
     if ret.cruiseState.speed > 70:  # 255 kph in m/s == no current setpoint
       ret.cruiseState.speed = 0
+
+    self.motor2_stock = pt_cp.vl["Motor_2"]
+    self.acc_sys_stock = ext_cp.vl["ACC_System"]
+    self.acc_anz_stock = ext_cp.vl["ACC_GRA_Anzeige"]
+    self.bremse8_stock = pt_cp.vl["Bremse_8"]
+    self.bremse11_stock = pt_cp.vl["Bremse_11"]
+    self.LH2_steeringState = pt_cp.vl["Lenkhilfe_2"]["LH2_aktLenkeingriff"]
+    self.LH2_Abbr = pt_cp.vl["Lenkhilfe_2"]["LH2_PLA_Abbr"]
+    self.MOB_Standby = br_cp.vl["Motor_Bremse"]["MOB_Standby"]
 
     # Update button states for turn signals and ACC controls, capture all ACC button state/config for passthrough
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(300, pt_cp.vl["Gate_Komf_1"]["GK1_Blinker_li"],
@@ -275,5 +312,6 @@ class CarState(CarStateBase):
   def get_can_parsers_pq(CP):
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], [], CanBus(CP).pt),
+      Bus.aux: CANParser(DBC[CP.carFingerprint][Bus.pt], [], CanBus(CP).aux),
       Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], CanBus(CP).cam),
     }

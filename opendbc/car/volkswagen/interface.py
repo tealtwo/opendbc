@@ -3,7 +3,11 @@ from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.volkswagen.carcontroller import CarController
 from opendbc.car.volkswagen.carstate import CarState
 from opendbc.car.volkswagen.values import CanBus, CAR, NetworkLocation, TransmissionType, VolkswagenFlags, VolkswagenSafetyFlags
-
+import sys
+import os
+sunnypilot_path = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+sys.path.insert(0, sunnypilot_path)
+from openpilot.common.params import Params
 
 class CarInterface(CarInterfaceBase):
   CarState = CarState
@@ -13,6 +17,7 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret: structs.CarParams, candidate: CAR, fingerprint, car_fw, alpha_long, is_release, docs) -> structs.CarParams:
     ret.brand = "volkswagen"
     ret.radarUnavailable = True
+    _params = Params()
 
     if ret.flags & VolkswagenFlags.PQ:
       # Set global PQ35/PQ46/NMS parameters
@@ -64,7 +69,19 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     if ret.flags & VolkswagenFlags.PQ:
       ret.steerActuatorDelay = 0.2
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      ret.longitudinalTuning.kf = 1.2
+      ret.longitudinalTuning.kpBP = [0.]
+      ret.longitudinalTuning.kpV = [.45]
+      ret.longitudinalTuning.kiBP = [0.]
+      ret.longitudinalTuning.kiV = [.69]
+      ret.longitudinalActuatorDelay = 0.6
+      ret.steerControlType = structs.CarParams.SteerControlType.angle if not _params.get_bool("pqLatControlToggle") else structs.CarParams.SteerControlType.torque
+      ret.lateralTuning.init('pid')
+      ret.lateralTuning.pid.kpBP = [0., 27.]
+      ret.lateralTuning.pid.kiBP = [0., 27.]
+      ret.lateralTuning.pid.kpV = [0., 0.]
+      ret.lateralTuning.pid.kiV = [0., 0.]
+      ret.lateralTuning.pid.kf = 0.
     else:
       ret.steerActuatorDelay = 0.1
       ret.lateralTuning.pid.kpBP = [0.]
