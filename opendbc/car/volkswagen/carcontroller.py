@@ -154,10 +154,17 @@ class CarController(CarControllerBase):
 
       if not hca_enabled:
         self.hca_frame_timer_running = 0
+      if hca_enabled:
+        if pqhca5or7Toggle:
+          self.HCA_Status = 7
+        else:
+          self.HCA_Status = 5
+      else:
+        self.HCA_Status = self.HCA_Status
 
       self.eps_timer_soft_disable_alert = self.hca_frame_timer_running > self.CCP.STEER_TIME_ALERT / DT_CTRL
       self.apply_torque_last = apply_torque
-      can_sends.append(self.CCS.create_hca_steering_control(self.packer_pt, self.CAN.pt, apply_torque, hca_enabled))
+      can_sends.append(self.CCS.create_hca_steering_control(self.packer_pt, self.CAN.pt, apply_torque, self.HCA_Status))
 
       if self.CP.flags & VolkswagenFlags.STOCK_HCA_PRESENT:
         # Pacify VW Emergency Assist driver inactivity detection by changing its view of driver steering input torque
