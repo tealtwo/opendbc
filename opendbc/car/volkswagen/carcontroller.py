@@ -299,9 +299,9 @@ class CarController(CarControllerBase):
         if self.leadDistanceBars == 1:
           distanceBars = 2
         elif self.leadDistanceBars == 2:
-          distanceBars = 4
+          distanceBars = 3
         elif self.leadDistanceBars == 3:
-          distanceBars = 8
+          distanceBars = 4
         elif self.leadDistanceBars == 0:
           distanceBars = 0
       else:
