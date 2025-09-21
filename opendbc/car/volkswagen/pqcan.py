@@ -126,9 +126,6 @@ def create_epb_control(packer, bus, apply_brake, epb_enabled):
 
 def create_aeb_control(packer, bus, fcw_alert, stock_aeb):
   values = stock_aeb
-  values.update = ({
-    "AWV_2_Warnsymbol": fcw_alert, # "APPLY BRAKE!" Message to Kombi MFD
-  })
   return packer.make_can_msg("AWV", bus, values)
 
 def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_distance, distanceBars):
