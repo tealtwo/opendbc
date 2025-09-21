@@ -124,12 +124,12 @@ def create_epb_control(packer, bus, apply_brake, epb_enabled):
 
   return packer.make_can_msg("EPB_1", bus, values)
 
-def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_distance, distanceBars, fcw_alert):
+def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, leadDistance, distanceBars, fcw_alert, leadVisible):
   values = {
     "ACA_StaACC": acc_hud_status,
     "ACA_Zeitluecke": distanceBars,
     "ACA_V_Wunsch": set_speed,
-    "ACA_gemZeitl": lead_distance,
+    "ACA_gemZeitl": leadDistance if leadVisible else 0,
     "ACA_PrioDisp": 3,
     "ACA_Akustik2": fcw_alert,
     # TODO: restore dynamic pop-to-foreground/highlight behavior with ACA_PrioDisp and ACA_AnzDisplay

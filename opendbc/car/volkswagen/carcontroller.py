@@ -292,7 +292,8 @@ class CarController(CarControllerBase):
       can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, self.CAN.pt, CS.ldw_stock_values, CC.latActive, CS.out.steeringPressed, hud_alert, hud_control))
 
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
-      lead_distance = 0
+      leadDistance = max(8, hud_control.leadDistance) if hud_control.leadDistance != 0 else 0
+      leadVisible = hud_control.leadVisible
       fcw_alert = hud_control.visualAlert == VisualAlert.fcw
       if fcw_alert:
         fcw_warning = 1
@@ -310,7 +311,7 @@ class CarController(CarControllerBase):
       # FIXME: PQ may need to use the on-the-wire mph/kmh toggle to fix rounding errors
       # FIXME: Detect clusters with vEgoCluster offsets and apply an identical vCruiseCluster offset
       set_speed = hud_control.setSpeed * CV.MS_TO_KPH
-      can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, self.CAN.pt, acc_hud_status, set_speed, lead_distance, distanceBars, fcw_warning))
+      can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, self.CAN.pt, acc_hud_status, set_speed, leadDistance, distanceBars, fcw_warning, leadVisible))
 
     # **** Stock ACC Button Controls **************************************** #
 
