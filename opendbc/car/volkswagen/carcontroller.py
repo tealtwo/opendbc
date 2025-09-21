@@ -111,10 +111,6 @@ class CarController(CarControllerBase):
     self.HCA_Status = 3
     self.aeb_available = False
     self.awv_warnsymbol = 0
-    self.aeb_apply_brake = 0
-    self.aeb_enabled = False
-    self.aeb_halten = False
-    self.aeb_parameter = 0
     self.leadDistanceBars = 0
 
   def update(self, CC, CC_SP, CS, now_nanos):
@@ -287,11 +283,7 @@ class CarController(CarControllerBase):
           self.awv_warnsymbol = 1
         else:
           self.awv_warnsymbol = 0
-        self.aeb_apply_brake = 0
-        self.aeb_enabled = False
-        self.aeb_halten = False
-        self.aeb_parameter = 0
-        can_sends.append(self.CCS.create_aeb_control(self.packer_pt, self.CAN.pt, self.awv_warnsymbol, self.aeb_apply_brake, self.aeb_halten, self.aeb_enabled, self.aeb_parameter))
+        can_sends.append(self.CCS.create_aeb_control(self.packer_pt, self.CAN.pt, self.awv_warnsymbol, CS.awv_stock))
     # **** HUD Controls ***************************************************** #
     if self.frame % self.CCP.LDW_STEP == 0:
       hud_alert = 0

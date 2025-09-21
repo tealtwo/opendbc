@@ -124,18 +124,11 @@ def create_epb_control(packer, bus, apply_brake, epb_enabled):
 
   return packer.make_can_msg("EPB_1", bus, values)
 
-def create_aeb_control(packer, bus, fcw_alert, apply_brake, halt, aeb_enabled, braking_power):
-  values = {
-    "AWV_1_Parameter": braking_power,  # Braking Intensity Level
-    "AWV_1_Prefill": 1 if braking_power else 0,  # Prime Brakes for increased stopping power
-    "ANB_Teilbremsung_Freigabe": aeb_enabled,  # Permission to apply partial brakes
-    "ANB_Ziel_Teilbrems_Verz_Anf": apply_brake,  # Apply Braking Pressure in m/s^2
-    "AWV_Halten": halt,  # Bring the vehicle to a stop / Hold at a stop
-    "AWV_2_Fehler": 0, # Orange Kombi AWV Inactive LED for kombi's with this function enabled in software
-    "AWV_2_Status": 0, # Green Kombi AWV Active LED for kombi's with this function enabled in software
-    "AWV_Text": 0, # AEB/AWV Message to MFD
+def create_aeb_control(packer, bus, fcw_alert, stock_aeb):
+  values = stock_aeb
+  values.update = ({
     "AWV_2_Warnsymbol": fcw_alert, # "APPLY BRAKE!" Message to Kombi MFD
-  }
+  })
   return packer.make_can_msg("AWV", bus, values)
 
 def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_distance, distanceBars):
