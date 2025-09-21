@@ -194,7 +194,7 @@ static bool volkswagen_pq_tx_hook(const CANPacket_t *msg) {
     // Check for AWV parameter (first trigger w/ AEB)
     bool awv_active = (awv_status == 1U || awv_status == 2U || awv_status == 3U);
     // Stop OP AWV if stock AWV triggers
-    if awv_active {
+    if (awv_active) {
       tx = false;
     // Otherwise allow OP AWV
     } else {
