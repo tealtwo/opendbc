@@ -293,6 +293,11 @@ class CarController(CarControllerBase):
 
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       lead_distance = 0
+      fcw_alert = hud_control.visualAlert == VisualAlert.fcw
+      if fcw_alert:
+        fcw_warning = 1
+      else:
+        fcw_warning = 0
       # Handle leadDistanceBars for VW PQ Kombi MFD
       if hud_control.leadVisible:  # Don't display lead until we know the scaling factor
         self.leadDistanceBars = min(3, hud_control.leadDistanceBars)
@@ -310,7 +315,7 @@ class CarController(CarControllerBase):
       # FIXME: PQ may need to use the on-the-wire mph/kmh toggle to fix rounding errors
       # FIXME: Detect clusters with vEgoCluster offsets and apply an identical vCruiseCluster offset
       set_speed = hud_control.setSpeed * CV.MS_TO_KPH
-      can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, self.CAN.pt, acc_hud_status, set_speed, lead_distance, distanceBars))
+      can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, self.CAN.pt, acc_hud_status, set_speed, lead_distance, distanceBars, fcw_warning))
 
     # **** Stock ACC Button Controls **************************************** #
 
