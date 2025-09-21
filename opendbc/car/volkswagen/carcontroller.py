@@ -294,7 +294,7 @@ class CarController(CarControllerBase):
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       lead_distance = 0
       # Handle leadDistanceBars for VW PQ Kombi MFD
-      if hud_control.leadVisible and self.frame * DT_CTRL > 1.0:  # Don't display lead until we know the scaling factor
+      if hud_control.leadVisible:  # Don't display lead until we know the scaling factor
         self.leadDistanceBars = min(3, hud_control.leadDistanceBars)
         if self.leadDistanceBars == 1:
           distanceBars = 2
