@@ -162,7 +162,7 @@ class CarController(CarControllerBase):
         else:
           self.HCA_Status = 5
       else:
-        self.HCA_Status = self.HCA_Status
+        self.HCA_Status = 3
 
       self.eps_timer_soft_disable_alert = self.hca_frame_timer_running > self.CCP.STEER_TIME_ALERT / DT_CTRL
       self.apply_torque_last = apply_torque
