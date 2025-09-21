@@ -124,10 +124,6 @@ def create_epb_control(packer, bus, apply_brake, epb_enabled):
 
   return packer.make_can_msg("EPB_1", bus, values)
 
-def create_aeb_control(packer, bus, fcw_alert, stock_aeb):
-  values = stock_aeb
-  return packer.make_can_msg("AWV", bus, values)
-
 def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_distance, distanceBars):
   values = {
     "ACA_StaACC": acc_hud_status,

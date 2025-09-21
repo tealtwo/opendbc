@@ -188,19 +188,6 @@ static bool volkswagen_pq_tx_hook(const CANPacket_t *msg) {
   };
 
   bool tx = true;
-  // Safety Check for AWV (Stock Autonomous Emergency Braking Signal)
-  if (msg->addr == MSG_AWV) {
-    uint32_t awv_status = ((msg->data[2] >> 2) & 0x3U);
-    // Check for AWV parameter (first trigger w/ AEB)
-    bool awv_active = (awv_status == 1U || awv_status == 2U || awv_status == 3U);
-    // Stop OP AWV if stock AWV triggers
-    if (awv_active) {
-      tx = true;
-    // Otherwise allow OP AWV
-    } else {
-      tx = true;
-    }
-  }
   // Safety check for HCA_1 Heading Control Assist torque or angle
   // Signal: HCA_1.LW_OffSet (requested torque)
   // Signal: HCA_1.LM_OffSet (requested angle)

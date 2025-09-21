@@ -275,15 +275,15 @@ class CarController(CarControllerBase):
       self.bremse8_counter_last = CS.bremse8_stock["COUNTER"]
       self.bremse11_counter_last = CS.bremse11_stock["COUNTER"]
     # AEB Controller
-    self.aeb_available = CS.awv_available
-    if self.aeb_available in (0, 14, 10):
-      if self.frame % self.CCP.AEB_CONTROL_STEP == 0:
-        fcw_alert = hud_control.visualAlert == VisualAlert.fcw
-        if fcw_alert:
-          self.awv_warnsymbol = 1
-        else:
-          self.awv_warnsymbol = 0
-        can_sends.append(self.CCS.create_aeb_control(self.packer_pt, self.CAN.pt, self.awv_warnsymbol, CS.awv_stock))
+  #  self.aeb_available = CS.awv_available
+  #  if self.aeb_available in (0, 14, 10):
+  #    if self.frame % self.CCP.AEB_CONTROL_STEP == 0:
+  #      fcw_alert = hud_control.visualAlert == VisualAlert.fcw
+  #      if fcw_alert:
+  #        self.awv_warnsymbol = 1
+  #      else:
+  #        self.awv_warnsymbol = 0
+  #      can_sends.append(self.CCS.create_aeb_control(self.packer_pt, self.CAN.pt, self.awv_warnsymbol, CS.awv_stock))
     # **** HUD Controls ***************************************************** #
     if self.frame % self.CCP.LDW_STEP == 0:
       hud_alert = 0

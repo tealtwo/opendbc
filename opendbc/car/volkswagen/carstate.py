@@ -249,8 +249,6 @@ class CarState(CarStateBase):
     if ret.cruiseState.speed > 70:  # 255 kph in m/s == no current setpoint
       ret.cruiseState.speed = 0
 
-    self.awv_stock = ext_cp.vl["AWV"]
-    self.awv_available = ext_cp.vl["AWV"]["AWV_Text"]
     self.motor2_stock = pt_cp.vl["Motor_2"]
     self.acc_sys_stock = ext_cp.vl["ACC_System"]
     self.acc_anz_stock = ext_cp.vl["ACC_GRA_Anzeige"]
