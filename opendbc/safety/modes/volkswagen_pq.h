@@ -195,7 +195,7 @@ static bool volkswagen_pq_tx_hook(const CANPacket_t *msg) {
     bool awv_active = (awv_status == 1U || awv_status == 2U || awv_status == 3U);
     // Stop OP AWV if stock AWV triggers
     if (awv_active) {
-      tx = false;
+      tx = true;
     // Otherwise allow OP AWV
     } else {
       tx = true;
