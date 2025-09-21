@@ -156,7 +156,7 @@ class CarController(CarControllerBase):
 
       if not hca_enabled:
         self.hca_frame_timer_running = 0
-      if hca_enabled:
+      if hca_enabled and abs(apply_torque) > 0:
         if pqhca5or7Toggle:
           self.HCA_Status = 7
         else:
@@ -299,7 +299,6 @@ class CarController(CarControllerBase):
       else:
         fcw_warning = 0
       # Handle leadDistanceBars for VW PQ Kombi MFD
-     # if hud_control.leadVisible:  # Don't display lead until we know the scaling factor
       self.leadDistanceBars = min(3, hud_control.leadDistanceBars)
       if self.leadDistanceBars == 1:
         distanceBars = 2
