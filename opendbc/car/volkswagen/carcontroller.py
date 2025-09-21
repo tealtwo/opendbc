@@ -299,18 +299,14 @@ class CarController(CarControllerBase):
       else:
         fcw_warning = 0
       # Handle leadDistanceBars for VW PQ Kombi MFD
-      if hud_control.leadVisible:  # Don't display lead until we know the scaling factor
-        self.leadDistanceBars = min(3, hud_control.leadDistanceBars)
-        if self.leadDistanceBars == 1:
-          distanceBars = 2
-        elif self.leadDistanceBars == 2:
-          distanceBars = 3
-        elif self.leadDistanceBars == 3:
-          distanceBars = 4
-        elif self.leadDistanceBars == 0:
-          distanceBars = 0
-      else:
-        distanceBars = 0
+     # if hud_control.leadVisible:  # Don't display lead until we know the scaling factor
+      self.leadDistanceBars = min(3, hud_control.leadDistanceBars)
+      if self.leadDistanceBars == 1:
+        distanceBars = 2
+      elif self.leadDistanceBars == 2:
+        distanceBars = 3
+      elif self.leadDistanceBars == 3:
+        distanceBars = 4
       acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CS.out.gasPressed, CC.longActive, CC.cruiseControl.override)
       # FIXME: PQ may need to use the on-the-wire mph/kmh toggle to fix rounding errors
       # FIXME: Detect clusters with vEgoCluster offsets and apply an identical vCruiseCluster offset
