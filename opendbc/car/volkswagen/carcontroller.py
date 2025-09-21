@@ -30,7 +30,7 @@ def limit_jerk(accel, prev_accel, max_jerk, dt):
 def ECD_Handler(CS, self, ACS_Sta_ADR, ACS_Sollbeschl, vEgo, stopping):
   if (ACS_Sta_ADR == 1 and ACS_Sollbeschl < 0) and \
     ((CS.MOB_Standby and vEgo <= (18 * CV.KPH_TO_MS)) or self.EPB_enable):
-      if not self.EPB_enable:  # First frame of EPB entrye
+      if not self.EPB_enable:  # First frame of EPB entry
           self.EPB_counter = 0
           self.EPB_brake = 0
           self.EPB_enable = 1
@@ -75,7 +75,6 @@ class CarController(CarControllerBase):
     self.CAN = CanBus(CP)
     self.CCS = pqcan if CP.flags & VolkswagenFlags.PQ else mqbcan
     self.packer_pt = CANPacker(dbc_names[Bus.pt])
-    self.aeb_available = not CP.flags & VolkswagenFlags.PQ
     self.VM = VehicleModel(get_safety_model())
 
     self.apply_angle_last = 0
@@ -110,6 +109,13 @@ class CarController(CarControllerBase):
     self.long_deviation = 0
     self.long_jerklimit = 0
     self.HCA_Status = 3
+    self.aeb_available = False
+    self.awv_warnsymbol = 0
+    self.aeb_apply_brake = 0
+    self.aeb_enabled = False
+    self.aeb_halten = False
+    self.aeb_parameter = 0
+    self.leadDistanceBars = 0
 
   def update(self, CC, CC_SP, CS, now_nanos):
     actuators = CC.actuators
@@ -272,6 +278,20 @@ class CarController(CarControllerBase):
       self.acc_anz_counter_last = CS.acc_anz_stock["COUNTER"]
       self.bremse8_counter_last = CS.bremse8_stock["COUNTER"]
       self.bremse11_counter_last = CS.bremse11_stock["COUNTER"]
+    # AEB Controller
+    self.aeb_available = CS.awv_available
+    if self.aeb_available in (0, 14, 10):
+      if self.frame % self.CCP.AEB_CONTROL_STEP == 0:
+        fcw_alert = hud_control.visualAlert == VisualAlert.fcw
+        if fcw_alert:
+          self.awv_warnsymbol = 1
+        else:
+          self.awv_warnsymbol = 0
+        self.aeb_apply_brake = 0
+        self.aeb_enabled = False
+        self.aeb_halten = False
+        self.aeb_parameter = 0
+        can_sends.append(self.CCS.create_aeb_control(self.packer_pt, self.CAN.pt, self.awv_warnsymbol, self.aeb_apply_brake, self.aeb_halten, self.aeb_enabled, self.aeb_parameter))
     # **** HUD Controls ***************************************************** #
     if self.frame % self.CCP.LDW_STEP == 0:
       hud_alert = 0
@@ -281,13 +301,22 @@ class CarController(CarControllerBase):
 
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       lead_distance = 0
+      # Handle leadDistanceBars for VW PQ Kombi MFD
       if hud_control.leadVisible and self.frame * DT_CTRL > 1.0:  # Don't display lead until we know the scaling factor
-        lead_distance = 512 if CS.upscale_lead_car_signal else 8
+        self.leadDistanceBars = max(3, hud_control.leadDistanceBars) if hud_control.leadDistance != 0 else 0
+        if self.leadDistanceBars == 1:
+          distanceBars = 2
+        elif self.leadDistanceBars == 2:
+          distanceBars = 4
+        elif self.leadDistanceBars == 3:
+          distanceBars = 8
+        elif not self.leadDistanceBars or self.leadDistanceBars == 0:
+          distanceBars = 0
       acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CS.out.gasPressed, CC.longActive, CC.cruiseControl.override)
       # FIXME: PQ may need to use the on-the-wire mph/kmh toggle to fix rounding errors
       # FIXME: Detect clusters with vEgoCluster offsets and apply an identical vCruiseCluster offset
       set_speed = hud_control.setSpeed * CV.MS_TO_KPH
-      can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, self.CAN.pt, acc_hud_status, set_speed, lead_distance, hud_control.leadDistanceBars))
+      can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, self.CAN.pt, acc_hud_status, set_speed, lead_distance, distanceBars))
 
     # **** Stock ACC Button Controls **************************************** #
 

@@ -1169,7 +1169,7 @@ BO_ 208 Lenkhilfe_3: 6 XXX
  SG_ LH3_LMSign : 26|1@1+ (1,0) [0|1] "" XXX
  SG_ LH3_LMValid : 27|1@1+ (1,0) [0|1] "" XXX
  SG_ LH3_Sta_DSR : 28|4@1+ (1,0) [0|15] "" XXX
- SG_ LH3_BLW : 32|12@1+ (0.15,0) [0|615] "" XXX
+ SG_ LH3_BLW : 32|12@1+ (0.15,0) [0|615] "Unit_DegreeOfArc" XXX
  SG_ LH3_BLWSign : 44|1@1+ (1,0) [0|1] "" XXX
  SG_ LH3_BLWValid : 45|1@1+ (1,0) [0|1] "" XXX
  SG_ LH3_Lenkungstyp : 46|2@1+ (1,0) [0|3] "" XXX
