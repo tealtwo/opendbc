@@ -292,7 +292,7 @@ class CarController(CarControllerBase):
       can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, self.CAN.pt, CS.ldw_stock_values, CC.latActive, CS.out.steeringPressed, hud_alert, hud_control))
 
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
-      leadDistance = max(8, hud_control.leadDistance) if hud_control.leadDistance != 0 else 0
+      leadDistance = min(15, hud_control.leadDistance) if hud_control.leadDistance != 0 else 0
       leadVisible = hud_control.leadVisible
       fcw_alert = hud_control.visualAlert == VisualAlert.fcw
       if fcw_alert:
