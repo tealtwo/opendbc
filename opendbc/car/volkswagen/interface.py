@@ -75,7 +75,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiBP = [0.]
       ret.longitudinalTuning.kiV = [.69]
       ret.longitudinalActuatorDelay = 0.6
-      ret.steerControlType = structs.CarParams.SteerControlType.angle if not _params.get_bool("pqLatControlToggle") else structs.CarParams.SteerControlType.torque
+      ret.steerControlType = structs.CarParams.SteerControlType.angle if not _params.get_bool("pqLatControlToggle") else CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kpBP = [0., 27.]
       ret.lateralTuning.pid.kiBP = [0., 27.]
