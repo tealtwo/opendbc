@@ -16,7 +16,6 @@
 #define MSG_EPB_1               0x5C0U   // TX by OP, EPB/ECD control.
 #define MSG_BREMSE_8            0x1ACU   // TX by OP, spoofing radar
 #define MSG_BREMSE_11           0x5B7U   // TX by OP, spoofing radar
-#define MSG_AWV                 0x366U   // TX by OP/Radar, only partially filtered for OP AEB, factory AEB will continue to be forwarded
 
 static uint32_t volkswagen_pq_get_checksum(const CANPacket_t *msg) {
   return (uint32_t)msg->data[(msg->addr == MSG_MOTOR_5) ? 7 : 0];
@@ -57,13 +56,13 @@ static safety_config volkswagen_pq_init(uint16_t param) {
                                                  {MSG_ACC_GRA_ANZEIGE, 0, 8, .check_relay = true}, {MSG_ACC_SYSTEM, 0, 8, .check_relay = true},
                                                  {MSG_MOTOR_2, 2, 8, .check_relay = true}, {MSG_EPB_1, 1, 8, .check_relay = true},
                                                  {MSG_EPB_1, 2, 8, .check_relay = true}, {MSG_BREMSE_8, 2, 8, .check_relay = true},
-                                                 {MSG_BREMSE_11, 2, 8, .check_relay = true}, {MSG_AWV, 0, 8, .check_relay = true}};
+                                                 {MSG_BREMSE_11, 2, 8, .check_relay = true}};
 
   static const CanMsg VOLKSWAGEN_PQ_LONG_TX_MSGS[] =  {{MSG_HCA_1, 0, 5, .check_relay = true}, {MSG_LDW_1, 0, 8, .check_relay = true},
                                                 {MSG_ACC_SYSTEM, 0, 8, .check_relay = true}, {MSG_ACC_GRA_ANZEIGE, 0, 8, .check_relay = true},
                                                 {MSG_MOTOR_2, 2, 8, .check_relay = true}, {MSG_EPB_1, 1, 8, .check_relay = true},
                                                 {MSG_EPB_1, 2, 8, .check_relay = true}, {MSG_BREMSE_8, 2, 8, .check_relay = true},
-                                                {MSG_BREMSE_11, 2, 8, .check_relay = true}, {MSG_AWV, 0, 8, .check_relay = true}};
+                                                {MSG_BREMSE_11, 2, 8, .check_relay = true}};
 
   static RxCheck volkswagen_pq_rx_checks[] = {
     {.msg = {{MSG_LENKHILFE_3, 0, 6, 100U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
