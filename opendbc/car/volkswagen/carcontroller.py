@@ -283,7 +283,7 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
       hud_alert = 0
       if hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw):
         hud_alert = self.CCP.LDW_MESSAGES["laneAssistTakeOver"]
-      can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, self.CAN.ext, CS.ldw_stock_values, CC.latActive, CS.out.steeringPressed, hud_alert, hud_control))
+      can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, self.CAN.pt, CS.ldw_stock_values, CC.latActive, CS.out.steeringPressed, hud_alert, hud_control))
 
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       leadDistance = min(8, hud_control.leadDistance) if hud_control.leadDistance != 0 else 0
