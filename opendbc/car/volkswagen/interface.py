@@ -14,10 +14,13 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret: structs.CarParams, candidate: CAR, fingerprint, car_fw, alpha_long, is_release, docs) -> structs.CarParams:
     ret.brand = "volkswagen"
     ret.radarUnavailable = True
-    sunnypilot_path = os.path.join(os.path.dirname(__file__), '..', '..', '..')
-    sys.path.insert(0, sunnypilot_path)
-    from openpilot.common.params import Params
-    _params = Params()
+    try:
+      sunnypilot_path = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+      sys.path.insert(0, sunnypilot_path)
+      from openpilot.common.params import Params
+      _params = Params()
+    except (ImportError, ModuleNotFoundError):
+      _params = None
 
     if ret.flags & VolkswagenFlags.PQ:
       # Set global PQ35/PQ46/NMS parameters
@@ -75,9 +78,9 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiBP = [0.]
       ret.longitudinalTuning.kiV = [.69]
       ret.longitudinalActuatorDelay = 0.6
-      if _params.get_bool("pqLatControlToggle"):
+      if _params and _params.get_bool("pqLatControlToggle"):
         CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-      elif not _params.get_bool("pqLatControlToggle"):
+      elif _params and not _params.get_bool("pqLatControlToggle"):
         ret.steerControlType = structs.CarParams.SteerControlType.angle
     else:
       ret.steerActuatorDelay = 0.1
