@@ -212,7 +212,7 @@ static bool volkswagen_pq_tx_hook(const CANPacket_t *msg) {
     // LM_OffSet (Angle, PLA) Safety Check:
     } else {
       int desired_angle = msg->data[2] | ((msg->data[3] & 0x7FU) << 8); // HC1_LM_OffSet (Req Angle)
-      desired_angle = desired_angle * 0.04375; // Scaling factor for PQ to Angle (* 0.04375)
+      desired_angle = (int)desired_angle * 0.04375; // Scaling factor for PQ to Angle (* 0.04375) & keep integer
       int sign = (msg->data[3] & 0x80U) >> 7; // Sign Bit
       if (sign == 1) {
         desired_angle *= -1; // Apply Sign to Desired Angle
