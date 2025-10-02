@@ -156,67 +156,69 @@ static void volkswagen_pq_rx_hook(const CANPacket_t *msg) {
 }
 
 static bool volkswagen_pq_tx_hook(const CANPacket_t *msg) {
-  // Lateral Torque Limits
+  // Lateral Torque Limits (HCA)
   const TorqueSteeringLimits VWTorqueLimits = {
     .max_torque = 300,               // 3.0 Nm (EPS side max of 3.0Nm with fault if violated)
     .max_rt_delta = 113,             // 6 max rate up * 50Hz send rate * 250000 RT interval / 1000000 = 75 ; 125 * 1.5 for safety pad = 113
     .max_rate_up = 6,                // 3.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
     .max_rate_down = 10,             // 5.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
     .driver_torque_multiplier = 3,
-    .driver_torque_allowance = 80,
+    .driver_torque_allowance = 80, // Max Driver Torque Input Before OP Gives Up
     .type = TorqueDriverLimited,
   };
-  // Lateral Angle Limits, 400 deg total, 10deg/frame max rotation
+  // Lateral Angle Limits (PLA) 495 deg total, 10deg/frame max rotation
   const AngleSteeringLimits VWAngleLimits = {
-    .max_angle = 4000,  // 400 deg
-    .angle_deg_to_can = 10,
-    .frequency = 50U,
+    .max_angle = 4950,  // 495 deg
+    .angle_deg_to_can = 10, // 10deg/f
+    .frequency = 50U, // 50hz TX rate
   };
   // Based off Volkswagen Passat NMS to match openpilot
   const AngleSteeringParams VWSteeringParams = {
-    .slip_factor = -0.000580374383851451,  // calc_slip_factor(VM)
-    .steer_ratio = 16.4,
-    .wheelbase = 2.80,
+    .slip_factor = -0.000580374383851451,  // calc_slip_factor(VM) | FIXME: Stolen From Tesla
+    .steer_ratio = 18.4, // Volkswagen Passat NMS SteerRatio
+    .wheelbase = 2.80, // Volkswagen Passat NMS WheelBase
   };
-  // longitudinal limits
-  // acceleration in m/s2 * 1000 to avoid floating point math
+  // Longitudinal Limits
+  // Acceleration in m/s^2 * 1000 to avoid floating point math
   const LongitudinalLimits VOLKSWAGEN_PQ_LONG_LIMITS = {
-    .max_accel = 2000,
-    .min_accel = -3500,
+    .max_accel = 2000, // 2 m/s^2 Max Acceleration
+    .min_accel = -3500, // 3.5 m/s^2 Max Deceleration
     .inactive_accel = 3010,  // VW sends one increment above the max range when inactive
   };
 
-  bool tx = true;
-  // Safety check for HCA_1 Heading Control Assist torque or angle
+  bool tx = true; // Always TX if not Checked
+  // Safety check for Lateral Control, Torque|Angle
   // Signal: HCA_1.LW_OffSet (requested torque)
   // Signal: HCA_1.LM_OffSet (requested angle)
   // Signal: HCA_1.LM_OffSign (direction)
   if (msg->addr == MSG_HCA_1) {
-    uint32_t hca_status = ((msg->data[1] >> 4) & 0xFU);
+    uint32_t hca_status = ((msg->data[1] >> 4) & 0xFU); // HCA Status
     // Check for Angle Control
-    bool angle_steering = (hca_status == 10U || hca_status == 11U || hca_status == 13U || hca_status == 15U);
+    bool angle_steering = (hca_status == 10U || hca_status == 11U || hca_status == 13U || hca_status == 15U); // Check for HCA->PLA Status
+    bool angle_steering_active = (hca_status == 11U || hca_status == 13U) // Check for Active HCA->PLA Status
     // LW_OffSet (Torque, HCA) Safety Check:
     if (!angle_steering) {
-      int desired_torque = msg->data[2] | ((msg->data[3] & 0x7FU) << 8);
-      desired_torque = desired_torque / 32; // DBC scale from PQ network to centi-Nm (LW_OffSet)
-      int sign = (msg->data[3] & 0x80U) >> 7;
+      int desired_torque = msg->data[2] | ((msg->data[3] & 0x7FU) << 8); // HC1_LW_OffSet (Req Torque)
+      desired_torque = desired_torque / 32; // Scaling factor for PQ to centi-Nm (/32)
+      int sign = (msg->data[3] & 0x80U) >> 7; // Sign Bit
       if (sign == 1) {
-        desired_torque *= -1;
+        desired_torque *= -1; // Apply Sign to Desired Torque
       }
       // Check for Torque Control
-      bool steer_req = ((hca_status == 5U) || (hca_status == 7U));
-      if ((steer_torque_cmd_checks(desired_torque, steer_req, VWTorqueLimits) && !angle_steering)) {
-        tx = true;
+      bool steer_req = ((hca_status == 5U) || (hca_status == 7U)); //
+      if ((steer_torque_cmd_checks(desired_torque, steer_req, VWTorqueLimits))) {
+        tx = false; // Block Requested Torque if Safety Check Failed
       }
     // LM_OffSet (Angle, PLA) Safety Check:
     } else {
-      int desired_angle = msg->data[2] | ((msg->data[3] & 0x7FU) << 8);
-      int sign = (msg->data[3] & 0x80U) >> 7;
+      int desired_angle = msg->data[2] | ((msg->data[3] & 0x7FU) << 8); // HC1_LM_OffSet (Req Angle)
+      desired_angle = desired_angle * 0.04375 // Scaling factor for PQ to Angle (* 0.04375)
+      int sign = (msg->data[3] & 0x80U) >> 7; // Sign Bit
       if (sign == 1) {
-        desired_angle *= -1;
+        desired_angle *= -1; // Apply Sign to Desired Angle
       }
-      if (steer_angle_cmd_checks_vm(desired_angle, angle_steering, VWAngleLimits, VWSteeringParams)) {
-        tx = true;
+      if (steer_angle_cmd_checks_vm(desired_angle, angle_steering_active, VWAngleLimits, VWSteeringParams)) {
+        tx = false; // Block Requested Angle if Safety Check Failed
       }
     }
   }
