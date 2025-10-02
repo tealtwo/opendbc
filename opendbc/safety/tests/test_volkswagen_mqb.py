@@ -80,8 +80,8 @@ class TestVolkswagenMqbSafetyBase(common.PandaCarSafetyTest, common.DriverTorque
     return self.packer.make_can_msg_panda("HCA_01", 0, values)
 
   # Cruise control buttons
-  def _gra_acc_01_msg(self, cancel=0, resume=0, _set=0, bus=2):
-    values = {"GRA_Abbrechen": cancel, "GRA_Tip_Setzen": _set, "GRA_Tip_Wiederaufnahme": resume}
+  def _gra_acc_01_msg(self, cancel=0, resume=0, accel=0, decel=0, _set=0, bus=2):
+    values = {"GRA_Abbrechen": cancel, "GRA_Tip_Setzen": _set, "GRA_Tip_Wiederaufnahme": resume, "GRA_Tip_Hoch": accel, "GRA_Tip_Runter": decel}
     return self.packer.make_can_msg_panda("GRA_ACC_01", bus, values)
 
   # Acceleration request to drivetrain coordinator

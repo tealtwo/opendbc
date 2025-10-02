@@ -84,8 +84,8 @@ class TestVolkswagenPqSafetyBase(common.PandaCarSafetyTest, common.DriverTorqueS
     return self.packer.make_can_msg_panda("Motor_3", 0, values)
 
   # Cruise control buttons (GRA_Neu)
-  def _button_msg(self, _set=False, resume=False, cancel=False, bus=2):
-    values = {"GRA_Neu_Setzen": _set, "GRA_Recall": resume, "GRA_Abbrechen": cancel}
+  def _button_msg(self, _set=False, resume=False, cancel=False, accel=False, decel=False, bus=2):
+    values = {"GRA_Neu_Setzen": _set, "GRA_Recall": resume, "GRA_Abbrechen": cancel, "GRA_Up_kurz": accel, "GRA_Down_kurz": decel}
     return self.packer.make_can_msg_panda("GRA_Neu", bus, values)
 
   def test_torque_measurements(self):
