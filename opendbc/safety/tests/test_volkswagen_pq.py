@@ -20,6 +20,9 @@ MSG_GRA_NEU = 0x38A           # TX by OP, ACC control buttons for cancel/resume
 MSG_MOTOR_5 = 0x480           # RX from ECU, for ACC main switch state
 MSG_ACC_GRA_ANZEIGE = 0x56A   # TX by OP, ACC HUD
 MSG_LDW_1 = 0x5BE             # TX by OP, Lane line recognition and text alerts
+MSG_EPB_1 = 0x5C0             # TX by OP, eEPB for FtS & SnG on MK60EC1-CC using ECD
+MSG_BREMSE_8 = 0x1AC          # TX by OP, spoof radar, RX by OP, ECD feedback
+MSG_BREMSE_11 = 0x5B7         # TX by OP, spoof radar
 
 class TestVolkswagenPqSafetyBase(common.PandaCarSafetyTest, common.DriverTorqueSteeringSafetyTest):
   cruise_engaged = False
@@ -136,9 +139,10 @@ class TestVolkswagenPqSafetyBase(common.PandaCarSafetyTest, common.DriverTorqueS
 
 
 class TestVolkswagenPqStockSafety(TestVolkswagenPqSafetyBase):
-  # Transmit of GRA_Neu is allowed on bus 0 and 2 to keep compatibility with gateway and camera integration
-  TX_MSGS = [[MSG_HCA_1, 0], [MSG_GRA_NEU, 0], [MSG_GRA_NEU, 2], [MSG_LDW_1, 0]]
-  FWD_BLACKLISTED_ADDRS = {2: [MSG_HCA_1, MSG_LDW_1]}
+  # Transmit of GRA_Neu is allowed on bus 0 and 2 to keep compatibility with gateway and camera integration, OEM+ allows EPB/ECD for FtS & SnG on CC MK60EC1
+  TX_MSGS = [[MSG_HCA_1, 0], [MSG_GRA_NEU, 0], [MSG_GRA_NEU, 2], [MSG_LDW_1, 0], [MSG_ACC_GRA_ANZEIGE, 0], [MSG_ACC_SYSTEM, 0], [MSG_MOTOR_2, 2], [MSG_EPB_1, 1], [MSG_EPB_1, 2], [MSG_BREMSE_8, 2], [MSG_BREMSE_11, 2]]
+  FWD_BLACKLISTED_ADDRS = {2: [MSG_HCA_1, MSG_LDW_1, MSG_ACC_SYSTEM, MSG_ACC_GRA_ANZEIGE, MSG_BREMSE_8, MSG_BREMSE_11, MSG_MOTOR_2, MSG_EPB_1]}
+  RELAY_MALFUNCTION_ADDRS = {0: (MSG_HCA_1, MSG_LDW_1, MSG_ACC_SYSTEM, MSG_ACC_GRA_ANZEIGE)}
 
   def setUp(self):
     self.packer = CANPackerPanda("vw_pq")
@@ -157,8 +161,8 @@ class TestVolkswagenPqStockSafety(TestVolkswagenPqSafetyBase):
 
 
 class TestVolkswagenPqLongSafety(TestVolkswagenPqSafetyBase, common.LongitudinalAccelSafetyTest):
-  TX_MSGS = [[MSG_HCA_1, 0], [MSG_LDW_1, 0], [MSG_ACC_SYSTEM, 0], [MSG_ACC_GRA_ANZEIGE, 0]]
-  FWD_BLACKLISTED_ADDRS = {2: [MSG_HCA_1, MSG_LDW_1, MSG_ACC_SYSTEM, MSG_ACC_GRA_ANZEIGE]}
+  TX_MSGS = [[MSG_HCA_1, 0], [MSG_LDW_1, 0], [MSG_ACC_SYSTEM, 0], [MSG_ACC_GRA_ANZEIGE, 0], [MSG_EPB_1, 1], [MSG_EPB_1, 2], [MSG_BREMSE_8, 2], [MSG_BREMSE_11, 2]]
+  FWD_BLACKLISTED_ADDRS = {2: [MSG_HCA_1, MSG_LDW_1, MSG_ACC_SYSTEM, MSG_ACC_GRA_ANZEIGE, MSG_BREMSE_8, MSG_BREMSE_11, MSG_MOTOR_2, MSG_EPB_1]}
   RELAY_MALFUNCTION_ADDRS = {0: (MSG_HCA_1, MSG_LDW_1, MSG_ACC_SYSTEM, MSG_ACC_GRA_ANZEIGE)}
   INACTIVE_ACCEL = 3.01
 
