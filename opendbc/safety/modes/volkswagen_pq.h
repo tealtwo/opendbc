@@ -166,9 +166,9 @@ static bool volkswagen_pq_tx_hook(const CANPacket_t *msg) {
     .driver_torque_allowance = 80, // Max Driver Torque Input Before OP Gives Up
     .type = TorqueDriverLimited,
   };
-  // Lateral Angle Limits (PLA) 495 deg total, 10deg/frame max rotation
+  // Lateral Angle Limits (PLA) 540 deg total, 10deg/frame max rotation
   const AngleSteeringLimits VWAngleLimits = {
-    .max_angle = 4950,  // 495 deg
+    .max_angle = 5400,  // 540 deg
     .angle_deg_to_can = 10, // 10deg/f
     .frequency = 50U, // 50hz TX rate
   };
