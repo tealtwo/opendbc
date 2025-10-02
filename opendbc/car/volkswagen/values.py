@@ -211,7 +211,7 @@ class VolkswagenPQPlatformConfig(VolkswagenMQBPlatformConfig):
 @dataclass(frozen=True, kw_only=True)
 class VolkswagenCarSpecs(CarSpecs):
   centerToFrontRatio: float = 0.45
-  steerRatio: float = 16.4
+  steerRatio: float = 18.4
   minSteerSpeed: float = CarControllerParams.DEFAULT_MIN_STEER_SPEED
 
 
