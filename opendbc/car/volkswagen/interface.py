@@ -5,9 +5,6 @@ from opendbc.car.volkswagen.carstate import CarState
 from opendbc.car.volkswagen.values import CanBus, CAR, NetworkLocation, TransmissionType, VolkswagenFlags, VolkswagenSafetyFlags
 import sys
 import os
-sunnypilot_path = os.path.join(os.path.dirname(__file__), '..', '..', '..')
-sys.path.insert(0, sunnypilot_path)
-from openpilot.common.params import Params
 
 class CarInterface(CarInterfaceBase):
   CarState = CarState
@@ -17,6 +14,9 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret: structs.CarParams, candidate: CAR, fingerprint, car_fw, alpha_long, is_release, docs) -> structs.CarParams:
     ret.brand = "volkswagen"
     ret.radarUnavailable = True
+    sunnypilot_path = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+    sys.path.insert(0, sunnypilot_path)
+    from openpilot.common.params import Params
     _params = Params()
 
     if ret.flags & VolkswagenFlags.PQ:

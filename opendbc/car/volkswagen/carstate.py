@@ -7,9 +7,6 @@ from opendbc.car.volkswagen.values import DBC, CanBus, NetworkLocation, Transmis
                                                       CarControllerParams, VolkswagenFlags
 import sys
 import os
-sunnypilot_path = os.path.join(os.path.dirname(__file__), '..', '..', '..')
-sys.path.insert(0, sunnypilot_path)
-from openpilot.common.params import Params
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
@@ -17,6 +14,9 @@ ButtonType = structs.CarState.ButtonEvent.Type
 class CarState(CarStateBase):
   def __init__(self, CP, CP_SP):
     super().__init__(CP, CP_SP)
+    sunnypilot_path = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+    sys.path.insert(0, sunnypilot_path)
+    from openpilot.common.params import Params
     self._params = Params()
     self.frame = 0
     self.eps_init_complete = False
