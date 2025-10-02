@@ -3,7 +3,6 @@ import unittest
 
 from opendbc.car.lateral import get_max_angle_delta_vm, get_max_angle_vm
 from opendbc.car.vehicle_model import VehicleModel
-from opendbc.car.volkswagen.carcontroller import get_safety_CP
 from opendbc.can import CANDefine
 from opendbc.car.volkswagen.values import VolkswagenSafetyFlags, CarControllerParams
 from opendbc.car.structs import CarParams
