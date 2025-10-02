@@ -10,9 +10,6 @@ from opendbc.car.vehicle_model import VehicleModel
 import numpy as np
 import sys
 import os
-sunnypilot_path = os.path.join(os.path.dirname(__file__), '..', '..', '..')
-sys.path.insert(0, sunnypilot_path)
-from openpilot.common.params import Params
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -70,6 +67,9 @@ def ECD_Handler(CS, self, ACS_Sta_ADR, ACS_Sollbeschl, vEgo, stopping):
 class CarController(CarControllerBase):
   def __init__(self, dbc_names, CP, CP_SP):
     super().__init__(dbc_names, CP, CP_SP)
+    sunnypilot_path = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+    sys.path.insert(0, sunnypilot_path)
+    from openpilot.common.params import Params
     self._params = Params()
     self.CCP = CarControllerParams(CP)
     self.CAN = CanBus(CP)
