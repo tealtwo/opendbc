@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 import unittest
 
-from opendbc.car.volkswagen.values import VolkswagenSafetyFlags
+from opendbc.car.lateral import get_max_angle_delta_vm, get_max_angle_vm
+from opendbc.car.vehicle_model import VehicleModel
+from opendbc.car.volkswagen.carcontroller import get_safety_CP
+from opendbc.can import CANDefine
+from opendbc.car.volkswagen.values import VolkswagenSafetyFlags, CarControllerParams
 from opendbc.car.structs import CarParams
 from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
-from opendbc.safety.tests.common import CANPackerPanda
+from opendbc.safety.tests.common import CANPackerPanda, away_round
 
 MSG_LENKHILFE_3 = 0x0D0       # RX from EPS, for steering angle and driver steering torque
 MSG_HCA_1 = 0x0D2             # TX by OP, Heading Control Assist steering torque
@@ -18,19 +22,38 @@ MSG_MOTOR_5 = 0x480           # RX from ECU, for ACC main switch state
 MSG_ACC_GRA_ANZEIGE = 0x56A   # TX by OP, ACC HUD
 MSG_LDW_1 = 0x5BE             # TX by OP, Lane line recognition and text alerts
 
-
 class TestVolkswagenPqSafetyBase(common.PandaCarSafetyTest, common.DriverTorqueSteeringSafetyTest):
   cruise_engaged = False
 
   RELAY_MALFUNCTION_ADDRS = {0: (MSG_HCA_1, MSG_LDW_1)}
-
+  # Torque (HCA) Control Limits
   MAX_RATE_UP = 6
   MAX_RATE_DOWN = 10
   MAX_TORQUE_LOOKUP = [0], [300]
   MAX_RT_DELTA = 113
 
+  # Angle (PLA) Control Limits
+  # STEER_ANGLE_MAX = 495  # deg
+  # DEG_TO_CAN = 10
+  # Volkswagen uses get_max_angle_delta_vm and get_max_angle_vm for real lateral accel and jerk limits
+  # TODO: integrate this into AngleSteeringSafetyTest
+  # ANGLE_RATE_BP = None
+  # ANGLE_RATE_UP = None
+  # ANGLE_RATE_DOWN = None
+
+  # Real Time Limits
+  # LATERAL_FREQUENCY = 50  # Hz
+
   DRIVER_TORQUE_ALLOWANCE = 80
   DRIVER_TORQUE_FACTOR = 3
+
+  # def _get_steer_cmd_angle_max(self, speed):
+  #  return get_max_angle_vm(max(speed, 1), self.VM, CarControllerParams)
+
+  # def setUp(self):
+  #  self.VM = VehicleModel(get_safety_CP())
+  #  self.packer = CANPackerPanda("vw_pq")
+  #  self.define = CANDefine("vw_pq")
 
   def _set_prev_torque(self, t):
     self.safety.set_desired_torque_last(t)
@@ -66,11 +89,15 @@ class TestVolkswagenPqSafetyBase(common.PandaCarSafetyTest, common.DriverTorqueS
     values = {"LM_Offset": abs(torque), "LM_OffSign": torque < 0, "HCA_Status": hca_status if steer_req else 3}
     return self.packer.make_can_msg_panda("HCA_1", 0, values)
 
+  # openpilot steering output angle
+  # def _angle_cmd_msg(self, angle, steer_req=1, hca_status=13):
+  #  values = {"LM_Offset": abs(angle), "LM_OffSign": angle < 0, "HCA_Status": hca_status if steer_req else 15}
+  #  return self.packer.make_can_msg_panda("HCA_1", 0, values)
+
   # ACC engagement and brake light switch status
   # Called indirectly for compatibility with common.py tests
   def _motor_2_msg(self, brake_pressed=False, cruise_engaged=False):
-    values = {"MO2_BLS": brake_pressed,
-              "MO2_Sta_GRA": cruise_engaged}
+    values = {"MO2_BLS": brake_pressed, "MO2_Sta_GRA": cruise_engaged}
     return self.packer.make_can_msg_panda("Motor_2", 0, values)
 
   # ACC main switch status

@@ -174,7 +174,7 @@ static bool volkswagen_pq_tx_hook(const CANPacket_t *msg) {
   };
   // Based off Volkswagen Passat NMS to match openpilot
   const AngleSteeringParams VWSteeringParams = {
-    .slip_factor = -0.000580374383851451,  // calc_slip_factor(VM) | FIXME: Stolen From Tesla
+    .slip_factor = -0.000580374383851451,  // calc_slip_factor(VM) | FIXME: Stolen From Tesla (Actual Val: -0.00143398)
     .steer_ratio = 18.4, // Volkswagen Passat NMS SteerRatio
     .wheelbase = 2.80, // Volkswagen Passat NMS WheelBase
   };
