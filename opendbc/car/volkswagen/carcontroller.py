@@ -7,6 +7,7 @@ from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.volkswagen import mqbcan, pqcan
 from opendbc.car.volkswagen.values import CanBus, CarControllerParams, VolkswagenFlags
 from opendbc.car.vehicle_model import VehicleModel
+from opendbc.sunnypilot.car.volkswagen.icbm import IntelligentCruiseButtonManagementInterface
 import numpy as np
 import sys
 import os
@@ -67,9 +68,10 @@ def ECD_Handler(CS, self, ACS_Sta_ADR, ACS_Sollbeschl, vEgo, stopping):
   return self.EPB_enable, self.EPB_brake, self.EPB_active
 
 
-class CarController(CarControllerBase):
+class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterface):
   def __init__(self, dbc_names, CP, CP_SP):
     super().__init__(dbc_names, CP, CP_SP)
+    IntelligentCruiseButtonManagementInterface.__init__(self, CP, CP_SP)
     self._params = Params()
     self.CCP = CarControllerParams(CP)
     self.CAN = CanBus(CP)
@@ -274,22 +276,14 @@ class CarController(CarControllerBase):
       self.acc_anz_counter_last = CS.acc_anz_stock["COUNTER"]
       self.bremse8_counter_last = CS.bremse8_stock["COUNTER"]
       self.bremse11_counter_last = CS.bremse11_stock["COUNTER"]
-    # AEB Controller
-  #  self.aeb_available = CS.awv_available
-  #  if self.aeb_available in (0, 14, 10):
-  #    if self.frame % self.CCP.AEB_CONTROL_STEP == 0:
-  #      fcw_alert = hud_control.visualAlert == VisualAlert.fcw
-  #      if fcw_alert:
-  #        self.awv_warnsymbol = 1
-  #      else:
-  #        self.awv_warnsymbol = 0
-  #      can_sends.append(self.CCS.create_aeb_control(self.packer_pt, self.CAN.pt, self.awv_warnsymbol, CS.awv_stock))
+    # Intelligent Cruise Button Management
+    can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CS, self.CCP, CC_SP, self.packer, self.CAN.ext, self.frame, self.last_button_frame, CS.gra_stock_values["COUNTER"]))
     # **** HUD Controls ***************************************************** #
     if self.frame % self.CCP.LDW_STEP == 0:
       hud_alert = 0
       if hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw):
         hud_alert = self.CCP.LDW_MESSAGES["laneAssistTakeOver"]
-      can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, self.CAN.pt, CS.ldw_stock_values, CC.latActive, CS.out.steeringPressed, hud_alert, hud_control))
+      can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, self.CAN.ext, CS.ldw_stock_values, CC.latActive, CS.out.steeringPressed, hud_alert, hud_control))
 
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       leadDistance = min(8, hud_control.leadDistance) if hud_control.leadDistance != 0 else 0

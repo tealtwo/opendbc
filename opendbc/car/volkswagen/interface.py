@@ -103,6 +103,8 @@ class CarInterface(CarInterfaceBase):
     ret.vEgoStopping = 0.5
     ret.autoResumeSng = ret.minEnableSpeed == -1
 
+    ret.intelligentCruiseButtonManagementAvailable = True
+
     CAN = CanBus(fingerprint=fingerprint)
     if CAN.pt >= 4:
       safety_configs.insert(0, get_safety_config(structs.CarParams.SafetyModel.noOutput))
