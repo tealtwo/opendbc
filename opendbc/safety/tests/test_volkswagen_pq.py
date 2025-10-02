@@ -88,7 +88,7 @@ class TestVolkswagenPqSafetyBase(common.PandaCarSafetyTest, common.DriverTorqueS
 
   # openpilot steering output torque
   def _torque_cmd_msg(self, torque, steer_req=1, hca_status=5):
-    values = {"LM_Offset": abs(torque), "LM_OffSign": torque < 0, "HCA_Status": hca_status if steer_req else 3}
+    values = {"LW_Offset": abs(torque), "LM_OffSign": torque < 0, "HCA_Status": hca_status if steer_req else 3}
     return self.packer.make_can_msg_panda("HCA_1", 0, values)
 
   # openpilot steering output angle
@@ -142,7 +142,7 @@ class TestVolkswagenPqStockSafety(TestVolkswagenPqSafetyBase):
   # Transmit of GRA_Neu is allowed on bus 0 and 2 to keep compatibility with gateway and camera integration, OEM+ allows EPB/ECD for FtS & SnG on CC MK60EC1
   TX_MSGS = [[MSG_HCA_1, 0], [MSG_GRA_NEU, 0], [MSG_GRA_NEU, 2], [MSG_LDW_1, 0], [MSG_ACC_GRA_ANZEIGE, 0], [MSG_ACC_SYSTEM, 0], [MSG_MOTOR_2, 2], [MSG_EPB_1, 1], [MSG_EPB_1, 2], [MSG_BREMSE_8, 2], [MSG_BREMSE_11, 2]]
   FWD_BLACKLISTED_ADDRS = {2: [MSG_HCA_1, MSG_LDW_1, MSG_ACC_SYSTEM, MSG_ACC_GRA_ANZEIGE, MSG_BREMSE_8, MSG_BREMSE_11, MSG_MOTOR_2, MSG_EPB_1]}
-  RELAY_MALFUNCTION_ADDRS = {0: (MSG_HCA_1, MSG_LDW_1, MSG_ACC_SYSTEM, MSG_ACC_GRA_ANZEIGE)}
+  RELAY_MALFUNCTION_ADDRS = {0: (MSG_HCA_1, MSG_LDW_1, MSG_ACC_SYSTEM, MSG_ACC_GRA_ANZEIGE), 1: (MSG_EPB_1,), 2: (MSG_MOTOR_2, MSG_EPB_1, MSG_BREMSE_8, MSG_BREMSE_11)}
 
   def setUp(self):
     self.packer = CANPackerPanda("vw_pq")
@@ -161,9 +161,9 @@ class TestVolkswagenPqStockSafety(TestVolkswagenPqSafetyBase):
 
 
 class TestVolkswagenPqLongSafety(TestVolkswagenPqSafetyBase, common.LongitudinalAccelSafetyTest):
-  TX_MSGS = [[MSG_HCA_1, 0], [MSG_LDW_1, 0], [MSG_ACC_SYSTEM, 0], [MSG_ACC_GRA_ANZEIGE, 0], [MSG_EPB_1, 1], [MSG_EPB_1, 2], [MSG_BREMSE_8, 2], [MSG_BREMSE_11, 2]]
+  TX_MSGS = [[MSG_HCA_1, 0], [MSG_LDW_1, 0], [MSG_ACC_SYSTEM, 0], [MSG_ACC_GRA_ANZEIGE, 0], [MSG_MOTOR_2, 2], [MSG_EPB_1, 1], [MSG_EPB_1, 2], [MSG_BREMSE_8, 2], [MSG_BREMSE_11, 2]]
   FWD_BLACKLISTED_ADDRS = {2: [MSG_HCA_1, MSG_LDW_1, MSG_ACC_SYSTEM, MSG_ACC_GRA_ANZEIGE, MSG_BREMSE_8, MSG_BREMSE_11, MSG_MOTOR_2, MSG_EPB_1]}
-  RELAY_MALFUNCTION_ADDRS = {0: (MSG_HCA_1, MSG_LDW_1, MSG_ACC_SYSTEM, MSG_ACC_GRA_ANZEIGE)}
+  RELAY_MALFUNCTION_ADDRS = {0: (MSG_HCA_1, MSG_LDW_1, MSG_ACC_SYSTEM, MSG_ACC_GRA_ANZEIGE), 1: (MSG_EPB_1,), 2: (MSG_MOTOR_2, MSG_EPB_1, MSG_BREMSE_8, MSG_BREMSE_11)}
   INACTIVE_ACCEL = 3.01
 
   def setUp(self):
