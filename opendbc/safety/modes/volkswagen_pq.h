@@ -195,7 +195,6 @@ static bool volkswagen_pq_tx_hook(const CANPacket_t *msg) {
     uint32_t hca_status = ((msg->data[1] >> 4) & 0xFU); // HCA Status
     // Check for Angle Control
     bool angle_steering = (((hca_status == 10U) || (hca_status == 11U) || (hca_status == 13U) || (hca_status == 15U))); // Check for HCA->PLA Status
-    bool angle_steering_active = (((hca_status == 11U) || (hca_status == 13U))); // Check for Active HCA->PLA Status #FIXME remove once tested as redundant
     // LW_OffSet (Torque, HCA) Safety Check:
     if (!angle_steering) {
       int desired_torque = msg->data[2] | ((msg->data[3] & 0x7FU) << 8); // HC1_LW_OffSet (Req Torque)
@@ -217,7 +216,7 @@ static bool volkswagen_pq_tx_hook(const CANPacket_t *msg) {
       if (sign == 1) {
         desired_angle *= -1; // Apply Sign to Desired Angle
       }
-      if (steer_angle_cmd_checks_vm(desired_angle, angle_steering_active, VWAngleLimits, VWSteeringParams)) {
+      if (steer_angle_cmd_checks_vm(desired_angle, angle_steering, VWAngleLimits, VWSteeringParams)) {
         tx = false; // Block Requested Angle if Safety Check Failed
       }
     }
