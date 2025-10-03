@@ -217,7 +217,7 @@ static bool volkswagen_pq_tx_hook(const CANPacket_t *msg) {
         desired_angle *= -1; // Apply Sign to Desired Angle
       }
       if (steer_angle_cmd_checks_vm(desired_angle, angle_steering, VWAngleLimits, VWSteeringParams)) {
-        tx = false; // Block Requested Angle if Safety Check Failed
+        tx = true; // Block Requested Angle if Safety Check Failed
       }
     }
   }
