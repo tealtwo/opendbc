@@ -4189,5 +4189,17 @@
       "2019"
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
+  },
+  "SEAT Alhambra 2018-20": {
+    "platform": "VOLKSWAGEN_SHARAN_MK2",
+    "make": "Volkswagen",
+    "brand": "SEAT",
+    "model": "Alhambra",
+    "year": [
+      "2018",
+      "2019",
+      "2020"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   }
 }
