@@ -156,6 +156,7 @@ class CarState(CarStateBase):
 
   def update_pq(self, pt_cp, br_cp, cam_cp, ext_cp) -> tuple[structs.CarState, structs.CarStateSP]:
     hcaLateralControl = self._params.get_bool("pqLatControlToggle")
+    pqCCOnly = self._params.get_bool("pqCCOnlyToggle")
     ret = structs.CarState()
     ret_sp = structs.CarStateSP()
 
@@ -227,7 +228,7 @@ class CarState(CarStateBase):
 
     # Update ACC radar status.
     # This parses both ECM & Radar cruiseState, as well as ECD for deceleration under > 18km/h
-    self.acc_type = ext_cp.vl["ACC_System"]["ACS_Typ_ACC"]
+    self.acc_type = 0 if pqCCOnly else ext_cp.vl["ACC_System"]["ACS_Typ_ACC"]
     ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"])
     MO2_StaGRA = pt_cp.vl["Motor_2"]["MO2_Sta_GRA"] in (1, 2)
     BR8_VerzEPB = bool(pt_cp.vl["Bremse_8"]["BR8_Verz_EPB_akt"])
@@ -238,14 +239,15 @@ class CarState(CarStateBase):
     elif not MO2_StaGRA or ACS_StaADR or BR8_VerzEPB:
       self.last_cruiseActive = False
     ret.cruiseState.enabled = self.last_cruiseActive
-    if self.CP.pcmCruise:
+    if self.CP.pcmCruise and not pqCCOnly:
       ret.accFaulted = ext_cp.vl["ACC_GRA_Anzeige"]["ACA_StaACC"] in (6, 7)
-    else:
+    elif not pqCCOnly:
       ret.accFaulted = pt_cp.vl["Motor_2"]["MO2_Sta_GRA"] == 3 or ext_cp.vl["ACC_System"]["ACS_Sta_ADR"] == 3
 
     # Update ACC setpoint. When the setpoint reads as 255, the driver has not
     # yet established an ACC setpoint, so treat it as zero.
-    ret.cruiseState.speed = ext_cp.vl["ACC_GRA_Anzeige"]["ACA_V_Wunsch"] * CV.KPH_TO_MS
+    # Motor_2 contains CC setpoint, otherwise we use the ACC Radar
+    ret.cruiseState.speed = pt_cp.vl["Motor_2"]["MO2_GRA_Soll"] * CV.KPH_TO_MS if pqCCOnly else ext_cp.vl["ACC_GRA_Anzeige"]["ACA_V_Wunsch"] * CV.KPH_TO_MS
     if ret.cruiseState.speed > 70:  # 255 kph in m/s == no current setpoint
       ret.cruiseState.speed = 0
 
