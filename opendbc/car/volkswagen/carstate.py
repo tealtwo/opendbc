@@ -176,7 +176,7 @@ class CarState(CarStateBase):
     if hcaLateralControl:
       ret.steerFaultTemporary, ret.steerFaultPermanent = self.update_hca_state(hca_status)
     else:
-      ret.steerFaultTemporary = True if pt_cp.vl["Lenkhilfe_2"]["LH2_PLA_Abbr"] == 2 else False
+      ret.steerFaultTemporary = True if pt_cp.vl["Lenkhilfe_2"]["LH2_PLA_Abbr"] in (2, 7) else False
     self.LH_3_Sign = pt_cp.vl["Lenkhilfe_3"]["LH3_BLWSign"]
 
     # Update gas, brakes, and gearshift.

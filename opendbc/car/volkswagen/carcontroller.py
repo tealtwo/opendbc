@@ -112,6 +112,7 @@ class CarController(CarControllerBase):
     self.aeb_available = False
     self.awv_warnsymbol = 0
     self.leadDistanceBars = 0
+    self.steeringPressed = 0
 
   def update(self, CC, CC_SP, CS, now_nanos):
     actuators = CC.actuators
@@ -158,7 +159,7 @@ class CarController(CarControllerBase):
         self.hca_frame_timer_running = 0
       if hca_enabled and abs(apply_torque) > 0:
         if pqhca5or7Toggle:
-          self.HCA_Status = 7
+          self.HCA_Status = 7 # FIXME: Have this use the PQ only flag, MQB only has HCA3/5
         else:
           self.HCA_Status = 5
       else:
@@ -274,22 +275,16 @@ class CarController(CarControllerBase):
       self.acc_anz_counter_last = CS.acc_anz_stock["COUNTER"]
       self.bremse8_counter_last = CS.bremse8_stock["COUNTER"]
       self.bremse11_counter_last = CS.bremse11_stock["COUNTER"]
-    # AEB Controller
-  #  self.aeb_available = CS.awv_available
-  #  if self.aeb_available in (0, 14, 10):
-  #    if self.frame % self.CCP.AEB_CONTROL_STEP == 0:
-  #      fcw_alert = hud_control.visualAlert == VisualAlert.fcw
-  #      if fcw_alert:
-  #        self.awv_warnsymbol = 1
-  #      else:
-  #        self.awv_warnsymbol = 0
-  #      can_sends.append(self.CCS.create_aeb_control(self.packer_pt, self.CAN.pt, self.awv_warnsymbol, CS.awv_stock))
     # **** HUD Controls ***************************************************** #
     if self.frame % self.CCP.LDW_STEP == 0:
+      if CC.latActive and not hcaLateralControl and CS.LH2_steeringState != 64:
+        self.steeringPressed = (self.frame // 2) % 2 == 0
+      else:
+        self.steeringPressed = CS.out.steeringPressed
       hud_alert = 0
       if hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw):
         hud_alert = self.CCP.LDW_MESSAGES["laneAssistTakeOver"]
-      can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, self.CAN.pt, CS.ldw_stock_values, CC.latActive, CS.out.steeringPressed, hud_alert, hud_control))
+      can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, self.CAN.pt, CS.ldw_stock_values, CC.latActive, self.steeringPressed, hud_alert, hud_control))
 
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       leadDistance = min(8, hud_control.leadDistance) if hud_control.leadDistance != 0 else 0
