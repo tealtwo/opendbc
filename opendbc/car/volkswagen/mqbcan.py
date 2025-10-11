@@ -97,8 +97,8 @@ def create_acc_accel_control(packer, bus, acc_type, acc_enabled, accel, acc_cont
     "ACC_Status_ACC": acc_control,
     "ACC_StartStopp_Info": acc_enabled,
     "ACC_Sollbeschleunigung_02": accel if acc_enabled else 3.01,
-    "ACC_zul_Regelabw_unten": 0.2,  # FIXME: use dynamic comfort bands & jerklimits (they are in CC, use them here!)
-    "ACC_zul_Regelabw_oben": 0.2,  # FIXME: dynamic adjustment of comfort-band
+    "ACC_zul_Regelabw_unten": comfortBand if acc_enabled else 0.2, # Dynamic Comfort Band
+    "ACC_zul_Regelabw_oben": comfortBand if acc_enabled else 0.2, # Dynamic Comfort Band
     "ACC_neg_Sollbeschl_Grad_02": 4.0 if acc_enabled else 0,  # FIXME: dynamic adjustment of jerk limits
     "ACC_pos_Sollbeschl_Grad_02": 4.0 if acc_enabled else 0,  # FIXME: dynamic adjustment of jerk limits
     "ACC_Anfahren": starting,

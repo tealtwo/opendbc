@@ -212,7 +212,7 @@ class CarController(CarControllerBase):
       starting = actuators.longControlState == LongCtrlState.pid and (CS.esp_hold_confirmation or CS.out.vEgo < self.CP.vEgoStopping)
       self.accel_diff = (0.0019 * (accel - self.accel_last)) + (1 - 0.0019) * self.accel_diff
       self.long_jerklimit = (0.01 * (clip(abs(accel), 0.7, 2))) + (1 - 0.01) * self.long_jerklimit
-      self.long_deviation = clip(CS.out.vEgo / 40, 0, 0.13) * interp(abs(accel - self.accel_diff), [0, .2, 1.], [0.0, 0.0, 0.0])
+      self.long_deviation = interp(abs(accel - self.accel_diff), [0, 0.3, 1.0], [0.02, 0.04, 0.08])  # 0.1 -> 0.2 -> 0.4 m/s²
       if self.CCS == pqcan and CC.longActive and actuators.accel <= 0 and CS.out.vEgoRaw <= 5:
         if not self.EPB_enable:  # first frame of EPB entry
           self.EPB_counter = 0
@@ -228,10 +228,10 @@ class CarController(CarControllerBase):
         self.EPB_brake = 0
       # Increment EPB Counter
       if self.EPB_enable:
-        acc_control = 0
+        acc_control = 0 # FIXME: Keep ACS_Sta_ADR, ACS_Sollbeschl, ACS_Soll_Freigabe, ACS_Anhaltenwunsch, aktiv when using eEPB
         self.EPB_counter = min(self.EPB_counter + 1, 10)
         if self.EPB_counter <= 9:
-          acc_control = 0
+          acc_control = 0 # FIXME: Keep ACS_Sta_ADR, ACS_Sollbeschl, ACS_Soll_Freigabe, ACS_Anhaltenwunsch, aktiv when using eEPB
       else:
         self.EPB_counter = 0
       self.accel_last = accel
